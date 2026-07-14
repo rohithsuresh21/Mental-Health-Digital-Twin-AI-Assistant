@@ -1,0 +1,201 @@
+text,timestamp,sleep_hours,sleep_quality,activity_level,music_mood_score
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2025-09-02 07:02:39,8.6,0.73,0.7,0.71
+Good sleep last night. Woke up feeling refreshed and calm.,2025-09-03 07:38:09,6.5,0.64,0.57,0.33
+Tried a new recipe tonight and it turned out well. Little things like this make me happy.,2025-09-04 09:44:19,8.3,0.84,0.62,0.64
+The weekend was exactly what I needed. Relaxed and recharged.,2025-09-05 07:30:03,8.1,0.75,0.67,0.47
+The weekend was exactly what I needed. Relaxed and recharged.,2025-09-06 13:06:44,8.1,0.79,0.74,0.46
+Grateful for today. Nothing special happened but I feel content.,2025-09-07 12:45:33,8.0,0.66,0.52,0.8
+Morning run felt amazing. Energy is high and I feel ready for whatever comes.,2025-09-08 12:49:07,7.8,0.63,0.65,0.36
+Grateful for today. Nothing special happened but I feel content.,2025-09-09 13:19:05,8.3,0.74,0.6,0.8
+Went for a long walk. Nature helps me reset and think clearly.,2025-09-10 07:29:04,6.0,0.7,0.31,0.47
+Good sleep last night. Woke up feeling refreshed and calm.,2025-09-11 13:28:17,7.2,0.93,0.93,0.62
+Took the dog for an extra-long walk. Both of us needed it.,2025-09-12 18:59:13,8.2,0.76,0.77,0.56
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2025-09-12 14:47:33,6.9,0.6,0.75,0.9
+Had lunch outside for once. Small change of scenery did wonders.,2025-09-13 13:38:52,7.9,0.73,0.95,0.69
+Spent the evening reading. Mind feels clear and at peace.,2025-09-14 11:07:45,7.9,0.81,0.68,0.62
+Slept in a bit and still felt rested when I woke up.,2025-09-15 11:56:31,7.1,0.83,0.69,0.82
+"Had a solid workout this morning, feeling strong and clear-headed.",2025-09-16 07:31:43,7.6,0.59,0.69,0.88
+Had a laugh with the team today. Work doesn't feel like work when you enjoy it.,2025-09-17 07:09:26,7.6,0.69,0.54,0.52
+Finished a book I've been meaning to read. Satisfying feeling.,2025-09-18 07:53:21,7.6,0.66,0.89,0.62
+Good progress on my goals this week. Feeling motivated to keep going.,2025-09-20 10:53:25,7.9,0.92,0.9,0.63
+Cooked dinner for myself and actually enjoyed it. Small wins matter.,2025-09-21 16:45:00,8.0,0.85,0.67,0.43
+Slept in a bit and still felt rested when I woke up.,2025-09-22 14:23:04,8.1,0.87,0.75,0.54
+Took the dog for an extra-long walk. Both of us needed it.,2025-09-23 20:37:04,7.7,0.72,0.66,0.83
+Had lunch outside for once. Small change of scenery did wonders.,2025-09-24 19:17:54,8.6,0.85,0.77,0.75
+Did some gardening this afternoon. Simple and calming.,2025-09-26 14:53:42,7.8,0.77,0.61,0.65
+Had lunch outside for once. Small change of scenery did wonders.,2025-09-27 20:15:17,8.9,0.87,0.66,0.6
+Did some gardening this afternoon. Simple and calming.,2025-09-28 18:49:23,7.4,0.82,0.75,0.47
+Went for a long walk. Nature helps me reset and think clearly.,2025-09-29 17:01:51,8.0,0.72,0.89,0.68
+Morning run felt amazing. Energy is high and I feel ready for whatever comes.,2025-09-30 15:56:35,8.7,0.73,0.66,0.7
+Finished a book I've been meaning to read. Satisfying feeling.,2025-10-01 18:03:59,8.3,0.84,0.54,0.68
+Called my mom today. Always lifts my mood instantly.,2025-10-02 17:48:08,7.8,0.74,0.62,0.89
+"Had a great day at work, got everything done and even had time to catch up with a friend over coffee.",2025-10-03 15:03:58,7.6,0.7,0.78,0.68
+Morning run felt amazing. Energy is high and I feel ready for whatever comes.,2025-10-04 10:30:26,7.8,0.86,0.76,0.71
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2025-10-05 08:47:47,8.3,0.81,0.62,0.61
+Productive afternoon. Finished the report and feeling proud of myself.,2025-10-06 07:41:15,6.7,0.66,0.43,0.32
+Went to the gym after a few days off. Felt great to get moving again.,2025-10-07 08:25:07,7.8,0.65,0.45,0.71
+"Had a solid workout this morning, feeling strong and clear-headed.",2025-10-08 07:13:32,7.4,0.83,0.63,0.51
+Productive afternoon. Finished the report and feeling proud of myself.,2025-10-09 07:14:28,7.2,0.73,0.66,0.55
+Grateful for today. Nothing special happened but I feel content.,2025-10-10 13:28:27,7.7,0.63,0.7,0.43
+Had a nice conversation with a colleague. Feeling connected and valued.,2025-10-11 09:05:11,7.7,0.85,0.84,0.88
+Grateful for today. Nothing special happened but I feel content.,2025-10-12 07:15:23,7.0,0.86,0.86,0.79
+Grateful for today. Nothing special happened but I feel content.,2025-10-13 08:56:01,7.3,0.82,0.94,0.47
+"Met up with friends for dinner. Good food, good company.",2025-10-14 07:26:47,8.0,0.89,0.61,0.74
+"Had a great day at work, got everything done and even had time to catch up with a friend over coffee.",2025-10-15 07:21:48,7.3,0.7,0.59,0.69
+"Pretty average day, nothing major happened either way.",2025-10-15 07:23:08,7.8,0.88,0.58,0.64
+"Had a solid workout this morning, feeling strong and clear-headed.",2025-10-16 07:50:55,8.3,0.84,0.53,0.75
+"Pretty average day, nothing major happened either way.",2025-10-17 07:57:15,7.6,0.82,0.74,0.82
+"Had a solid workout this morning, feeling strong and clear-headed.",2025-10-18 09:27:19,7.9,0.59,0.52,0.76
+Started a new hobby this week and I'm actually enjoying it.,2025-10-19 13:01:08,7.7,0.89,0.74,0.56
+Exercised after work. Body feels tired but mind feels great.,2025-10-21 15:57:51,8.3,0.7,0.43,0.9
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2025-10-22 17:00:04,6.8,0.84,0.82,0.68
+Spent the evening reading. Mind feels clear and at peace.,2025-10-23 22:52:33,7.0,0.88,0.51,0.49
+"Pretty average day, nothing major happened either way.",2025-10-25 07:15:50,7.6,0.86,0.74,0.77
+Productive afternoon. Finished the report and feeling proud of myself.,2025-10-26 07:33:43,6.7,0.62,0.43,0.51
+Wrapped up a big project today. Relieved and happy with how it turned out.,2025-10-27 11:44:41,8.1,0.75,0.76,0.59
+Spent the evening reading. Mind feels clear and at peace.,2025-10-28 16:05:35,7.5,0.78,0.67,0.74
+Went for a long walk. Nature helps me reset and think clearly.,2025-10-29 10:08:14,7.9,0.95,0.67,0.63
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2025-10-30 07:45:19,7.3,0.78,0.79,0.56
+"Had a solid workout this morning, feeling strong and clear-headed.",2025-10-31 09:33:40,7.8,0.85,0.68,0.59
+Productive afternoon. Finished the report and feeling proud of myself.,2025-11-01 12:06:04,8.3,0.79,0.75,0.81
+Went for a long walk. Nature helps me reset and think clearly.,2025-11-02 17:12:24,8.4,0.75,0.63,0.7
+Tried a new recipe tonight and it turned out well. Little things like this make me happy.,2025-11-03 20:00:00,7.7,0.59,0.87,0.66
+Morning run felt amazing. Energy is high and I feel ready for whatever comes.,2025-11-05 07:17:20,7.4,0.51,0.73,0.47
+Caught up with an old friend over video call. Felt good to laugh together again.,2025-11-06 11:30:33,7.7,0.64,0.68,0.63
+Called my mom today. Always lifts my mood instantly.,2025-11-07 08:26:45,7.7,0.82,0.71,0.79
+Productive afternoon. Finished the report and feeling proud of myself.,2025-11-08 07:12:31,7.6,0.68,0.7,0.74
+Had a nice conversation with a colleague. Feeling connected and valued.,2025-11-09 08:05:16,8.4,0.86,0.47,0.71
+Grateful for today. Nothing special happened but I feel content.,2025-11-10 07:23:14,8.5,0.79,0.63,0.7
+Good progress on my goals this week. Feeling motivated to keep going.,2025-11-11 09:45:26,7.5,0.84,0.7,0.84
+Did some gardening this afternoon. Simple and calming.,2025-11-12 08:00:51,8.0,0.71,0.78,0.78
+Called my mom today. Always lifts my mood instantly.,2025-11-13 12:04:13,7.5,0.74,0.4,0.78
+Wrapped up a big project today. Relieved and happy with how it turned out.,2025-11-14 08:49:52,7.5,0.57,0.47,0.63
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2025-11-15 08:16:48,8.2,0.77,0.76,0.52
+"Had a great day at work, got everything done and even had time to catch up with a friend over coffee.",2025-11-16 07:39:31,7.1,0.87,0.76,0.66
+Spent the evening reading. Mind feels clear and at peace.,2025-11-17 12:31:26,8.4,0.68,0.65,0.79
+"Had a solid workout this morning, feeling strong and clear-headed.",2025-11-18 07:38:09,8.7,0.78,0.92,0.58
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2025-11-19 07:01:38,8.0,0.76,0.49,0.69
+Tried a new recipe tonight and it turned out well. Little things like this make me happy.,2025-11-20 07:03:11,8.3,0.77,0.69,0.84
+Grateful for today. Nothing special happened but I feel content.,2025-11-21 11:56:20,7.2,0.63,0.61,0.5
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2025-11-22 17:59:10,8.5,0.81,0.59,0.58
+"Pretty average day, nothing major happened either way.",2025-11-23 14:59:33,9.2,0.72,0.6,0.7
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2025-11-24 09:42:46,8.1,0.8,0.58,0.51
+"Met up with friends for dinner. Good food, good company.",2025-11-25 08:21:28,8.1,0.77,0.49,0.81
+Had lunch outside for once. Small change of scenery did wonders.,2025-11-26 07:17:05,8.2,0.76,0.67,0.69
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2025-11-27 12:07:35,7.5,0.65,0.74,0.47
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2025-11-28 08:22:49,8.0,0.64,0.69,0.64
+Wrapped up a big project today. Relieved and happy with how it turned out.,2025-11-29 12:27:05,8.7,0.67,0.52,0.58
+Cooked dinner for myself and actually enjoyed it. Small wins matter.,2025-12-01 12:23:34,7.2,0.72,0.75,0.76
+Productive afternoon. Finished the report and feeling proud of myself.,2025-12-02 08:23:47,8.6,0.71,0.95,0.9
+"Had a solid workout this morning, feeling strong and clear-headed.",2025-12-03 07:26:15,6.9,0.39,0.56,0.56
+"Met up with friends for dinner. Good food, good company.",2025-12-04 10:02:24,6.7,0.79,0.67,0.56
+Went to the gym after a few days off. Felt great to get moving again.,2025-12-06 07:58:03,8.1,0.88,0.64,0.69
+Productive afternoon. Finished the report and feeling proud of myself.,2025-12-07 10:57:38,7.5,0.7,0.71,0.73
+Wrapped up a big project today. Relieved and happy with how it turned out.,2025-12-08 08:39:02,6.7,0.4,0.64,0.35
+Went to the gym after a few days off. Felt great to get moving again.,2025-12-09 11:20:59,7.9,0.96,0.7,0.51
+Productive afternoon. Finished the report and feeling proud of myself.,2025-12-10 07:48:38,7.1,0.9,0.7,0.73
+Had a laugh with the team today. Work doesn't feel like work when you enjoy it.,2025-12-11 09:04:01,8.3,0.78,0.66,0.54
+Tried a new recipe tonight and it turned out well. Little things like this make me happy.,2025-12-12 07:45:29,5.5,0.48,0.56,0.53
+Went for a long walk. Nature helps me reset and think clearly.,2025-12-13 07:16:58,8.0,0.77,0.72,0.76
+Morning run felt amazing. Energy is high and I feel ready for whatever comes.,2025-12-14 07:59:31,7.4,0.75,0.49,0.79
+"Had a solid workout this morning, feeling strong and clear-headed.",2025-12-15 11:47:19,7.8,0.83,0.9,0.8
+Tried a new recipe tonight and it turned out well. Little things like this make me happy.,2025-12-16 15:38:15,7.8,0.86,0.51,0.72
+Had a nice conversation with a colleague. Feeling connected and valued.,2025-12-17 13:23:50,7.9,0.62,0.87,0.57
+Tried a new recipe tonight and it turned out well. Little things like this make me happy.,2025-12-18 08:12:25,8.1,0.74,0.83,0.83
+The weekend was exactly what I needed. Relaxed and recharged.,2025-12-19 07:04:41,7.4,0.63,0.68,0.77
+Slept in a bit and still felt rested when I woke up.,2025-12-21 07:20:10,7.6,0.72,0.76,0.35
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2025-12-22 11:04:16,7.5,0.64,0.74,0.56
+Morning run felt amazing. Energy is high and I feel ready for whatever comes.,2025-12-23 07:26:31,7.2,0.74,0.51,0.66
+Caught up with an old friend over video call. Felt good to laugh together again.,2025-12-24 13:11:14,7.5,0.74,0.61,0.78
+Quiet day at home. Caught up on chores and felt accomplished.,2025-12-25 12:57:43,7.7,0.83,0.76,0.56
+Went for a long walk. Nature helps me reset and think clearly.,2025-12-26 13:49:42,8.1,0.81,0.74,0.61
+"Had a solid workout this morning, feeling strong and clear-headed.",2025-12-27 17:18:18,6.7,0.72,0.83,0.44
+Went to the gym after a few days off. Felt great to get moving again.,2025-12-28 14:16:47,8.1,0.74,0.8,0.72
+Tried a new recipe tonight and it turned out well. Little things like this make me happy.,2025-12-29 13:11:15,8.3,0.5,0.62,0.53
+Went for a long walk. Nature helps me reset and think clearly.,2025-12-30 10:58:37,7.7,0.71,0.62,0.75
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2025-12-31 07:16:15,8.8,0.5,0.66,0.7
+Tried a new recipe tonight and it turned out well. Little things like this make me happy.,2026-01-01 07:51:06,7.8,0.75,0.52,0.54
+"Met up with friends for dinner. Good food, good company.",2026-01-02 13:06:00,8.2,0.89,0.71,0.55
+Spent the evening reading. Mind feels clear and at peace.,2026-01-03 16:53:28,7.8,0.76,0.77,0.68
+Good sleep last night. Woke up feeling refreshed and calm.,2026-01-04 11:18:14,7.5,0.8,0.55,0.77
+Took the dog for an extra-long walk. Both of us needed it.,2026-01-05 07:52:37,8.4,0.66,0.75,0.53
+Took the dog for an extra-long walk. Both of us needed it.,2026-01-06 07:32:55,8.3,0.87,0.67,0.79
+Slept in a bit and still felt rested when I woke up.,2026-01-07 08:49:49,7.6,0.72,0.63,0.64
+Took the dog for an extra-long walk. Both of us needed it.,2026-01-08 07:40:38,7.6,0.8,0.62,0.76
+Productive afternoon. Finished the report and feeling proud of myself.,2026-01-09 07:02:23,8.3,0.73,0.51,0.75
+Good sleep last night. Woke up feeling refreshed and calm.,2026-01-10 07:16:02,8.4,0.76,0.53,0.69
+Took the dog for an extra-long walk. Both of us needed it.,2026-01-11 09:13:52,8.6,0.59,0.76,0.62
+The weekend was exactly what I needed. Relaxed and recharged.,2026-01-13 07:43:23,7.4,0.83,0.53,0.7
+The weekend was exactly what I needed. Relaxed and recharged.,2026-01-14 07:13:02,8.5,0.8,0.59,0.43
+Wrapped up a big project today. Relieved and happy with how it turned out.,2026-01-15 07:04:26,7.2,0.6,0.91,0.63
+"Had a solid workout this morning, feeling strong and clear-headed.",2026-01-16 07:35:09,7.3,0.65,0.56,0.62
+Good progress on my goals this week. Feeling motivated to keep going.,2026-01-17 07:10:25,7.2,0.95,0.6,0.56
+Cooked dinner for myself and actually enjoyed it. Small wins matter.,2026-01-18 07:18:42,8.0,0.93,0.87,0.6
+Exercised after work. Body feels tired but mind feels great.,2026-01-19 12:19:47,7.9,0.79,0.77,0.69
+The weekend was exactly what I needed. Relaxed and recharged.,2026-01-20 10:26:01,7.3,0.65,0.72,0.51
+Quiet day at home. Caught up on chores and felt accomplished.,2026-01-21 16:23:41,8.5,0.78,0.57,0.62
+Productive afternoon. Finished the report and feeling proud of myself.,2026-01-22 19:13:00,7.5,0.77,0.82,0.47
+Took the dog for an extra-long walk. Both of us needed it.,2026-01-23 15:07:52,6.9,0.81,0.68,0.68
+Productive afternoon. Finished the report and feeling proud of myself.,2026-01-24 16:23:29,8.0,0.76,0.8,0.54
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2026-01-25 11:03:35,7.8,0.7,0.55,0.74
+Morning run felt amazing. Energy is high and I feel ready for whatever comes.,2026-01-26 14:25:05,8.1,0.59,0.55,0.7
+Quiet day at home. Caught up on chores and felt accomplished.,2026-01-27 19:47:32,8.3,0.71,0.68,0.48
+Took the dog for an extra-long walk. Both of us needed it.,2026-01-28 17:10:33,9.1,0.83,0.82,0.75
+Cooked dinner for myself and actually enjoyed it. Small wins matter.,2026-01-29 11:24:31,8.3,0.84,0.66,0.76
+Went for a long walk. Nature helps me reset and think clearly.,2026-01-30 14:51:12,7.8,0.91,0.6,0.59
+Good progress on my goals this week. Feeling motivated to keep going.,2026-01-31 18:02:58,8.1,0.91,0.72,0.57
+Went to the gym after a few days off. Felt great to get moving again.,2026-02-01 12:59:40,7.7,0.73,0.95,0.78
+Tried a new recipe tonight and it turned out well. Little things like this make me happy.,2026-02-02 17:39:44,8.4,0.81,0.63,0.81
+Started a new hobby this week and I'm actually enjoying it.,2026-02-03 13:50:54,8.6,0.84,0.7,0.8
+Had a laugh with the team today. Work doesn't feel like work when you enjoy it.,2026-02-04 12:54:12,7.6,0.86,0.61,0.53
+Called my mom today. Always lifts my mood instantly.,2026-02-05 09:13:02,8.1,0.81,0.95,0.62
+"Had a solid workout this morning, feeling strong and clear-headed.",2026-02-06 09:24:22,7.8,0.67,0.46,0.43
+Had a nice conversation with a colleague. Feeling connected and valued.,2026-02-07 07:46:52,8.0,0.66,0.85,0.84
+Cooked dinner for myself and actually enjoyed it. Small wins matter.,2026-02-08 07:35:53,7.7,0.95,0.73,0.81
+Tried a new recipe tonight and it turned out well. Little things like this make me happy.,2026-02-09 07:53:20,6.9,0.74,0.45,0.63
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2026-02-10 09:35:54,7.6,0.77,0.78,0.68
+Took the dog for an extra-long walk. Both of us needed it.,2026-02-11 07:26:19,7.8,0.85,0.8,0.48
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2026-02-12 07:42:23,8.1,0.85,0.6,0.71
+Grateful for today. Nothing special happened but I feel content.,2026-02-13 07:01:00,7.1,0.92,0.67,0.65
+Spent the evening reading. Mind feels clear and at peace.,2026-02-14 07:15:28,8.4,0.77,0.78,0.52
+"Met up with friends for dinner. Good food, good company.",2026-02-15 10:29:53,7.5,0.64,0.67,0.79
+Productive afternoon. Finished the report and feeling proud of myself.,2026-02-16 10:06:04,7.9,0.87,0.57,0.55
+Morning run felt amazing. Energy is high and I feel ready for whatever comes.,2026-02-17 09:05:51,7.6,0.84,0.75,0.66
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2026-02-18 09:02:02,8.1,0.76,0.7,0.83
+Had a laugh with the team today. Work doesn't feel like work when you enjoy it.,2026-02-19 07:46:20,7.5,0.8,0.91,0.67
+Exercised after work. Body feels tired but mind feels great.,2026-02-20 07:03:48,7.4,0.57,0.82,0.26
+Called my mom today. Always lifts my mood instantly.,2026-02-21 07:50:08,7.2,0.67,0.91,0.71
+Morning run felt amazing. Energy is high and I feel ready for whatever comes.,2026-02-23 07:39:46,7.7,0.65,0.75,0.67
+"Had a solid workout this morning, feeling strong and clear-headed.",2026-02-24 07:08:56,7.5,0.63,0.56,0.69
+Good progress on my goals this week. Feeling motivated to keep going.,2026-02-25 12:58:50,7.2,0.65,0.55,0.32
+Grateful for today. Nothing special happened but I feel content.,2026-02-26 16:59:14,7.8,0.68,0.71,0.72
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2026-02-26 15:48:16,6.6,0.53,0.7,0.59
+Good progress on my goals this week. Feeling motivated to keep going.,2026-02-27 20:17:57,7.5,0.48,0.69,0.74
+Tried a new recipe tonight and it turned out well. Little things like this make me happy.,2026-02-28 16:32:58,8.4,0.71,0.62,0.6
+Slept in a bit and still felt rested when I woke up.,2026-03-01 17:39:32,8.2,0.66,0.69,0.54
+Cooked dinner for myself and actually enjoyed it. Small wins matter.,2026-03-02 16:12:11,7.2,0.47,0.62,0.49
+Exercised after work. Body feels tired but mind feels great.,2026-03-03 17:17:43,7.7,0.83,0.85,0.44
+Grateful for today. Nothing special happened but I feel content.,2026-03-04 15:50:50,7.6,0.7,0.53,0.73
+Started a new hobby this week and I'm actually enjoying it.,2026-03-05 19:03:40,7.9,0.91,0.62,0.55
+Quiet day at home. Caught up on chores and felt accomplished.,2026-03-07 07:28:35,8.4,0.98,0.78,0.78
+Went to the gym after a few days off. Felt great to get moving again.,2026-03-08 09:57:06,7.6,0.65,0.67,0.86
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2026-03-09 10:54:25,6.9,0.73,0.45,0.67
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2026-03-10 09:24:23,8.2,0.66,0.65,0.83
+Had lunch outside for once. Small change of scenery did wonders.,2026-03-11 07:48:05,7.8,0.66,0.53,0.4
+Wrapped up a big project today. Relieved and happy with how it turned out.,2026-03-12 07:47:03,8.2,0.71,0.84,0.77
+Went to the gym after a few days off. Felt great to get moving again.,2026-03-13 07:19:40,7.5,0.73,0.8,0.68
+"Met up with friends for dinner. Good food, good company.",2026-03-14 11:59:42,7.9,0.62,0.82,0.55
+Took the dog for an extra-long walk. Both of us needed it.,2026-03-15 14:47:02,6.7,0.72,0.75,0.9
+Grateful for today. Nothing special happened but I feel content.,2026-03-16 12:40:27,7.6,0.65,0.95,0.68
+Grateful for today. Nothing special happened but I feel content.,2026-03-17 11:03:08,7.7,0.67,0.57,0.85
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2026-03-18 12:02:01,7.7,0.73,0.63,0.86
+"Met up with friends for dinner. Good food, good company.",2026-03-20 12:19:06,7.5,0.84,0.73,0.69
+"Had a great day at work, got everything done and even had time to catch up with a friend over coffee.",2026-03-21 12:26:37,7.4,0.85,0.91,0.65
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2026-03-22 08:23:39,7.3,0.65,0.72,0.62
+Cooked dinner for myself and actually enjoyed it. Small wins matter.,2026-03-23 07:00:59,7.7,0.78,0.51,0.76
+Caught up with an old friend over video call. Felt good to laugh together again.,2026-03-24 09:28:06,7.9,0.77,0.73,0.78
+Wrapped up a big project today. Relieved and happy with how it turned out.,2026-03-24 07:42:50,7.8,0.69,0.85,0.6
+Cooked dinner for myself and actually enjoyed it. Small wins matter.,2026-03-25 11:00:03,7.4,0.62,0.7,0.52
+Slept in a bit and still felt rested when I woke up.,2026-03-26 11:22:38,7.5,0.82,0.7,0.79
+"Had a solid workout this morning, feeling strong and clear-headed.",2026-03-27 10:59:33,8.0,0.74,0.66,0.59
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2026-03-28 07:57:00,8.1,0.78,0.65,0.77

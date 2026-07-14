@@ -1,0 +1,55 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+*.egg
+.python-version
+
+# Node
+node_modules/
+*.js.map
+*.d.ts
+*.mjs.map
+
+# Build outputs
+User Interface/dist/
+dist/
+
+# ML artifacts
+*.ckpt
+*.pkl
+*.pt
+*.npy
+*.npz
+lightning_logs/
+pipeline_outputs/
+
+# Runtime logs
+flask_out.txt
+flask_err.txt
+react_out.txt
+react_err.txt
+server_out*.txt
+server_err*.txt
+*.log
+
+# Uploads / user data
+User Interface/uploads/
+uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*

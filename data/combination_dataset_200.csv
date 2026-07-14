@@ -1,0 +1,201 @@
+text,timestamp,sleep_hours,sleep_quality,activity_level,music_mood_score
+"Had a great day at work, got everything done and even had time to catch up with a friend over coffee.",2025-09-02 13:00:38,8.1,0.78,0.6,0.78
+Morning run felt amazing. Energy is high and I feel ready for whatever comes.,2025-09-03 16:36:48,8.2,0.67,0.65,0.51
+Cooked dinner for myself and actually enjoyed it. Small wins matter.,2025-09-04 20:40:01,7.1,0.96,0.65,0.75
+Finished a book I've been meaning to read. Satisfying feeling.,2025-09-06 07:22:41,8.0,0.79,0.56,0.53
+Exercised after work. Body feels tired but mind feels great.,2025-09-07 07:57:26,8.0,0.89,0.46,0.54
+Productive afternoon. Finished the report and feeling proud of myself.,2025-09-09 07:29:20,7.7,0.88,0.77,0.77
+Went for a long walk. Nature helps me reset and think clearly.,2025-09-10 10:02:53,7.9,0.68,0.68,0.82
+Grateful for today. Nothing special happened but I feel content.,2025-09-11 07:53:50,7.9,0.66,0.88,0.72
+Quiet day at home. Caught up on chores and felt accomplished.,2025-09-12 07:52:37,8.2,0.98,0.63,0.57
+Cooked dinner for myself and actually enjoyed it. Small wins matter.,2025-09-13 07:53:27,6.5,0.79,0.78,0.66
+Good progress on my goals this week. Feeling motivated to keep going.,2025-09-14 07:10:33,7.8,0.87,0.75,0.71
+"Had a great day at work, got everything done and even had time to catch up with a friend over coffee.",2025-09-15 08:38:59,7.8,0.78,0.84,0.65
+Wrapped up a big project today. Relieved and happy with how it turned out.,2025-09-16 07:04:17,7.6,0.72,0.68,0.68
+Slept in a bit and still felt rested when I woke up.,2025-09-17 07:37:45,8.1,0.79,0.66,0.45
+Did some gardening this afternoon. Simple and calming.,2025-09-18 11:48:08,8.1,0.68,0.68,0.82
+Had a nice conversation with a colleague. Feeling connected and valued.,2025-09-19 10:04:13,7.9,0.7,0.79,0.63
+"Pretty average day, nothing major happened either way.",2025-09-20 08:21:49,7.6,0.9,0.79,0.9
+Wrapped up a big project today. Relieved and happy with how it turned out.,2025-09-21 10:09:23,7.3,0.78,0.76,0.83
+Slept in a bit and still felt rested when I woke up.,2025-09-22 09:13:10,7.7,0.94,0.72,0.57
+"Pretty average day, nothing major happened either way.",2025-09-23 12:21:02,7.7,0.78,0.69,0.59
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2025-09-24 18:06:49,7.7,0.88,0.82,0.9
+Good progress on my goals this week. Feeling motivated to keep going.,2025-09-25 22:04:35,7.4,0.68,0.95,0.72
+"Met up with friends for dinner. Good food, good company.",2025-09-26 16:02:28,8.0,0.7,0.76,0.67
+Had lunch outside for once. Small change of scenery did wonders.,2025-09-27 11:56:16,7.8,0.9,0.6,0.68
+Did some gardening this afternoon. Simple and calming.,2025-09-28 08:45:49,6.9,0.83,0.56,0.9
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2025-09-29 07:51:27,7.1,0.94,0.59,0.45
+Did some gardening this afternoon. Simple and calming.,2025-09-30 11:06:25,7.9,0.8,0.58,0.5
+Good progress on my goals this week. Feeling motivated to keep going.,2025-10-01 09:41:46,6.6,0.75,0.74,0.4
+Tried a new recipe tonight and it turned out well. Little things like this make me happy.,2025-10-03 10:41:04,7.9,0.94,0.47,0.73
+Good sleep last night. Woke up feeling refreshed and calm.,2025-10-05 14:49:21,8.1,0.72,0.74,0.52
+The weekend was exactly what I needed. Relaxed and recharged.,2025-10-06 10:46:42,8.0,0.94,0.66,0.58
+Went for a long walk. Nature helps me reset and think clearly.,2025-10-07 12:21:25,6.8,0.97,0.94,0.59
+Cooked dinner for myself and actually enjoyed it. Small wins matter.,2025-10-08 17:09:26,7.8,0.77,0.88,0.46
+Finished a book I've been meaning to read. Satisfying feeling.,2025-10-09 17:33:34,8.1,0.55,0.78,0.56
+Had a nice conversation with a colleague. Feeling connected and valued.,2025-10-10 19:39:36,8.5,0.83,0.62,0.56
+Had a laugh with the team today. Work doesn't feel like work when you enjoy it.,2025-10-12 07:25:43,7.2,0.95,0.84,0.58
+Quiet day at home. Caught up on chores and felt accomplished.,2025-10-13 08:25:46,7.1,0.83,0.7,0.6
+Caught up with an old friend over video call. Felt good to laugh together again.,2025-10-14 07:00:57,7.9,0.85,0.7,0.74
+Productive afternoon. Finished the report and feeling proud of myself.,2025-10-15 07:05:56,7.8,0.81,0.63,0.76
+Did some gardening this afternoon. Simple and calming.,2025-10-16 07:59:03,7.9,0.75,0.72,0.63
+Did some gardening this afternoon. Simple and calming.,2025-10-17 09:54:05,7.7,0.83,0.81,0.45
+Grateful for today. Nothing special happened but I feel content.,2025-10-18 07:39:39,7.7,0.79,0.55,0.72
+Productive afternoon. Finished the report and feeling proud of myself.,2025-10-19 13:27:57,7.7,0.73,0.47,0.47
+The weekend was exactly what I needed. Relaxed and recharged.,2025-10-20 10:05:52,7.8,0.96,0.65,0.39
+Exercised after work. Body feels tired but mind feels great.,2025-10-21 12:16:59,8.4,0.8,0.85,0.58
+Morning run felt amazing. Energy is high and I feel ready for whatever comes.,2025-10-22 08:11:34,8.2,0.81,0.54,0.61
+The weekend was exactly what I needed. Relaxed and recharged.,2025-10-23 07:46:20,7.9,0.69,0.86,0.61
+Had a laugh with the team today. Work doesn't feel like work when you enjoy it.,2025-10-24 10:21:23,8.2,0.76,0.78,0.73
+Took the dog for an extra-long walk. Both of us needed it.,2025-10-25 11:54:47,6.8,0.76,0.8,0.62
+Grateful for today. Nothing special happened but I feel content.,2025-10-27 10:20:37,8.6,0.91,0.6,0.68
+Morning run felt amazing. Energy is high and I feel ready for whatever comes.,2025-10-28 07:03:08,8.1,0.71,0.92,0.77
+"Had a solid workout this morning, feeling strong and clear-headed.",2025-10-29 07:27:18,7.9,0.7,0.59,0.57
+Had a nice conversation with a colleague. Feeling connected and valued.,2025-10-30 07:06:57,8.2,0.7,0.82,0.9
+Did some gardening this afternoon. Simple and calming.,2025-10-31 07:36:55,7.1,0.72,0.85,0.7
+Spent the evening reading. Mind feels clear and at peace.,2025-11-01 07:46:39,7.4,0.78,0.7,0.76
+Went for a long walk. Nature helps me reset and think clearly.,2025-11-02 08:25:57,7.4,0.75,0.68,0.71
+Spent the evening reading. Mind feels clear and at peace.,2025-11-03 09:32:02,7.7,0.63,0.53,0.82
+"Had a solid workout this morning, feeling strong and clear-headed.",2025-11-04 12:46:40,7.6,0.79,0.71,0.71
+Quiet day at home. Caught up on chores and felt accomplished.,2025-11-05 16:34:25,8.5,0.79,0.81,0.73
+Good sleep last night. Woke up feeling refreshed and calm.,2025-11-06 11:30:00,7.9,0.67,0.64,0.78
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2025-11-07 16:54:40,7.7,0.75,0.67,0.51
+Caught up with an old friend over video call. Felt good to laugh together again.,2025-11-08 13:56:09,7.4,0.8,0.59,0.5
+Grateful for today. Nothing special happened but I feel content.,2025-11-09 10:02:17,8.2,0.86,0.69,0.53
+The weekend was exactly what I needed. Relaxed and recharged.,2025-11-10 10:07:19,8.3,0.82,0.5,0.54
+"Had a great day at work, got everything done and even had time to catch up with a friend over coffee.",2025-11-11 11:48:00,7.1,0.57,0.86,0.84
+Good progress on my goals this week. Feeling motivated to keep going.,2025-11-12 08:33:30,6.7,0.83,0.67,0.69
+The weekend was exactly what I needed. Relaxed and recharged.,2025-11-13 09:27:26,8.2,0.86,0.69,0.58
+Quiet day at home. Caught up on chores and felt accomplished.,2025-11-14 07:13:59,8.1,0.95,0.52,0.55
+Did some gardening this afternoon. Simple and calming.,2025-11-15 07:26:07,7.7,0.69,0.64,0.77
+Had lunch outside for once. Small change of scenery did wonders.,2025-11-16 11:11:17,8.0,0.75,0.69,0.55
+Good progress on my goals this week. Feeling motivated to keep going.,2025-11-17 07:15:00,8.1,0.72,0.55,0.58
+Had a nice conversation with a colleague. Feeling connected and valued.,2025-11-18 07:12:26,7.7,0.92,0.68,0.59
+Caught up with an old friend over video call. Felt good to laugh together again.,2025-11-18 07:12:12,8.8,0.77,0.86,0.71
+The weekend was exactly what I needed. Relaxed and recharged.,2025-11-19 07:34:57,8.1,0.66,0.73,0.58
+Started a new hobby this week and I'm actually enjoying it.,2025-11-20 10:00:11,7.2,0.81,0.66,0.66
+Caught up with an old friend over video call. Felt good to laugh together again.,2025-11-21 12:01:32,8.2,0.54,0.72,0.44
+Called my mom today. Always lifts my mood instantly.,2025-11-22 09:30:56,6.9,0.76,0.61,0.35
+Went grocery shopping and meal-prepped for the week. Feels good to be organized.,2025-11-23 07:55:14,7.6,0.78,0.83,0.76
+Caught up with an old friend over video call. Felt good to laugh together again.,2025-11-24 11:08:00,7.7,0.61,0.65,0.69
+The weekend was exactly what I needed. Relaxed and recharged.,2025-11-25 07:05:15,8.0,0.85,0.7,0.69
+"Had a great day at work, got everything done and even had time to catch up with a friend over coffee.",2025-11-26 11:44:54,7.4,0.72,0.74,0.75
+Caught up with an old friend over video call. Felt good to laugh together again.,2025-11-27 08:31:32,7.0,0.69,0.63,0.71
+Cooked dinner for myself and actually enjoyed it. Small wins matter.,2025-11-28 12:55:02,7.5,0.95,0.67,0.53
+Less motivated than usual today. Pushed through but it was harder than it should've been.,2025-11-29 08:20:32,7.3,0.66,0.62,0.65
+Did some gardening this afternoon. Simple and calming.,2025-11-30 08:52:00,8.2,0.85,0.7,0.46
+Been more irritable than usual this week.,2025-12-01 07:38:37,7.6,0.61,0.6,0.65
+Had a laugh with the team today. Work doesn't feel like work when you enjoy it.,2025-12-02 07:59:33,7.2,0.89,0.6,0.53
+Skipped my workout again. Just didn't have the energy for it.,2025-12-03 09:53:32,7.0,0.76,0.38,0.5
+"Pretty average day, nothing major happened either way.",2025-12-04 13:31:23,6.4,0.61,0.35,0.51
+"Not my best day, but not terrible either. Just kind of flat.",2025-12-04 17:53:59,7.5,0.54,0.69,0.44
+Went for a long walk. Nature helps me reset and think clearly.,2025-12-05 15:42:39,6.7,0.48,0.61,0.58
+Rougher day than usual. Couldn't quite shake the tired feeling.,2025-12-06 13:48:14,6.8,0.69,0.47,0.74
+Rougher day than usual. Couldn't quite shake the tired feeling.,2025-12-07 15:02:03,6.8,0.5,0.48,0.49
+Less motivated than usual today. Pushed through but it was harder than it should've been.,2025-12-07 12:40:36,5.8,0.45,0.71,0.55
+Less motivated than usual today. Pushed through but it was harder than it should've been.,2025-12-08 11:59:14,7.2,0.82,0.58,0.39
+Work was busy but manageable. Handled everything without feeling overwhelmed.,2025-12-09 16:10:14,7.0,0.47,0.63,0.56
+Quiet day at home. Caught up on chores and felt accomplished.,2025-12-10 18:34:05,7.2,0.45,0.26,0.51
+"Not my best day, but not terrible either. Just kind of flat.",2025-12-11 20:30:17,6.9,0.53,0.42,0.41
+Skipped my workout again. Just didn't have the energy for it.,2025-12-12 07:33:51,6.0,0.58,0.28,0.41
+Another sleepless night replaying everything I've done wrong.,2025-12-13 07:21:51,6.6,0.49,0.37,0.38
+Cancelled on a friend last minute. Just wasn't feeling up to it.,2025-12-14 07:24:03,6.4,0.57,0.23,0.69
+Good sleep last night. Woke up feeling refreshed and calm.,2025-12-15 13:33:16,6.3,0.46,0.27,0.32
+Can't get out of bed today. Everything feels pointless and heavy.,2025-12-16 10:09:55,6.5,0.5,0.16,0.28
+Skipped my workout again. Just didn't have the energy for it.,2025-12-17 10:52:57,5.7,0.32,0.6,0.52
+Cried in the bathroom at work today. Had to pretend everything was fine after.,2025-12-18 13:30:10,5.4,0.23,0.37,0.32
+Skipped my workout again. Just didn't have the energy for it.,2025-12-19 12:02:12,5.3,0.26,0.43,0.35
+Everything is too much. I can't focus on anything for more than a minute.,2025-12-20 11:36:13,6.4,0.48,0.28,0.36
+"Feeling a bit off lately, can't really explain why.",2025-12-21 07:59:58,4.9,0.39,0.2,0.42
+Cancelled on a friend last minute. Just wasn't feeling up to it.,2025-12-23 12:38:46,3.7,0.4,0.3,0.41
+"Just numb. Not sad exactly, just nothing.",2025-12-24 09:52:48,4.5,0.36,0.37,0.3
+Rougher day than usual. Couldn't quite shake the tired feeling.,2025-12-25 14:48:34,5.3,0.33,0.23,0.25
+Skipped my workout again. Just didn't have the energy for it.,2025-12-26 10:22:41,4.0,0.35,0.27,0.48
+Another sleepless night replaying everything I've done wrong.,2025-12-27 11:26:21,4.4,0.5,0.39,0.06
+Didn't sleep great. Kept waking up in the middle of the night.,2025-12-27 08:20:10,5.0,0.46,0.24,0.36
+Everything is too much. I can't focus on anything for more than a minute.,2025-12-28 07:55:12,5.7,0.19,0.29,0.25
+Didn't sleep at all last night. Keep thinking about everything that's wrong.,2025-12-30 08:29:18,5.9,0.04,0.18,0.12
+"Noticed I've been more withdrawn lately, even around people I like.",2025-12-31 09:12:05,4.6,0.3,0.24,0.23
+Feeling hopeless. Like things will never get better no matter what I do.,2026-01-01 07:48:03,5.4,0.14,0.3,0.24
+My mind won't stop. Anxious about everything and nothing at the same time.,2026-01-02 07:14:04,3.5,0.25,0.23,0.23
+Skipped work again. Couldn't get myself to leave the house.,2026-01-03 07:33:07,3.5,0.21,0.41,0.44
+Didn't eat much today. No appetite. Don't really care.,2026-01-04 07:44:07,3.7,0.19,0.11,0.04
+Woke up already exhausted. Don't know how I'll get through today.,2026-01-05 07:36:15,3.2,0.19,0.31,0.32
+I don't see the point anymore. Just going through the motions every day.,2026-01-06 07:19:48,5.6,0.46,0.09,0.18
+Haven't showered in a few days. Just don't have it in me right now.,2026-01-07 07:31:58,3.1,0.16,0.21,0.34
+Tried to work but kept staring at the same sentence for twenty minutes.,2026-01-08 07:46:46,3.5,0.12,0.14,0.17
+Tried to work but kept staring at the same sentence for twenty minutes.,2026-01-09 08:32:12,3.1,0.27,0.12,0.16
+Feel like a burden to everyone around me lately.,2026-01-10 07:39:45,3.9,0.18,0.09,0.18
+Ignored calls from my family again. I just can't talk to anyone right now.,2026-01-11 11:38:48,5.6,0.19,0.21,0.21
+Dark thoughts today. Tried to distract myself but they keep coming back.,2026-01-12 17:11:25,3.2,0.0,0.23,0.12
+Feel like I'm disappearing. Like no one would notice if I just stopped showing up.,2026-01-14 12:44:51,4.3,0.11,0.01,0.36
+"Just numb. Not sad exactly, just nothing.",2026-01-15 15:05:00,6.8,0.38,0.02,0.15
+Dark thoughts today. Tried to distract myself but they keep coming back.,2026-01-16 16:01:55,4.8,0.06,0.14,0.24
+I keep crying and I don't even know why. Just feel empty inside.,2026-01-17 22:46:21,6.1,0.0,0.18,0.07
+Haven't showered in a few days. Just don't have it in me right now.,2026-01-19 07:36:48,2.5,0.29,0.0,0.17
+Skipped work again. Couldn't get myself to leave the house.,2026-01-20 07:24:16,5.2,0.23,0.13,0.33
+Didn't sleep at all last night. Keep thinking about everything that's wrong.,2026-01-21 10:44:25,4.1,0.12,0.33,0.22
+Tried to work but kept staring at the same sentence for twenty minutes.,2026-01-22 09:20:24,3.8,0.06,0.11,0.34
+Keep cancelling on people. I don't want them to see me like this.,2026-01-23 07:47:26,4.0,0.23,0.34,0.38
+"Just numb. Not sad exactly, just nothing.",2026-01-24 07:01:24,3.3,0.37,0.0,0.28
+Didn't eat much today. No appetite. Don't really care.,2026-01-25 08:04:45,3.3,0.12,0.11,0.13
+Ignored calls from my family again. I just can't talk to anyone right now.,2026-01-26 11:51:10,4.5,0.15,0.39,0.18
+Feel like I'm disappearing. Like no one would notice if I just stopped showing up.,2026-01-27 07:17:05,3.6,0.23,0.09,0.21
+Cancelled plans again. Just couldn't face being around people today.,2026-01-28 07:40:37,4.1,0.21,0.21,0.32
+Feeling hopeless. Like things will never get better no matter what I do.,2026-01-29 07:47:36,5.7,0.3,0.16,0.14
+Can't get out of bed today. Everything feels pointless and heavy.,2026-01-30 07:07:31,3.5,0.4,0.12,0.17
+Another sleepless night replaying everything I've done wrong.,2026-01-31 11:31:29,4.7,0.31,0.36,0.28
+Keep cancelling on people. I don't want them to see me like this.,2026-02-01 15:42:29,3.4,0.28,0.15,0.14
+"Just numb. Not sad exactly, just nothing.",2026-02-02 21:05:14,5.4,0.19,0.17,0.3
+I keep crying and I don't even know why. Just feel empty inside.,2026-02-04 07:43:04,5.0,0.28,0.2,0.14
+I hate feeling like this. I'm so tired of feeling like this.,2026-02-05 11:48:45,4.1,0.19,0.17,0.32
+Can't get out of bed today. Everything feels pointless and heavy.,2026-02-06 09:43:45,3.3,0.23,0.0,0.36
+Can't get out of bed today. Everything feels pointless and heavy.,2026-02-07 13:32:07,5.2,0.13,0.11,0.19
+Dark thoughts today. Tried to distract myself but they keep coming back.,2026-02-08 16:13:59,3.7,0.23,0.27,0.08
+Tried to work but kept staring at the same sentence for twenty minutes.,2026-02-09 12:39:34,4.5,0.09,0.34,0.02
+Dark thoughts today. Tried to distract myself but they keep coming back.,2026-02-10 18:21:08,4.1,0.24,0.18,0.14
+Tried to work but kept staring at the same sentence for twenty minutes.,2026-02-11 22:23:53,4.9,0.16,0.25,0.05
+Nothing tastes like anything anymore. Just eating because I have to.,2026-02-12 19:24:00,4.1,0.36,0.35,0.39
+Didn't eat much today. No appetite. Don't really care.,2026-02-13 21:32:14,3.7,0.55,0.19,0.49
+Everything is too much. I can't focus on anything for more than a minute.,2026-02-14 23:33:53,5.1,0.07,0.24,0.19
+I don't see the point anymore. Just going through the motions every day.,2026-02-15 22:55:34,5.0,0.15,0.21,0.25
+Every small task feels like climbing a mountain right now.,2026-02-17 07:32:52,3.8,0.28,0.1,0.14
+Haven't showered in a few days. Just don't have it in me right now.,2026-02-18 07:43:43,3.5,0.28,0.15,0.01
+"Just numb. Not sad exactly, just nothing.",2026-02-19 07:14:37,3.7,0.25,0.18,0.23
+Stayed in bed most of the day. Couldn't find a reason to get up.,2026-02-21 07:22:07,4.0,0.22,0.18,0.32
+Ignored calls from my family again. I just can't talk to anyone right now.,2026-02-22 07:12:09,4.5,0.42,0.15,0.29
+Feeling completely alone even when I'm surrounded by people.,2026-02-23 07:18:32,6.1,0.05,0.14,0.38
+Cried in the bathroom at work today. Had to pretend everything was fine after.,2026-02-24 07:48:51,4.4,0.17,0.39,0.4
+I keep crying and I don't even know why. Just feel empty inside.,2026-02-24 07:28:16,4.9,0.16,0.27,0.16
+I keep crying and I don't even know why. Just feel empty inside.,2026-02-25 09:23:23,6.1,0.08,0.05,0.04
+Another sleepless night replaying everything I've done wrong.,2026-02-26 11:52:22,4.4,0.37,0.17,0.35
+Feel like I'm disappearing. Like no one would notice if I just stopped showing up.,2026-02-27 07:12:48,5.0,0.27,0.23,0.22
+Feel like I'm disappearing. Like no one would notice if I just stopped showing up.,2026-02-28 07:57:44,4.1,0.31,0.26,0.35
+"Just numb. Not sad exactly, just nothing.",2026-02-28 13:39:27,4.8,0.32,0.13,0.3
+Every small task feels like climbing a mountain right now.,2026-03-01 17:34:32,3.6,0.03,0.28,0.19
+Skipped work again. Couldn't get myself to leave the house.,2026-03-02 13:50:40,4.8,0.23,0.2,0.0
+Every small task feels like climbing a mountain right now.,2026-03-03 11:05:00,4.2,0.23,0.1,0.23
+Every small task feels like climbing a mountain right now.,2026-03-05 08:02:31,4.0,0.22,0.22,0.16
+Every small task feels like climbing a mountain right now.,2026-03-06 07:01:47,2.9,0.27,0.21,0.19
+Feel like a burden to everyone around me lately.,2026-03-07 07:14:57,4.5,0.08,0.22,0.25
+"Sat in the dark for hours. Didn't turn on the lights, didn't move much.",2026-03-08 07:03:46,5.1,0.2,0.0,0.06
+Everything is too much. I can't focus on anything for more than a minute.,2026-03-09 12:15:43,4.4,0.45,0.13,0.3
+Feeling completely alone even when I'm surrounded by people.,2026-03-10 13:15:42,4.5,0.27,0.2,0.1
+Feel like I'm disappearing. Like no one would notice if I just stopped showing up.,2026-03-11 10:17:44,4.7,0.4,0.03,0.19
+Feeling completely alone even when I'm surrounded by people.,2026-03-12 07:14:06,4.8,0.23,0.23,0.1
+Keep cancelling on people. I don't want them to see me like this.,2026-03-13 07:19:21,6.5,0.32,0.29,0.37
+Keep cancelling on people. I don't want them to see me like this.,2026-03-14 07:20:57,4.2,0.32,0.12,0.21
+Every small task feels like climbing a mountain right now.,2026-03-15 07:51:08,5.2,0.37,0.19,0.17
+Stayed in bed most of the day. Couldn't find a reason to get up.,2026-03-16 09:46:50,4.4,0.42,0.19,0.0
+My mind won't stop. Anxious about everything and nothing at the same time.,2026-03-17 07:48:26,5.6,0.33,0.05,0.05
+Snapped at a coworker for no reason. I feel awful about it but couldn't stop myself.,2026-03-18 11:50:08,4.1,0.3,0.1,0.0
+Haven't showered in a few days. Just don't have it in me right now.,2026-03-19 16:15:27,5.5,0.48,0.08,0.24
+Ignored calls from my family again. I just can't talk to anyone right now.,2026-03-20 13:39:48,4.4,0.2,0.09,0.22
+Feel like a burden to everyone around me lately.,2026-03-22 19:33:26,5.4,0.26,0.0,0.05
+I hate feeling like this. I'm so tired of feeling like this.,2026-03-23 16:13:17,4.1,0.27,0.26,0.41
+Barely made it through the day. Everything took so much effort.,2026-03-24 20:56:32,5.6,0.0,0.11,0.32
+Nothing tastes like anything anymore. Just eating because I have to.,2026-03-25 20:10:02,5.2,0.11,0.25,0.29
+Keep cancelling on people. I don't want them to see me like this.,2026-03-26 21:50:29,4.3,0.11,0.29,0.09
+Keep cancelling on people. I don't want them to see me like this.,2026-03-28 07:10:01,4.4,0.39,0.15,0.01
+Didn't sleep at all last night. Keep thinking about everything that's wrong.,2026-03-29 07:44:56,4.5,0.07,0.11,0.16
+Feel like a burden to everyone around me lately.,2026-03-30 07:32:40,5.1,0.37,0.05,0.08

@@ -1,0 +1,6 @@
+{
+  "name": "Digital Health AI Assistant",
+  "description": "High-fidelity clinical diagnostic portal, multi-modal log synthesis, analytics dashboard, and explainable AI transparency metrics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
