@@ -11,7 +11,7 @@ export default defineConfig(() => {
       {
         name: 'api-proxy',
         configureServer(server) {
-          const FLASK_URL = process.env.FLASK_URL || 'http://localhost:5000';
+          const FLASK_URL = process.env.FLASK_URL || 'http://127.0.0.1:5000';
 
           server.middlewares.use('/api/diagnose', async (req, res) => {
             if (req.method !== 'POST') {

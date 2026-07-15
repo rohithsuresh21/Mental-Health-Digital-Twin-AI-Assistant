@@ -18,7 +18,7 @@ app.use(express.json());
 
 const upload = multer({ dest: path.join(__dirname, 'uploads') });
 
-const FLASK_URL = process.env.FLASK_URL || 'http://localhost:5000';
+const FLASK_URL = process.env.FLASK_URL || 'http://127.0.0.1:5000';
 
 // API diagnosis endpoint (JSON — no file upload)
 app.post('/api/diagnose', async (req, res) => {

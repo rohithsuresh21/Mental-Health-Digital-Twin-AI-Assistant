@@ -1683,4 +1683,4 @@ if __name__ == "__main__":
     print("  POST /daily/delete   — Delete user data")
     print("")
     print("Frontend: cd User Interface && npm run dev  →  http://localhost:3000")
-    app.run(debug=False, port=5000, threaded=True)
+    app.run(debug=False, port=5000, threaded=True, host='0.0.0.0')
