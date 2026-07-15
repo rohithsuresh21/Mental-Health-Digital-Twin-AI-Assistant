@@ -58,7 +58,7 @@ function FunSlider({ value, onChange, label, max = 1, step = 0.05, showPct = tru
   );
 }
 
-export default function PatientIntakePortal({ userId, onCalibrated }: { userId: string; onCalibrated?: () => void }) {
+export default function PatientIntakePortal({ userId, onCalibrated, onNavigateToAnalysis }: { userId: string; onCalibrated?: () => void; onNavigateToAnalysis?: () => void }) {
   const { status, loading, refresh, deleteData } = usePatientData(userId);
   const [tab, setTab] = useState<'submit' | 'history'>('submit');
   const [msg, setMsg] = useState('');
@@ -78,8 +78,14 @@ export default function PatientIntakePortal({ userId, onCalibrated }: { userId: 
   const calibrated = status?.calibrated || false;
   const pct = calibrated ? 100 : Math.min(100, Math.round((count / MIN_ENTRIES) * 100));
   const color = calColor(count, calibrated);
+  const [showCalibrationChoice, setShowCalibrationChoice] = useState(false);
 
-  useEffect(() => { if (calibrated) onCalibrated?.(); }, [calibrated]);
+  useEffect(() => {
+    if (calibrated) {
+      onCalibrated?.();
+      setShowCalibrationChoice(true);
+    }
+  }, [calibrated]);
 
   async function handleSubmit() {
     if (!journalFile && !audioFile) { setMsg('Upload a journal file or audio recording.'); return; }
@@ -161,6 +167,27 @@ export default function PatientIntakePortal({ userId, onCalibrated }: { userId: 
           <span className="text-sm text-emerald-200">
             <strong>Baseline Calibrated</strong> — your personal model is active.
           </span>
+        </div>
+      )}
+
+      {showCalibrationChoice && (
+        <div className="bg-[#0F1729] border border-blue-500/30 rounded-2xl p-5 mb-5">
+          <p className="text-sm text-gray-300 mb-4 text-center">
+            Your baseline is ready with <strong>{count} entries</strong>. What would you like to do?
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => setShowCalibrationChoice(false)}
+              className="bg-[#1A202C] hover:bg-[#232B3B] text-gray-300 text-[11px] font-bold uppercase tracking-wider px-5 py-3 rounded-xl transition-all cursor-pointer">
+              Continue Calibration
+            </button>
+            <button onClick={() => onNavigateToAnalysis?.()}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold uppercase tracking-wider px-5 py-3 rounded-xl transition-all cursor-pointer">
+              Analyze Now
+            </button>
+          </div>
+          <p className="text-[10px] text-gray-500 text-center mt-3">
+            "Continue Calibration" keeps improving accuracy. "Analyze Now" shows your current insights.
+          </p>
         </div>
       )}
 

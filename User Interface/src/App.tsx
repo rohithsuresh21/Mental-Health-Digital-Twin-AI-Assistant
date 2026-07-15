@@ -1653,7 +1653,7 @@ export default function App() {
           {activeTab === 'intake' && (
             <div className="max-w-2xl mx-auto my-2 animate-in fade-in duration-200" id="intake-portal-container">
               <div className="glass-panel rounded-2xl p-6">
-                <PatientIntakePortal userId={userId} onCalibrated={() => patientData.refresh()} />
+                <PatientIntakePortal userId={userId} onCalibrated={() => patientData.refresh()} onNavigateToAnalysis={() => setActiveTab('analytics')} />
               </div>
             </div>
           )}
