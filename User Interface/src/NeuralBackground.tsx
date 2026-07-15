@@ -133,8 +133,8 @@ export default function NeuralBackground() {
         if (d < minDist) { minDist = d; closest = n; }
       });
       if (closest && minDist < 220) {
-        closest.activation = 1.0;
-        triggerForwardCascade(closest);
+        (closest as ArtificialNeuron).activation = 1.0;
+        triggerForwardCascade(closest as ArtificialNeuron);
       }
     };
     window.addEventListener('click', handleClick);

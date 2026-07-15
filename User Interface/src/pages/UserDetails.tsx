@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import NeuralBackground from '../NeuralBackground';
 
 export default function UserDetails() {
-  const [userId, setUserId] = useState('rohith_ms');
+  const [userId, setUserId] = useState('Alex@1996');
   const nav = useNavigate();
 
   function pickRole(role: 'admin' | 'patient') {

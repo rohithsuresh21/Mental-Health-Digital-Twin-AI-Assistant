@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Activity, 
   Bell, 
@@ -27,6 +27,8 @@ import {
 import { IngestionInput, DiagnosticData } from './types';
 import { defaultDiagnosticData } from './defaultData';
 import { mapFlaskRunResponse } from './diagnosisEngine';
+import PatientIntakePortal from './components/PatientIntakePortal';
+import { usePatientData } from './hooks/usePatientData';
 
 interface ClinicalAlert {
   id: string;
@@ -40,11 +42,14 @@ interface ClinicalAlert {
 const API = "http://localhost:3000";
 
 export default function App() {
-  // Theme state: dark by default, togglable
+  const role = localStorage.getItem('role') || 'admin';
+  const userId = localStorage.getItem('userId') || 'Alex@1996';
+  const isPatient = role === 'patient';
+
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
-  // Current active view: 'dashboard' | 'clinical' | 'analytics' | 'explainable' | 'profile'
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'clinical' | 'analytics' | 'explainable' | 'profile'>('dashboard');
+  type Tab = 'dashboard' | 'clinical' | 'analytics' | 'explainable' | 'profile' | 'intake';
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
@@ -55,33 +60,16 @@ export default function App() {
   const [diagnosticData, setDiagnosticData] = useState<DiagnosticData>(defaultDiagnosticData);
   const [hasRunAnalysis, setHasRunAnalysis] = useState(false);
 
-  // Clinical Alerts state
-  const [clinicalAlerts, setClinicalAlerts] = useState<ClinicalAlert[]>([
-    {
-      id: 'alert-1',
-      type: 'critical',
-      title: 'Severe Sleep Disruption',
-      message: 'Routine sleep disruption of -12.7% detected, causing motor velocity shifts.',
-      time: '12m ago',
-      read: false
-    },
-    {
-      id: 'alert-2',
-      type: 'warning',
-      title: 'Linguistic Shift Detected',
-      message: 'Linguistic shift score has crossed the moderate threshold (+0.142).',
-      time: '1h ago',
-      read: false
-    },
-    {
-      id: 'alert-3',
-      type: 'info',
-      title: 'Inference Cycle Complete',
-      message: 'Model completed standard 24-hour cycle with 94.2% confidence.',
-      time: '3h ago',
-      read: false
-    }
-  ]);
+  // Patient data from daily portal
+  const patientData = usePatientData(isPatient ? userId : '');
+
+  // Clinical Alerts state — reset on fresh page load via sessionStorage
+  const [clinicalAlerts, setClinicalAlerts] = useState<ClinicalAlert[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('clinicalAlerts');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [isAlertsDropdownOpen, setIsAlertsDropdownOpen] = useState(false);
   const alertsDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -100,6 +88,11 @@ export default function App() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Persist notifications to sessionStorage (resets on tab close)
+  useEffect(() => {
+    sessionStorage.setItem('clinicalAlerts', JSON.stringify(clinicalAlerts));
+  }, [clinicalAlerts]);
 
   // Form input states with personal details
   const [inputs, setInputs] = useState<IngestionInput>({
@@ -1244,11 +1237,11 @@ export default function App() {
         </div>
         <div className="flex-grow min-w-0">
           <div className="text-xs font-bold text-gray-200 truncate group-hover:text-white transition-colors">
-            {inputs.fullName || 'Guest Operator'}
+            {inputs.fullName || userId}
           </div>
           <div className="text-[10px] text-gray-500 flex items-center gap-1.5 font-sans">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            SYSTEM_ADMIN
+            {isPatient ? 'PATIENT' : 'SYSTEM_ADMIN'}
           </div>
         </div>
         <ArrowUpRight className="h-3.5 w-3.5 text-gray-600 group-hover:text-blue-400 transition-colors" />
@@ -1294,61 +1287,114 @@ export default function App() {
 
             {/* Navigation Items */}
             <nav className="flex-1 px-4 py-6 space-y-1.5">
-              <button 
-                id="tab-dashboard"
-                onClick={() => { setActiveTab('dashboard'); setIsMenuOpen(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
-                  activeTab === 'dashboard' 
-                    ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
-                }`}
-              >
-                <Compass className="h-4 w-4" />
-                Dashboard
-              </button>
+              {isPatient ? (
+                <>
+                  <div className="text-[9px] text-gray-500 tracking-widest uppercase px-4 pb-2 font-bold">Patient Portal</div>
 
-              <button 
-                id="tab-profile"
-                onClick={() => { setActiveTab('profile'); setIsMenuOpen(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
-                  activeTab === 'profile' 
-                    ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)]' 
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
-                }`}
-              >
-                <User className="h-4 w-4" />
-                User Profile
-              </button>
+                  <button id="tab-dashboard"
+                    onClick={() => { setActiveTab('dashboard'); setIsMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'dashboard' 
+                        ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <Compass className="h-4 w-4" />
+                    Dashboard
+                  </button>
 
-              <button 
-                id="tab-overview"
-                onClick={() => { setActiveTab('clinical'); setIsMenuOpen(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
-                  activeTab === 'clinical' 
-                    ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
-                }`}
-              >
-                <User className="h-4 w-4" />
-                Clinical Details
-              </button>
+                  <button id="tab-intake"
+                    onClick={() => { setActiveTab('intake'); setIsMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'intake' 
+                        ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <FileText className="h-4 w-4" />
+                    Clinical Patient Intake Portal
+                  </button>
 
-              <button 
-                id="tab-analytics"
-                onClick={() => { 
-                  if (hasRunAnalysis) { setActiveTab('analytics'); setIsMenuOpen(false); }
-                  else { setActiveTab('clinical'); setIsMenuOpen(false); }
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
-                  activeTab === 'analytics' 
-                    ? 'bg-gray-800 text-white border-l-2 border-blue-500' 
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
-                }`}
-              >
-                <Activity className="h-4 w-4" />
-                Analytics {!hasRunAnalysis && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
-              </button>
+                  <button id="tab-patient-profile"
+                    onClick={() => { setActiveTab('profile'); setIsMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'profile' 
+                        ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)]' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <User className="h-4 w-4" />
+                    Patient Profile Settings
+                  </button>
 
+                  <button id="tab-patient-analysis"
+                    onClick={() => { 
+                      if (patientData.status?.calibrated) { setActiveTab('analytics'); setIsMenuOpen(false); }
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'analytics' 
+                        ? 'bg-gray-800 text-white border-l-2 border-blue-500' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <Activity className="h-4 w-4" />
+                    Analysis {!patientData.status?.calibrated && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button id="tab-dashboard"
+                    onClick={() => { setActiveTab('dashboard'); setIsMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'dashboard' 
+                        ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <Compass className="h-4 w-4" />
+                    Dashboard
+                  </button>
+
+                  <button id="tab-profile"
+                    onClick={() => { setActiveTab('profile'); setIsMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'profile' 
+                        ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)]' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <User className="h-4 w-4" />
+                    User Profile
+                  </button>
+
+                  <button id="tab-overview"
+                    onClick={() => { setActiveTab('clinical'); setIsMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'clinical' 
+                        ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <User className="h-4 w-4" />
+                    Clinical Details
+                  </button>
+
+                  <button id="tab-analytics"
+                    onClick={() => { 
+                      if (hasRunAnalysis) { setActiveTab('analytics'); setIsMenuOpen(false); }
+                      else { setActiveTab('clinical'); setIsMenuOpen(false); }
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'analytics' 
+                        ? 'bg-gray-800 text-white border-l-2 border-blue-500' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <Activity className="h-4 w-4" />
+                    Analytics {!hasRunAnalysis && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
+                  </button>
+                </>
+              )}
             </nav>
 
             {/* Profile */}
@@ -1366,7 +1412,7 @@ export default function App() {
             <div className="flex items-center gap-2.5">
               <span className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6] animate-pulse" />
               <h1 className="text-sm font-extrabold tracking-widest bg-gradient-to-r from-blue-400 via-indigo-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(59,130,246,0.3)] uppercase font-sans">
-                Clinical Provider Workspace
+                {isPatient ? 'Patient Dashboard' : 'Clinical Provider Workspace'}
               </h1>
             </div>
           )}
@@ -1398,9 +1444,25 @@ export default function App() {
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
                 <input 
                   type="text" 
-                  placeholder="Filter patient ID..." 
+                  placeholder="Search by keyword (e.g. mood, detector)..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      const q = searchQuery.toLowerCase();
+                      const idMatch = document.getElementById(q);
+                      if (idMatch) { idMatch.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+                      const all = document.querySelectorAll('h2, h3, h4, p, span, div, button');
+                      for (const el of all) {
+                        if (el.id?.toLowerCase().includes(q) || el.textContent?.toLowerCase().includes(q)) {
+                          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          (el as HTMLElement).style.outline = '2px solid #3b82f6';
+                          setTimeout(() => { (el as HTMLElement).style.outline = ''; }, 2000);
+                          break;
+                        }
+                      }
+                    }
+                  }}
                   className="w-full bg-[#151922] border border-[#232B3B] rounded-md pl-9 pr-4 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
@@ -1585,6 +1647,15 @@ export default function App() {
                 {/* Status indicators */}
                 <div className="absolute top-2 left-[15%] text-[7px] font-mono tracking-widest text-emerald-400/40">System Online</div>
                 <div className="absolute top-4 left-[15%] text-[7px] font-mono tracking-widest text-sky-400/30">Model v3.5 · Ready</div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB INTAKE: Clinical Patient Intake Portal (patient daily alignment) */}
+          {activeTab === 'intake' && (
+            <div className="max-w-2xl mx-auto my-2 animate-in fade-in duration-200" id="intake-portal-container">
+              <div className="glass-panel rounded-2xl p-6">
+                <PatientIntakePortal userId={userId} onCalibrated={() => {}} />
               </div>
             </div>
           )}
@@ -1956,6 +2027,62 @@ export default function App() {
             const handleChartMouseLeave = () => {
               setHoveredPointIndex(null);
             };
+
+            if (isPatient) {
+              const s = patientData.status;
+              if (!s?.calibrated) {
+                return (
+                  <div className="max-w-2xl mx-auto my-16 text-center animate-in fade-in duration-300" id="analytics-locked-container">
+                    <div className="glass-panel rounded-2xl p-12">
+                      <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-slate-800/50 border border-slate-600/30 flex items-center justify-center">
+                        <Activity className="h-8 w-8 text-slate-500" />
+                      </div>
+                      <h2 className="text-xl font-bold text-white mb-3">Analysis Not Yet Available</h2>
+                      <p className="text-sm text-gray-400 leading-relaxed mb-4 max-w-md mx-auto">
+                        Your baseline needs more data points before analysis can begin. Continue submitting daily check-ins to build your personal model.
+                      </p>
+                      <div className="flex items-center justify-center gap-2 mb-6">
+                        <span className={`h-2 w-2 rounded-full ${s && s.entry_count >= 14 ? 'bg-emerald-500' : s && s.entry_count >= 10 ? 'bg-orange-400' : s && s.entry_count >= 6 ? 'bg-yellow-400' : 'bg-red-400'}`} />
+                        <span className="text-xs text-gray-400">{s?.entry_count || 0}/{s?.entries_needed || 14} entries</span>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('intake')}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all duration-300 hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] cursor-pointer"
+                      >
+                        <FileText className="h-4 w-4" />
+                        Go to Check-In
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+              // Patient is calibrated — show their analytics
+              const calCount = s?.entry_count || 0;
+              return (
+                <div className="space-y-6" id="patient-analytics-container">
+                  <div className="bg-emerald-900/15 backdrop-blur-sm border border-emerald-700/30 rounded-2xl p-5 flex items-center gap-4">
+                    <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_10px_#10b981] shrink-0" />
+                    <div>
+                      <h3 className="text-sm font-bold text-emerald-200">Baseline Calibrated</h3>
+                      <p className="text-xs text-gray-400 mt-1">Your personal model is active with {calCount} entries. Analysis is running on your calibrated data.</p>
+                    </div>
+                  </div>
+                  <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-6">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Your Health Overview</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-[#0B0E14] rounded-xl p-4 border border-[#1A202C]">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Entries</div>
+                        <div className="text-2xl font-bold text-white">{calCount}</div>
+                      </div>
+                      <div className="bg-[#0B0E14] rounded-xl p-4 border border-[#1A202C]">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Calibration</div>
+                        <div className="text-2xl font-bold text-emerald-400">100%</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
 
             if (!hasRunAnalysis) {
               return (
@@ -2549,15 +2676,15 @@ export default function App() {
                         <div className="relative shrink-0">
                           <svg width="72" height="72" className="transform -rotate-90">
                             <circle cx="36" cy="36" r="30" fill="none" stroke="#1A202C" strokeWidth="5" />
-                            <circle cx="36" cy="36" r="30" fill="none" stroke="#3B82F6" strokeWidth="5" strokeDasharray={`${(pct / 100) * 188.5} 188.5`} strokeLinecap="round" className="drop-shadow-[0_0_6px_rgba(59,130,246,0.4)] transition-all duration-700" />
+                            <circle cx="36" cy="36" r="30" fill="none" stroke={calibrated ? "#10B981" : "#3B82F6"} strokeWidth="5" strokeDasharray={`${(pct / 100) * 188.5} 188.5`} strokeLinecap="round" className={`transition-all duration-700 ${calibrated ? 'drop-shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'drop-shadow-[0_0_6px_rgba(59,130,246,0.4)]'}`} />
                           </svg>
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-xs font-bold text-sky-400 font-mono">{Math.round(pct)}%</span>
+                            <span className={`text-xs font-bold font-mono ${calibrated ? 'text-emerald-400' : 'text-sky-400'}`}>{Math.round(pct)}%</span>
                           </div>
                         </div>
                         <div>
                           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider font-sans">Biometric Calibration Status</div>
-                          <div className="text-[11px] text-gray-500 mt-0.5 font-sans">{calibrated ? 'Fully calibrated — baseline established.' : `Calibrating with patient data (${Math.round(pct)}% complete).`}</div>
+                          <div className={`text-[11px] mt-0.5 font-sans ${calibrated ? 'text-emerald-400' : 'text-gray-500'}`}>{calibrated ? 'Fully calibrated - baseline established.' : `Calibrating with patient data (${Math.round(pct)}% complete).`}</div>
                         </div>
                       </div>
                     </div>
