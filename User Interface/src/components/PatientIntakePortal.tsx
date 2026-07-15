@@ -13,6 +13,51 @@ function calColor(count: number, calibrated: boolean): string {
   return '#10b981';
 }
 
+function moodEmoji(v: number): string {
+  if (v < 0.15) return '\u{1F62B}';
+  if (v < 0.30) return '\u{1F622}';
+  if (v < 0.45) return '\u{1F61E}';
+  if (v < 0.55) return '\u{1F610}';
+  if (v < 0.70) return '\u{1F642}';
+  if (v < 0.85) return '\u{1F60A}';
+  return '\u{1F604}';
+}
+
+function interpolateColor(v: number): string {
+  const hue = v * 142;
+  const sat = 70 + v * 20;
+  const lit = 45 + v * 15;
+  return `hsl(${hue}, ${sat}%, ${lit}%)`;
+}
+
+function FunSlider({ value, onChange, label, max = 1, step = 0.05, showPct = true }: {
+  value: number; onChange: (v: number) => void; label: string;
+  max?: number; step?: number; showPct?: boolean;
+}) {
+  const pct = max === 1 ? value : value / max;
+  const emoji = moodEmoji(pct);
+  const color = interpolateColor(pct);
+  return (
+    <div className="mb-4">
+      <label className="flex items-center justify-between text-[11px] mb-2">
+        <span className="text-gray-400">{label}</span>
+        <span className="flex items-center gap-2">
+          <span className="text-lg">{emoji}</span>
+          <span className="text-gray-300 font-mono text-xs" style={{ color }}>
+            {showPct ? `${Math.round(pct * 100)}%` : `${value.toFixed(1)}h`}
+          </span>
+        </span>
+      </label>
+      <input type="range" min={0} max={max} step={step}
+        value={value}
+        onChange={e => onChange(parseFloat(e.target.value))}
+        className="w-full accent-blue-500"
+        style={{ accentColor: color }}
+      />
+    </div>
+  );
+}
+
 export default function PatientIntakePortal({ userId, onCalibrated }: { userId: string; onCalibrated?: () => void }) {
   const { status, loading, refresh, deleteData } = usePatientData(userId);
   const [tab, setTab] = useState<'submit' | 'history'>('submit');
@@ -159,48 +204,21 @@ export default function PatientIntakePortal({ userId, onCalibrated }: { userId: 
               className="text-[12px] text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-[#1A202C] file:text-gray-300 hover:file:bg-[#232B3B] cursor-pointer" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-5">
-            <div>
-              <label className="text-[11px] text-gray-400 mb-2 flex justify-between">
-                <span>Sleep hours</span>
-                <span className="text-gray-300 font-mono">{sliders.sleep_hours}h</span>
-              </label>
-              <input type="range" min={0} max={12} step={0.5}
-                value={sliders.sleep_hours}
-                onChange={e => setSliders({ ...sliders, sleep_hours: parseFloat(e.target.value) })}
-                className="w-full accent-blue-500" />
-            </div>
-            <div>
-              <label className="text-[11px] text-gray-400 mb-2 flex justify-between">
-                <span>Sleep quality</span>
-                <span className="text-gray-300 font-mono">{Math.round(sliders.sleep_quality * 100)}%</span>
-              </label>
-              <input type="range" min={0} max={1} step={0.05}
-                value={sliders.sleep_quality}
-                onChange={e => setSliders({ ...sliders, sleep_quality: parseFloat(e.target.value) })}
-                className="w-full accent-blue-500" />
-            </div>
-            <div>
-              <label className="text-[11px] text-gray-400 mb-2 flex justify-between">
-                <span>Activity level</span>
-                <span className="text-gray-300 font-mono">{Math.round(sliders.activity_level * 100)}%</span>
-              </label>
-              <input type="range" min={0} max={1} step={0.05}
-                value={sliders.activity_level}
-                onChange={e => setSliders({ ...sliders, activity_level: parseFloat(e.target.value) })}
-                className="w-full accent-blue-500" />
-            </div>
-            <div>
-              <label className="text-[11px] text-gray-400 mb-2 flex justify-between">
-                <span>Mood today</span>
-                <span className="text-gray-300 font-mono">{Math.round(sliders.music_mood_score * 100)}%</span>
-              </label>
-              <input type="range" min={0} max={1} step={0.05}
-                value={sliders.music_mood_score}
-                onChange={e => setSliders({ ...sliders, music_mood_score: parseFloat(e.target.value) })}
-                className="w-full accent-blue-500" />
-            </div>
-          </div>
+          <FunSlider label="How many hours did you sleep?"
+            value={sliders.sleep_hours} max={12} step={0.5} showPct={false}
+            onChange={v => setSliders({ ...sliders, sleep_hours: v })} />
+
+          <FunSlider label="How well did you sleep?"
+            value={sliders.sleep_quality}
+            onChange={v => setSliders({ ...sliders, sleep_quality: v })} />
+
+          <FunSlider label="How active were you today?"
+            value={sliders.activity_level}
+            onChange={v => setSliders({ ...sliders, activity_level: v })} />
+
+          <FunSlider label="How would you describe your mood?"
+            value={sliders.music_mood_score}
+            onChange={v => setSliders({ ...sliders, music_mood_score: v })} />
 
           <button onClick={handleSubmit} disabled={submitting}
             className="bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all disabled:opacity-40 cursor-pointer">

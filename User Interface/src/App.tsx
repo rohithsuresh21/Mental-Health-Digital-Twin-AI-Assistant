@@ -1303,18 +1303,6 @@ export default function App() {
                     Dashboard
                   </button>
 
-                  <button id="tab-intake"
-                    onClick={() => { setActiveTab('intake'); setIsMenuOpen(false); }}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
-                      activeTab === 'intake' 
-                        ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
-                    }`}
-                  >
-                    <FileText className="h-4 w-4" />
-                    Clinical Patient Intake Portal
-                  </button>
-
                   <button id="tab-patient-profile"
                     onClick={() => { setActiveTab('profile'); setIsMenuOpen(false); }}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
@@ -1325,6 +1313,18 @@ export default function App() {
                   >
                     <User className="h-4 w-4" />
                     Patient Profile Settings
+                  </button>
+
+                  <button id="tab-intake"
+                    onClick={() => { setActiveTab('intake'); setIsMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'intake' 
+                        ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <FileText className="h-4 w-4" />
+                    Clinical Patient Intake Portal
                   </button>
 
                   <button id="tab-patient-analysis"
