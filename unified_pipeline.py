@@ -626,14 +626,7 @@ class UnifiedJournalPipeline:
             raise ValueError("XGBoost model not trained. Call train_xgboost_classifier first.")
         
         try:
-            X = np.array([feature_vec])
-
-            # PCA preprocessing (scaler → PCA) if available
-            if hasattr(self, 'scaler') and self.scaler is not None:
-                X_scaled = self.scaler.transform(X)
-                X_input = self.pca.transform(X_scaled) if hasattr(self, 'pca') and self.pca is not None else X_scaled
-            else:
-                X_input = X
+            X_input = np.array([feature_vec])
 
             # Raw margin (before sigmoid)
             raw_margin = float(self.xgb_model.predict(X_input, output_margin=True)[0])

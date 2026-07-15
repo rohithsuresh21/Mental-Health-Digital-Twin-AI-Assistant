@@ -2,7 +2,7 @@ import os, json, sys, traceback, tempfile, time
 from pathlib import Path
 from datetime import datetime
 import numpy as np
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -11,6 +11,11 @@ CORS(app)
 
 from unified_pipeline import UnifiedJournalPipeline
 _pipeline = UnifiedJournalPipeline()
+
+from daily_portal.routes import daily
+from daily_portal.db import init_db
+init_db()
+app.register_blueprint(daily)
 
 CUSUM_STATUS_TEXT = {
     1: {
@@ -858,43 +863,49 @@ dz.addEventListener("drop", e => {
 
 @app.route("/")
 def index():
-    return render_template_string(HTML)
+    return jsonify({
+        "service": "Mental Health Digital Twin API",
+        "status": "running",
+        "frontend": "http://localhost:3000",
+        "endpoints": {
+            "run": "POST /run",
+            "submit": "POST /daily/submit",
+            "status": "GET /daily/status",
+            "calibrate": "POST /daily/calibrate",
+        }
+    })
 
 
 @app.route("/run", methods=["POST"])
 def run():
     try:
         user_id = request.form.get("user_id", "user_demo").strip()
-        demo    = request.form.get("demo", "false").lower() == "true"
         file    = request.files.get("file")
 
-        from single_user_pipeline import run_single_user
+        if not file or not file.filename:
+            return jsonify({"error": "No file uploaded. Upload a CSV, JSON, TXT, PDF, or DOCX file with journal entries."}), 400
 
-        demo_atrisk = "atrisk" in user_id.lower() or "risk" in user_id.lower()
+        suffix = Path(file.filename).suffix.lower()
+        if suffix not in {".csv",".json",".txt",".pdf",".docx",".doc"}:
+            return jsonify({"error": f"Unsupported file type: {suffix}"})
 
-        if file and file.filename:
-            suffix = Path(file.filename).suffix.lower()
-            if suffix not in {".csv",".json",".txt",".pdf",".docx",".doc"}:
-                return jsonify({"error": f"Unsupported file type: {suffix}"})
-            # Write uploaded file to a temp location
-            fd, tmp_path = tempfile.mkstemp(suffix=suffix)
-            os.close(fd)
-            file.save(tmp_path)
-            try:
-                result = run_single_user(user_id, file_path=tmp_path)
-            finally:
-                # Retry deletion up to 3 times on Windows
-                for _delay in [0, 0.5, 1.0]:
-                    try:
-                        os.unlink(tmp_path)
-                        break
-                    except PermissionError:
-                        if _delay == 1.0:
-                            pass  # give up after 1s
-                        else:
-                            time.sleep(_delay)
-        else:
-            result = run_single_user(user_id, use_demo=True, demo_atrisk=demo_atrisk)
+        from pipeline_runner import run_pipeline
+
+        fd, tmp_path = tempfile.mkstemp(suffix=suffix)
+        os.close(fd)
+        file.save(tmp_path)
+        try:
+            result = run_pipeline(user_id, file_path=tmp_path)
+        finally:
+            for _delay in [0, 0.5, 1.0]:
+                try:
+                    os.unlink(tmp_path)
+                    break
+                except PermissionError:
+                    if _delay == 1.0:
+                        pass
+                    else:
+                        time.sleep(_delay)
 
         result["cusum_status"] = build_cusum_status(
             result.get("cusum_alert_upper", []),
@@ -1161,13 +1172,515 @@ def internal_explainer():
         return jsonify({"error": str(e)}), 500
 
 
+PORTAL_HTML = r"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Daily Alignment Portal</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0a0a0a;
+    --surface:  #111111;
+    --border:   #1f1f1f;
+    --muted:    #3a3a3a;
+    --text:     #d4d4d4;
+    --dim:      #6b6b6b;
+    --accent:   #e2e2e2;
+    --blue:     #4a90d9;
+    --red:      #c0392b;
+    --green:    #27ae60;
+    --amber:    #d4a017;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  header {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header h1 { font-size: 16px; font-weight: 500; color: var(--accent); }
+  header .sub { font-size: 11px; color: var(--dim); }
+  header nav { display: flex; gap: 8px; }
+
+  .container { max-width: 800px; margin: 0 auto; padding: 32px 20px; }
+
+  .nav-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--dim);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .15s;
+  }
+  .nav-btn:hover { background: var(--border); color: var(--text); }
+  .nav-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .nav-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+
+  .calibration-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 4px;
+  }
+  .calibration-bar .progress {
+    flex: 1;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .calibration-bar .fill {
+    height: 100%;
+    background: var(--blue);
+    transition: width .4s;
+    border-radius: 4px;
+  }
+  .calibration-bar .fill.done { background: var(--green); }
+  .cal-text { font-size: 12px; color: var(--dim); }
+
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+  .form-group textarea, .form-group input[type=file] {
+    width: 100%;
+  }
+  .form-group textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    min-height: 80px;
+    resize: vertical;
+  }
+  .form-group textarea:focus { border-color: var(--muted); }
+
+  .slider-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .slider-group { }
+  .slider-group label {
+    font-size: 11px;
+    color: var(--dim);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .slider-group input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+  .slider-group input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+  .slider-value { font-size: 13px; color: var(--text); margin-top: 2px; }
+
+  .btn {
+    padding: 8px 20px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn:hover { background: var(--border); }
+  .btn-primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 500; }
+  .btn-primary:hover { background: #c8c8c8; }
+  .btn-danger { border-color: #3a1a1a; color: var(--red); }
+  .btn-danger:hover { background: #1a0a0a; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .inline-status {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--dim);
+    min-height: 18px;
+  }
+  .spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 1.5px solid var(--muted);
+    border-top-color: var(--text);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .history-table th {
+    text-align: left;
+    padding: 8px 10px;
+    color: var(--dim);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .history-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .history-table tr:hover td { background: var(--surface); }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+  .badge-yes { border-color: #1a2e1a; color: var(--green); }
+  .badge-no  { border-color: #3a1a1a; color: var(--red); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--dim);
+    font-size: 13px;
+  }
+
+  .tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .tab {
+    padding: 10px 20px;
+    font-size: 12px;
+    color: var(--dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+    font-family: inherit;
+    background: none;
+    border-top: none; border-left: none; border-right: none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .audio-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .audio-actions .btn { font-size: 12px; }
+
+  .dashboard-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-top: 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: background .15s;
+  }
+  .dashboard-link:hover { background: var(--surface); }
+  .dashboard-link .arrow { font-size: 18px; color: var(--dim); }
+
+  @media (max-width: 600px) {
+    .slider-row { grid-template-columns: 1fr; }
+    header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Daily Alignment Portal</h1>
+    <div class="sub">Check in each day to help the system learn your baseline</div>
+  </div>
+  <nav>
+    <a href="/" class="nav-btn">Dashboard</a>
+    <a href="/portal" class="nav-btn active">Daily Portal</a>
+  </nav>
+</header>
+<div class="container">
+  <div class="card" id="calibrationCard">
+    <div class="card-title">Calibration Progress</div>
+    <div class="calibration-bar">
+      <div class="progress"><div class="fill" id="calFill" style="width:0%"></div></div>
+      <span class="cal-text" id="calText">0 / 14 entries</span>
+    </div>
+    <div id="calMessage" style="font-size:12px;color:var(--dim);margin-top:8px;">
+      Submit entries daily to calibrate your personal baseline.
+    </div>
+    <a href="/" id="dashboardLink" class="dashboard-link" style="display:none;">
+      <span style="flex:1;"><strong>Fully Calibrated</strong> &mdash; your dashboards are ready</span>
+      <span class="arrow">&rarr;</span>
+    </a>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('submit')">Submit Entry</button>
+    <button class="tab" onclick="switchTab('history')">History</button>
+  </div>
+
+  <div id="tabSubmit">
+    <div class="card">
+      <div class="card-title">Today's Check-In</div>
+
+      <div class="form-group">
+        <label>User ID</label>
+        <input type="text" id="userId" value="rohith_ms" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;outline:none;">
+      </div>
+
+      <div class="form-group">
+        <label>Journal Text (paste or type)</label>
+        <textarea id="journalText" placeholder="How was your day?..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Text File (.txt)</label>
+        <input type="file" id="textFile" accept=".txt" style="font-size:12px;color:var(--dim);">
+      </div>
+
+      <div class="form-group">
+        <label>Audio Recording (.wav)</label>
+        <div class="audio-actions">
+          <input type="file" id="audioFile" accept=".wav" style="font-size:12px;color:var(--dim);flex:1;">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Health Sliders</label>
+        <div class="slider-row">
+          <div class="slider-group">
+            <label>Sleep Hours <span class="slider-value" id="sleepHoursVal">7.0</span></label>
+            <input type="range" min="0" max="12" step="0.5" value="7" oninput="document.getElementById('sleepHoursVal').textContent=this.value">
+          </div>
+          <div class="slider-group">
+            <label>Sleep Quality <span class="slider-value" id="sleepQualityVal">0.7</span></label>
+            <input type="range" min="0" max="1" step="0.05" value="0.7" oninput="document.getElementById('sleepQualityVal').textContent=this.value">
+          </div>
+          <div class="slider-group">
+            <label>Activity Level <span class="slider-value" id="activityVal">0.6</span></label>
+            <input type="range" min="0" max="1" step="0.05" value="0.6" oninput="document.getElementById('activityVal').textContent=this.value">
+          </div>
+          <div class="slider-group">
+            <label>Music Mood <span class="slider-value" id="musicVal">0.5</span></label>
+            <input type="range" min="0" max="1" step="0.05" value="0.5" oninput="document.getElementById('musicVal').textContent=this.value">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="submitDaily()">Submit Today's Entry</button>
+      <div class="inline-status" id="submitStatus"></div>
+    </div>
+  </div>
+
+  <div id="tabHistory" style="display:none;">
+    <div class="card">
+      <div class="card-title">Entry History</div>
+      <div id="historyContent"><div class="empty-state">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let CURRENT_USER = "";
+const MIN_ENTRIES = 14;
+
+function setStatus(el, msg, loading) {
+  document.getElementById(el).innerHTML = (loading ? '<span class="spinner"></span>' : '') + msg;
+}
+
+function switchTab(name) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.querySelector(`.tab[onclick*="${name}"]`).classList.add("active");
+  document.getElementById("tabSubmit").style.display = name === "submit" ? "block" : "none";
+  document.getElementById("tabHistory").style.display = name === "history" ? "block" : "none";
+  if (name === "history") loadHistory();
+}
+
+function refreshStatus() {
+  const uid = document.getElementById("userId").value.trim() || "rohith_ms";
+  CURRENT_USER = uid;
+  fetch(`/daily/status?user_id=${encodeURIComponent(uid)}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) return;
+      const fill = document.getElementById("calFill");
+      const text = document.getElementById("calText");
+      const msg = document.getElementById("calMessage");
+      const link = document.getElementById("dashboardLink");
+      const pct = d.calibrated ? 100 : d.progress_pct;
+      fill.style.width = pct + "%";
+      fill.className = "fill" + (d.calibrated ? " done" : "");
+      text.textContent = d.calibrated ? "Calibrated!" : `${d.calibration_progress}`;
+      if (d.calibrated) {
+        msg.innerHTML = "Your personal baseline is calibrated. All dashboards are unlocked.";
+        link.style.display = "flex";
+      } else {
+        const rem = d.entries_needed - d.entry_count;
+        msg.innerHTML = rem > 0 ? `${rem} more day${rem > 1 ? 's' : ''} until full calibration.` : "Ready to calibrate! Click the button below.";
+        link.style.display = "none";
+      }
+    })
+    .catch(() => {});
+}
+
+function submitDaily() {
+  const uid = document.getElementById("userId").value.trim() || "rohith_ms";
+  CURRENT_USER = uid;
+  const text = document.getElementById("journalText").value.trim();
+  const textFile = document.getElementById("textFile").files[0];
+  const audioFile = document.getElementById("audioFile").files[0];
+
+  if (!text && !textFile && !audioFile) {
+    setStatus("submitStatus", "Provide text, a .txt file, or audio to submit.");
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append("user_id", uid);
+  fd.append("sleep_hours", document.querySelector("#sleepHoursVal").textContent);
+  fd.append("sleep_quality", document.querySelector("#sleepQualityVal").textContent);
+  fd.append("activity_level", document.querySelector("#activityVal").textContent);
+  fd.append("music_mood_score", document.querySelector("#musicVal").textContent);
+
+  if (text) fd.append("text", text);
+  if (textFile) fd.append("text", textFile);
+  if (audioFile) fd.append("audio", audioFile);
+
+  setStatus("submitStatus", "Extracting features and saving...", true);
+
+  fetch("/daily/submit", { method: "POST", body: fd })
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) {
+        setStatus("submitStatus", d.error);
+        return;
+      }
+      setStatus("submitStatus", "Done! Entry saved for " + d.entry_date);
+      refreshStatus();
+      document.getElementById("journalText").value = "";
+      document.getElementById("textFile").value = "";
+      document.getElementById("audioFile").value = "";
+    })
+    .catch(e => setStatus("submitStatus", "Error: " + e));
+}
+
+function loadHistory() {
+  const uid = document.getElementById("userId").value.trim() || "rohith_ms";
+  CURRENT_USER = uid;
+  const el = document.getElementById("historyContent");
+  el.innerHTML = '<div class="empty-state">Loading...</div>';
+
+  fetch(`/daily/status?user_id=${encodeURIComponent(uid)}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) { el.innerHTML = '<div class="empty-state">' + d.error + '</div>'; return; }
+      if (!d.history || d.history.length === 0) {
+        el.innerHTML = '<div class="empty-state">No entries yet. Start submitting daily!</div>';
+        return;
+      }
+      let html = `<table class="history-table">
+        <thead><tr>
+          <th>Date</th>
+          <th>Text</th>
+          <th>Audio</th>
+          <th>Sleep</th>
+          <th>Quality</th>
+          <th>Activity</th>
+          <th>Music</th>
+          <th>Status</th>
+        </tr></thead><tbody>`;
+      d.history.forEach(e => {
+        const yes = '<span class="badge badge-yes">yes</span>';
+        const no = '<span class="badge badge-no">no</span>';
+        html += `<tr>
+          <td>${e.entry_date}</td>
+          <td>${e.has_text ? yes : no}</td>
+          <td>${e.has_audio ? yes : no}</td>
+          <td>${e.sleep_hours != null ? e.sleep_hours : '—'}</td>
+          <td>${e.sleep_quality != null ? e.sleep_quality.toFixed(2) : '—'}</td>
+          <td>${e.activity_level != null ? e.activity_level.toFixed(2) : '—'}</td>
+          <td>${e.music_mood_score != null ? e.music_mood_score.toFixed(2) : '—'}</td>
+          <td>${e.features_extracted ? yes : no}</td>
+        </tr>`;
+      });
+      html += "</tbody></table>";
+      el.innerHTML = html;
+    })
+    .catch(() => el.innerHTML = '<div class="empty-state">Failed to load history</div>');
+}
+
+document.getElementById("userId").addEventListener("change", refreshStatus);
+document.getElementById("userId").addEventListener("keyup", refreshStatus);
+
+refreshStatus();
+</script>
+</body>
+</html>"""
+
+
 if __name__ == "__main__":
-    print("Open: http://localhost:5000")
-    print("Internal endpoints ready:")
-    print("  POST /internal/feature-extractor")
-    print("  POST /internal/forecaster")
-    print("  POST /internal/consensus")
-    print("  POST /internal/risk-calculator")
-    print("  POST /internal/calibration")
-    print("  POST /internal/explainer")
+    print("Flask API running on http://localhost:5000")
+    print("  GET /             — API info")
+    print("  POST /run         — Run full pipeline (file upload / demo)")
+    print("  POST /daily/submit   — Submit daily entry")
+    print("  GET  /daily/status   — Calibration progress + history")
+    print("  POST /daily/calibrate — Force baseline calibration")
+    print("  POST /daily/delete   — Delete user data")
+    print("")
+    print("Frontend: cd User Interface && npm run dev  →  http://localhost:3000")
     app.run(debug=False, port=5000, threaded=True)
