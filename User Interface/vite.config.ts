@@ -45,7 +45,7 @@ export default defineConfig(() => {
               }
 
               const ac = new AbortController();
-              const to = setTimeout(() => ac.abort(), 30000);
+              const to = setTimeout(() => ac.abort(), 300000);
               const flaskRes = await fetch(`${FLASK_URL}/run`, {
                 method: 'POST',
                 body: formData,

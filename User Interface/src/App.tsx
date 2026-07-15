@@ -741,7 +741,7 @@ export default function App() {
         });
         fd.append('file', docFileObj);
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 45000);
+        const timeoutId = setTimeout(() => controller.abort(), 300000);
         const flaskRes = await fetch('http://localhost:5000/run', {
           method: 'POST',
           body: fd,
@@ -759,7 +759,7 @@ export default function App() {
       } else {
         // No file — use Vite middleware (text mode)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 45000);
+        const timeoutId = setTimeout(() => controller.abort(), 300000);
         const res = await fetch('/api/diagnose', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -811,7 +811,7 @@ export default function App() {
     } catch (err: any) {
       console.error('Pipeline error:', err);
       const msg = err.name === 'AbortError'
-        ? 'Backend took too long (45s timeout). Is Flask running on port 5000?'
+        ? 'Backend took too long (5 min timeout). Is Flask running on port 5000?'
         : err.message || 'Pipeline unavailable';
       setDiagnosticData(prev => ({ ...prev, apiError: msg }));
       setIsAnalyzing(false);
