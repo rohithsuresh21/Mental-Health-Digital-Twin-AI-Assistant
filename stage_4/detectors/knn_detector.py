@@ -25,6 +25,15 @@ class NativeKnnDistanceDetector:
 
     def fit(self, X: np.ndarray) -> "NativeKnnDistanceDetector":
         X_arr = np.asarray(X, dtype=np.float64)
+        n = X_arr.shape[0]
+        if n < self.k + 2:
+            self.k = max(1, n - 2)
+            self.nn_engine_fit = NearestNeighbors(
+                n_neighbors=self.k + 1, algorithm='auto', metric=self.metric, n_jobs=-1
+            )
+            self.nn_engine_infer = NearestNeighbors(
+                n_neighbors=self.k, algorithm='auto', metric=self.metric, n_jobs=-1
+            )
 
         if self.metric == "mahalanobis":
             cov = np.cov(X_arr, rowvar=False)

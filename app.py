@@ -887,7 +887,7 @@ def run():
 
         suffix = Path(file.filename).suffix.lower()
         if suffix not in {".csv",".json",".txt",".pdf",".docx",".doc"}:
-            return jsonify({"error": f"Unsupported file type: {suffix}"})
+            return jsonify({"error": f"Unsupported file type: {suffix}"}), 400
 
         from pipeline_runner import run_pipeline
 
@@ -917,7 +917,7 @@ def run():
 
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/internal/feature-extractor", methods=["POST"])

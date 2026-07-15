@@ -55,6 +55,7 @@ export default defineConfig(() => {
               }
 
               const pipelineResult = await flaskRes.json();
+              if (pipelineResult.error) throw new Error(pipelineResult.error);
               const { mapFlaskRunResponse } = await import('./src/diagnosisEngine');
               const result = mapFlaskRunResponse(pipelineResult, fields);
 
