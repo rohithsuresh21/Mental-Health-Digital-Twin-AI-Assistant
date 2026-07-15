@@ -748,14 +748,13 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(inputs),
         signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error || `Server responded ${res.status}`);
-        }
-        result = await res.json();
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || `Server responded ${res.status}`);
       }
+      result = await res.json();
 
       setAnalysisProgress(90);
       setAnalysisStage('Mapping pipeline output to dashboard...');
