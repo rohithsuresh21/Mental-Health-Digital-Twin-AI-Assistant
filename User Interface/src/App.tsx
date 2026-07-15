@@ -734,6 +734,7 @@ export default function App() {
 
       if (docFileObj) {
         // Upload file directly to Flask (CORS enabled) with all fields
+        console.log('[Diagnosis] Uploading file to Flask /run:', docFileObj.name);
         const fd = new FormData();
         Object.entries(inputs).forEach(([key, val]) => {
           fd.append(key, String(val ?? ''));
@@ -750,6 +751,7 @@ export default function App() {
         const pipelineResult = await flaskRes.json();
         if (pipelineResult.error) throw new Error(pipelineResult.error);
         result = mapFlaskRunResponse(pipelineResult, inputs);
+        console.log('[Diagnosis] Flask /run succeeded with', pipelineResult.n_entries, 'entries');
       } else {
         // No file — use Vite middleware (text mode)
         const res = await fetch('/api/diagnose', {
@@ -802,6 +804,8 @@ export default function App() {
       console.error('Pipeline error:', err);
       setDiagnosticData(prev => ({ ...prev, apiError: err.message || 'Pipeline unavailable' }));
       setIsAnalyzing(false);
+      setAnalysisStage(err.message || 'Pipeline error');
+      setTimeout(() => setAnalysisStage(''), 3000);
     }
   };
 
@@ -1761,12 +1765,12 @@ export default function App() {
                     </div>
                     <button
                       onClick={() => {
-                        setActiveTab('clinical');
+                        setActiveTab(isPatient ? 'intake' : 'clinical');
                       }}
                       className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] active:scale-95 cursor-pointer flex items-center justify-center gap-2"
                     >
                       <ArrowRight className="h-4 w-4" />
-                      Save & Continue to Document Upload
+                      {isPatient ? 'Save & Continue to Daily Alignment Portal' : 'Save & Continue to Document Upload'}
                     </button>
                   </div>
                 </div>
@@ -1783,7 +1787,7 @@ export default function App() {
                 <div className="animate-flow-dot" />
                 
                 <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-indigo-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(59,130,246,0.25)]">Clinical Patient Intake Portal</h2>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-indigo-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(59,130,246,0.25)]">Clinical Documents Upload</h2>
                 </div>
                 <p className="text-[#A5C0FF]/60 text-xs mb-8">Share patient journal entries, voice recordings, and clinical documents for analysis.</p>
 
