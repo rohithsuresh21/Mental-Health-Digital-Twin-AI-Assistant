@@ -44,10 +44,14 @@ export default defineConfig(() => {
                 formData.set('demo', 'true');
               }
 
+              const ac = new AbortController();
+              const to = setTimeout(() => ac.abort(), 30000);
               const flaskRes = await fetch(`${FLASK_URL}/run`, {
                 method: 'POST',
                 body: formData,
+                signal: ac.signal,
               });
+              clearTimeout(to);
 
               if (!flaskRes.ok) {
                 const errText = await flaskRes.text();

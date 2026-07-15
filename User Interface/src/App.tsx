@@ -740,10 +740,14 @@ export default function App() {
           fd.append(key, String(val ?? ''));
         });
         fd.append('file', docFileObj);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 45000);
         const flaskRes = await fetch('http://localhost:5000/run', {
           method: 'POST',
           body: fd,
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
         if (!flaskRes.ok) {
           const errText = await flaskRes.text();
           throw new Error(`Flask /run responded ${flaskRes.status}: ${errText}`);
@@ -754,11 +758,15 @@ export default function App() {
         console.log('[Diagnosis] Flask /run succeeded with', pipelineResult.n_entries, 'entries');
       } else {
         // No file — use Vite middleware (text mode)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 45000);
         const res = await fetch('/api/diagnose', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(inputs),
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
         if (!res.ok) {
           const errData = await res.json();
           throw new Error(errData.error || `Server responded ${res.status}`);
@@ -802,10 +810,13 @@ export default function App() {
       setClinicalAlerts(prev => [...newAlerts, ...prev]);
     } catch (err: any) {
       console.error('Pipeline error:', err);
-      setDiagnosticData(prev => ({ ...prev, apiError: err.message || 'Pipeline unavailable' }));
+      const msg = err.name === 'AbortError'
+        ? 'Backend took too long (45s timeout). Is Flask running on port 5000?'
+        : err.message || 'Pipeline unavailable';
+      setDiagnosticData(prev => ({ ...prev, apiError: msg }));
       setIsAnalyzing(false);
-      setAnalysisStage(err.message || 'Pipeline error');
-      setTimeout(() => setAnalysisStage(''), 3000);
+      setAnalysisStage(msg);
+      setTimeout(() => setAnalysisStage(''), 5000);
     }
   };
 
