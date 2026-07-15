@@ -732,39 +732,22 @@ export default function App() {
 
       let result: DiagnosticData;
 
+      // Always use Vite middleware (no direct Flask fetch — avoids CORS/IPv6 issues)
+      // Read file content into inputs if present
       if (docFileObj) {
-        // Upload file directly to Flask (CORS enabled) with all fields
-        console.log('[Diagnosis] Uploading file to Flask /run:', docFileObj.name);
-        const fd = new FormData();
-        Object.entries(inputs).forEach(([key, val]) => {
-          fd.append(key, String(val ?? ''));
-        });
-        fd.append('file', docFileObj);
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 300000);
-        const flaskRes = await fetch('http://127.0.0.1:5000/run', {
-          method: 'POST',
-          body: fd,
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        if (!flaskRes.ok) {
-          const errText = await flaskRes.text();
-          throw new Error(`Flask /run responded ${flaskRes.status}: ${errText}`);
-        }
-        const pipelineResult = await flaskRes.json();
-        if (pipelineResult.error) throw new Error(pipelineResult.error);
-        result = mapFlaskRunResponse(pipelineResult, inputs);
-        console.log('[Diagnosis] Flask /run succeeded with', pipelineResult.n_entries, 'entries');
-      } else {
-        // No file — use Vite middleware (text mode)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 300000);
-        const res = await fetch('/api/diagnose', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(inputs),
-          signal: controller.signal,
+        console.log('[Diagnosis] Reading uploaded file:', docFileObj.name);
+        const fileText = await docFileObj.text();
+        inputs.docFileContent = fileText;
+        inputs.docFileName = docFileObj.name;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
+      const res = await fetch('/api/diagnose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inputs),
+        signal: controller.signal,
         });
         clearTimeout(timeoutId);
         if (!res.ok) {
@@ -811,7 +794,7 @@ export default function App() {
     } catch (err: any) {
       console.error('Pipeline error:', err);
       const msg = err.name === 'AbortError'
-        ? 'Backend took too long (5 min timeout). Is Flask running on port 5000?'
+        ? 'Backend took too long (2 min timeout). Falling back to local mock.'
         : err.message || 'Pipeline unavailable';
       setDiagnosticData(prev => ({ ...prev, apiError: msg }));
       setIsAnalyzing(false);

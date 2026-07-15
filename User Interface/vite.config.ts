@@ -27,11 +27,12 @@ export default defineConfig(() => {
               await new Promise<void>(resolve => req.on('end', () => resolve()));
               const fields = JSON.parse(body || '{}');
 
-              // Build a text entry from form fields for the pipeline
+              // Build a text entry from form fields + uploaded file for the pipeline
               const text = [
                 fields.communicationLogs || '',
                 fields.voiceRecordingsText || '',
                 fields.clinicalReportsText || '',
+                fields.docFileContent || '',
               ].filter(Boolean).join('\n\n');
 
               // Call Flask's /run endpoint
@@ -45,7 +46,7 @@ export default defineConfig(() => {
               }
 
               const ac = new AbortController();
-              const to = setTimeout(() => ac.abort(), 300000);
+              const to = setTimeout(() => ac.abort(), 120000);
               const flaskRes = await fetch(`${FLASK_URL}/run`, {
                 method: 'POST',
                 body: formData,
@@ -67,7 +68,8 @@ export default defineConfig(() => {
               res.end(JSON.stringify(result));
             } catch (err: any) {
               console.error('Error in API proxy:', err);
-              // Fallback to local mock
+              // Fallback to local mock — always returns valid data
+              console.log('[API Proxy] Falling back to local mock diagnosis');
               const { runDiagnosis } = await import('./src/diagnosisEngine');
               const result = await runDiagnosis(fields);
               res.setHeader('Content-Type', 'application/json');

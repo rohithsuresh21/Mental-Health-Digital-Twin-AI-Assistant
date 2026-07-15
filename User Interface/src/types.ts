@@ -72,4 +72,6 @@ export interface IngestionInput {
   bloodType?: string;
   medicalHistory?: string;
   symptoms?: string;
+  docFileContent?: string;
+  docFileName?: string;
 }
