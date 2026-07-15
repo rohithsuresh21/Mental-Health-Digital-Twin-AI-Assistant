@@ -1436,7 +1436,7 @@ export default function App() {
             <div className="flex items-center gap-2.5">
               <span className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6] animate-pulse" />
               <h1 className="text-sm font-extrabold tracking-widest bg-gradient-to-r from-blue-400 via-indigo-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(59,130,246,0.3)] uppercase font-sans">
-                Clinical Provider Workspace — Intake & Analysis
+                Clinical Provider Workspace — Document Upload & Analysis
               </h1>
             </div>
           )}
@@ -2172,14 +2172,14 @@ export default function App() {
                     </div>
                     <h2 className="text-xl font-bold text-white mb-3">Analysis Not Yet Available</h2>
                     <p className="text-sm text-gray-400 leading-relaxed mb-8 max-w-md mx-auto">
-                      Please complete the clinical intake assessment and upload your documents first. Once the analysis runs, you'll find your personalized dashboard here.
+                      Please complete the clinical documents upload and start the analysis. Once the analysis runs, you'll find your personalized dashboard here.
                     </p>
                     <button
                       onClick={() => setActiveTab('clinical')}
                       className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all duration-300 hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] cursor-pointer"
                     >
                       <User className="h-4 w-4" />
-                      Go to Clinical Intake
+                      Go to Document Upload
                     </button>
                   </div>
                 </div>
