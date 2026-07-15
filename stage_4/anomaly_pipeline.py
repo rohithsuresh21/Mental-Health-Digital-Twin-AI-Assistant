@@ -30,6 +30,9 @@ class MultiDetectorPipeline:
     def fit(self, X: np.ndarray) -> "MultiDetectorPipeline":
         X_clean = self.sanitizer.fit_transform(X)
 
+        if np.any(np.isnan(X_clean)) or np.any(np.isinf(X_clean)):
+            X_clean = np.nan_to_num(X_clean, nan=0.0, posinf=1.0, neginf=-1.0)
+
         self.mahalanobis.fit(X_clean)
         self.copula.fit(X_clean)
         self.isolation_forest.fit(X_clean)

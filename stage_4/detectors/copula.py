@@ -33,11 +33,17 @@ class GaussianCopulaAnomalyDetector:
         if self.n_features == 1:
             R = np.array([[1.0]])
 
-        scaled_reg = 1e-5 * self.n_features
+        if np.any(np.isnan(R)) or np.any(np.isinf(R)):
+            R = np.eye(self.n_features)
+
+        scaled_reg = 1e-3 * self.n_features
         R_reg = R + np.eye(self.n_features) * scaled_reg
 
         sign, logdet = np.linalg.slogdet(R_reg)
         self.copula_det_log = logdet if sign > 0 else 0.0
+        if np.isnan(self.copula_det_log) or np.isinf(self.copula_det_log):
+            self.copula_det_log = 0.0
+            R_reg = np.eye(self.n_features) * (1.0 + scaled_reg)
         self.copula_covariance_pinv = pinvh(R_reg)
 
         raw_train_scores = self._calculate_negative_log_likelihood(X_arr)
