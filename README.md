@@ -1,2 +1,3 @@
-# Mental-Health-Digital-Twin-AI
-ITISOC - summer project on Digital Twin for Personalized Mental Health topic
+# Mental Health Digital Twin AI
+
+Deployed on Hugging Face Spaces with Docker backend.
