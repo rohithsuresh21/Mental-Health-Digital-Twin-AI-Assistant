@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const BASE = 'http://127.0.0.1:5000';
+const BASE = '/api';
 
 export interface PatientStatus {
   entry_count: number;
