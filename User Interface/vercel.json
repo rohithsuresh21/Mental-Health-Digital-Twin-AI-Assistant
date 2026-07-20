@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://mental-health-twin-api.onrender.com/$1"
+      "destination": "https://mental-health-digital-twin-ai-assistant.onrender.com/$1"
     },
     {
       "source": "/(.*)",
