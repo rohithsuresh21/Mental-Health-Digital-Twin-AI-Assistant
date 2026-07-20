@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://b19590c17fbca08f-49-47-218-215.serveousercontent.com/$1"
+      "destination": "https://blackjack-ward-complement-surgical.trycloudflare.com/$1"
     },
     {
       "source": "/(.*)",
