@@ -9,7 +9,9 @@ services:
     healthCheckPath: /
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.11
+        value: "3.11.11"
+      - key: PIP_EXTRA_INDEX_URL
+        value: https://download.pytorch.org/whl/cpu
       - key: PORT
         value: "5000"
   - type: postgresql
