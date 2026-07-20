@@ -292,6 +292,8 @@ export default function App() {
     let animationFrameId: number;
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
+    const isMobile = window.innerWidth < 640;
+    const alpha = isMobile ? 0.7 : 1.0;
 
     // ArtificialNeuron represents a mathematical parameter/neuron in an LLM layer
     class ArtificialNeuron {
@@ -319,7 +321,7 @@ export default function App() {
         this.vx = 0;
         this.vy = 0;
         this.activation = Math.random() * 0.15;
-        this.size = 3.5 + Math.random() * 2.5;
+        this.size = isMobile ? 2 + Math.random() * 1.5 : 3.5 + Math.random() * 2.5;
 
         // Custom mathematical symbols mimicking transformer architecture
         const labels = ['x', 'W_Q', 'W_K', 'h_t', 'FFN', 'y_hat'];
@@ -329,8 +331,10 @@ export default function App() {
 
       update(time: number, mouseX: number, mouseY: number, isDragged: boolean) {
         // Dynamic target floating rest baseline position
-        const targetX = this.baseX + Math.sin(time * 0.4 + this.id * 1.5) * 12;
-        const targetY = this.baseY + Math.cos(time * 0.35 + this.id * 2.2) * 16;
+        const oscX = isMobile ? 8 : 12;
+        const oscY = isMobile ? 10 : 16;
+        const targetX = this.baseX + Math.sin(time * 0.4 + this.id * 1.5) * oscX;
+        const targetY = this.baseY + Math.cos(time * 0.35 + this.id * 2.2) * oscY;
 
         if (isDragged) {
           // Compute velocity while dragging so there's an inertia kick on release
@@ -376,7 +380,7 @@ export default function App() {
           c.arc(this.x, this.y, this.size + actGlow + 3, 0, Math.PI * 2);
           const grad = c.createRadialGradient(this.x, this.y, this.size - 1, this.x, this.y, this.size + actGlow + 3);
           const glowColor = isLightTheme ? '59, 130, 246' : '165, 192, 255';
-          grad.addColorStop(0, `rgba(${glowColor}, ${0.12 + this.activation * 0.22})`);
+          grad.addColorStop(0, `rgba(${glowColor}, ${(0.12 + this.activation * 0.22) * alpha})`);
           grad.addColorStop(1, `rgba(${glowColor}, 0)`);
           c.fillStyle = grad;
           c.fill();
@@ -386,11 +390,11 @@ export default function App() {
         c.beginPath();
         c.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         c.fillStyle = isLightTheme 
-          ? `rgba(59, 130, 246, ${0.18 + this.activation * 0.62})`
-          : `rgba(147, 197, 253, ${0.14 + this.activation * 0.62})`;
+          ? `rgba(59, 130, 246, ${(0.18 + this.activation * 0.62) * alpha})`
+          : `rgba(147, 197, 253, ${(0.14 + this.activation * 0.62) * alpha})`;
         c.strokeStyle = isLightTheme
-          ? `rgba(59, 130, 246, ${0.45 + this.activation * 0.48})`
-          : `rgba(165, 192, 255, ${0.32 + this.activation * 0.48})`;
+          ? `rgba(59, 130, 246, ${(0.45 + this.activation * 0.48) * alpha})`
+          : `rgba(165, 192, 255, ${(0.32 + this.activation * 0.48) * alpha})`;
         c.lineWidth = 1.0;
         c.fill();
         c.stroke();
@@ -425,7 +429,7 @@ export default function App() {
       }
     }
 
-    const layerDistribution = [3, 4, 4, 4, 3]; // Beautifully sparse, clean neural network style layout
+    const layerDistribution = isMobile ? [2, 2, 2, 2, 2] : [3, 4, 4, 4, 3];
     const layerCount = layerDistribution.length;
     let neurons: ArtificialNeuron[] = [];
     let pulses: ActivationPulse[] = [];
@@ -437,11 +441,12 @@ export default function App() {
       let globalId = 0;
       for (let l = 0; l < layerCount; l++) {
         const nodeCount = layerDistribution[l];
-        // Calculate responsive X layout with comfortable padding
-        const x = 70 + (l / (layerCount - 1)) * (w - 140);
+        const padX = isMobile ? 30 : 70;
+        const padY1 = isMobile ? 40 : 90;
+        const padY2 = isMobile ? 40 : 180;
+        const x = padX + (l / (layerCount - 1)) * (w - padX * 2);
         for (let i = 0; i < nodeCount; i++) {
-          // Calculate responsive Y layout
-          const y = 90 + (i / (nodeCount - 1 || 1)) * (h - 180);
+          const y = padY1 + (i / (nodeCount - 1 || 1)) * (h - padY1 - padY2);
           neurons.push(new ArtificialNeuron(globalId++, l, i, x, y));
         }
       }
@@ -474,7 +479,8 @@ export default function App() {
 
       selected.forEach(target => {
         // Enforce a safe cap on parallel pulse entities to prevent rendering bottlenecks
-        if (pulses.length < 35) {
+        const maxPulses = isMobile ? 20 : 35;
+        if (pulses.length < maxPulses) {
           pulses.push(new ActivationPulse(fromNeuron, target));
         }
       });
@@ -495,7 +501,8 @@ export default function App() {
         }
       });
 
-      if (closestNode && minDist < 220) {
+      const clickRadius = isMobile ? 120 : 220;
+      if (closestNode && minDist < clickRadius) {
         (closestNode as ArtificialNeuron).activation = 1.0;
         triggerForwardCascade(closestNode);
       }
@@ -603,8 +610,8 @@ export default function App() {
 
       const time = Date.now() * 0.001;
 
-      // Periodic background signal generation (every 1400ms)
-      if (Date.now() - lastInferenceTime > 1400) {
+      // Periodic background signal generation
+      if (Date.now() - lastInferenceTime > (isMobile ? 2500 : 1400)) {
         const inputNodes = neurons.filter(n => n.layer === 0);
         if (inputNodes.length > 0) {
           const randInput = inputNodes[Math.floor(Math.random() * inputNodes.length)];
@@ -632,8 +639,8 @@ export default function App() {
           // Synapse glow intensity matches connected node activations
           const connectionAlpha = 0.015 + (n1.activation + n2.activation) * 0.045;
           ctx.strokeStyle = isLightTheme
-            ? `rgba(59, 130, 246, ${Math.min(0.25, connectionAlpha * 1.8)})`
-            : `rgba(165, 192, 255, ${Math.min(0.18, connectionAlpha)})`;
+            ? `rgba(59, 130, 246, ${Math.min(0.25, connectionAlpha * 1.8 * alpha)})`
+            : `rgba(165, 192, 255, ${Math.min(0.18, connectionAlpha * alpha)})`;
           ctx.lineWidth = 0.55;
           ctx.stroke();
         });
@@ -643,9 +650,9 @@ export default function App() {
       if (mouse.x > -1000 && mouse.y > -1000) {
         // Draw crisp cursor diagnostic dot
         ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, 4.0, 0, Math.PI * 2);
-        ctx.fillStyle = isLightTheme ? 'rgba(59, 130, 246, 0.82)' : 'rgba(165, 192, 255, 0.82)';
-        ctx.shadowBlur = 12;
+        ctx.arc(mouse.x, mouse.y, isMobile ? 2.5 : 4.0, 0, Math.PI * 2);
+        ctx.fillStyle = isLightTheme ? `rgba(59, 130, 246, ${0.82 * alpha})` : `rgba(165, 192, 255, ${0.82 * alpha})`;
+        ctx.shadowBlur = isMobile ? 6 : 12;
         ctx.shadowColor = isLightTheme ? '#3b82f6' : '#a5c0ff';
         ctx.fill();
         ctx.shadowBlur = 0;
@@ -659,13 +666,13 @@ export default function App() {
             ctx.moveTo(n.x, n.y);
             ctx.lineTo(mouse.x, mouse.y);
             ctx.strokeStyle = isLightTheme
-              ? `rgba(59, 130, 246, ${0.08 * (1 - dist / 180)})`
-              : `rgba(165, 192, 255, ${0.04 * (1 - dist / 180)})`;
+              ? `rgba(59, 130, 246, ${0.08 * (1 - dist / 180) * alpha})`
+              : `rgba(165, 192, 255, ${0.04 * (1 - dist / 180) * alpha})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
 
             // Symmetrical slight static activation from proximity focus
-            n.activation = Math.min(1.0, n.activation + 0.005);
+            n.activation = Math.min(1.0, n.activation + (isMobile ? 0.003 : 0.005));
           }
         });
       }
@@ -678,9 +685,9 @@ export default function App() {
         // Draw pulse particle
         const pos = pulse.getPosition();
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y, 2.0, 0, Math.PI * 2);
+        ctx.arc(pos.x, pos.y, isMobile ? 1.3 : 2.0, 0, Math.PI * 2);
         ctx.fillStyle = pulse.color;
-        ctx.shadowBlur = 6;
+        ctx.shadowBlur = isMobile ? 3 : 6;
         ctx.shadowColor = pulse.color;
         ctx.fill();
         ctx.shadowBlur = 0;

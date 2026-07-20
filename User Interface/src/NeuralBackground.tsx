@@ -9,6 +9,9 @@ export default function NeuralBackground() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const isMobile = window.innerWidth < 640;
+    const alpha = isMobile ? 0.7 : 1.0;
+
     let animationFrameId: number;
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
@@ -25,12 +28,14 @@ export default function NeuralBackground() {
         this.x = baseX; this.y = baseY;
         this.vx = 0; this.vy = 0;
         this.activation = Math.random() * 0.15;
-        this.size = 3.5 + Math.random() * 2.5;
+        this.size = isMobile ? 2 + Math.random() * 1.5 : 3.5 + Math.random() * 2.5;
       }
 
       update(time: number) {
-        const targetX = this.baseX + Math.sin(time * 0.4 + this.id * 1.5) * 12;
-        const targetY = this.baseY + Math.cos(time * 0.35 + this.id * 2.2) * 16;
+        const oscX = isMobile ? 8 : 12;
+        const oscY = isMobile ? 10 : 16;
+        const targetX = this.baseX + Math.sin(time * 0.4 + this.id * 1.5) * oscX;
+        const targetY = this.baseY + Math.cos(time * 0.35 + this.id * 2.2) * oscY;
         const springK = 0.08;
         const damping = 0.81;
         this.vx += (targetX - this.x) * springK;
@@ -52,15 +57,15 @@ export default function NeuralBackground() {
           c.beginPath();
           c.arc(this.x, this.y, this.size + actGlow + 3, 0, Math.PI * 2);
           const grad = c.createRadialGradient(this.x, this.y, this.size - 1, this.x, this.y, this.size + actGlow + 3);
-          grad.addColorStop(0, `rgba(165, 192, 255, ${0.12 + this.activation * 0.22})`);
+          grad.addColorStop(0, `rgba(165, 192, 255, ${(0.12 + this.activation * 0.22) * alpha})`);
           grad.addColorStop(1, `rgba(165, 192, 255, 0)`);
           c.fillStyle = grad;
           c.fill();
         }
         c.beginPath();
         c.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        c.fillStyle = `rgba(147, 197, 253, ${0.14 + this.activation * 0.62})`;
-        c.strokeStyle = `rgba(165, 192, 255, ${0.32 + this.activation * 0.48})`;
+        c.fillStyle = `rgba(147, 197, 253, ${(0.14 + this.activation * 0.62) * alpha})`;
+        c.strokeStyle = `rgba(165, 192, 255, ${(0.32 + this.activation * 0.48) * alpha})`;
         c.lineWidth = 1.0;
         c.fill();
         c.stroke();
@@ -83,7 +88,7 @@ export default function NeuralBackground() {
       }
     }
 
-    const layerDistribution = [3, 4, 4, 4, 3];
+    const layerDistribution = isMobile ? [2, 2, 2, 2, 2] : [3, 4, 4, 4, 3];
     const layerCount = layerDistribution.length;
     let neurons: ArtificialNeuron[] = [];
     let pulses: ActivationPulse[] = [];
@@ -92,11 +97,14 @@ export default function NeuralBackground() {
     const rebuildNetwork = (w: number, h: number) => {
       neurons = []; pulses = [];
       let globalId = 0;
+      const padX = isMobile ? 30 : 70;
+      const padY1 = isMobile ? 40 : 90;
+      const padY2 = isMobile ? 40 : 180;
       for (let l = 0; l < layerCount; l++) {
         const nodeCount = layerDistribution[l];
-        const x = 70 + (l / (layerCount - 1)) * (w - 140);
+        const x = padX + (l / (layerCount - 1)) * (w - padX * 2);
         for (let i = 0; i < nodeCount; i++) {
-          const y = 90 + (i / (nodeCount - 1 || 1)) * (h - 180);
+          const y = padY1 + (i / (nodeCount - 1 || 1)) * (h - padY1 - padY2);
           neurons.push(new ArtificialNeuron(globalId++, l, i, x, y));
         }
       }
@@ -112,6 +120,8 @@ export default function NeuralBackground() {
     };
     window.addEventListener('resize', handleResize);
 
+    const maxPulses = isMobile ? 20 : 35;
+
     const triggerForwardCascade = (fromNeuron: ArtificialNeuron) => {
       if (fromNeuron.layer >= layerCount - 1) return;
       const nextLayerNodes = neurons.filter(n => n.layer === fromNeuron.layer + 1);
@@ -119,20 +129,21 @@ export default function NeuralBackground() {
       const targetCount = 1 + Math.floor(Math.random() * 2);
       const shuffled = [...nextLayerNodes].sort(() => 0.5 - Math.random());
       shuffled.slice(0, Math.min(targetCount, shuffled.length)).forEach(target => {
-        if (pulses.length < 35) pulses.push(new ActivationPulse(fromNeuron, target));
+        if (pulses.length < maxPulses) pulses.push(new ActivationPulse(fromNeuron, target));
       });
     };
 
     const handleClick = (e: MouseEvent) => {
       let closest: ArtificialNeuron | null = null;
       let minDist = Infinity;
+      const clickRadius = isMobile ? 120 : 220;
       neurons.forEach(n => {
         const dx = n.x - e.clientX;
         const dy = n.y - e.clientY;
         const d = Math.sqrt(dx * dx + dy * dy);
         if (d < minDist) { minDist = d; closest = n; }
       });
-      if (closest && minDist < 220) {
+      if (closest && minDist < clickRadius) {
         (closest as ArtificialNeuron).activation = 1.0;
         triggerForwardCascade(closest as ArtificialNeuron);
       }
@@ -171,7 +182,7 @@ export default function NeuralBackground() {
           ctx.beginPath();
           ctx.moveTo(n1.x, n1.y);
           ctx.lineTo(n2.x, n2.y);
-          ctx.strokeStyle = `rgba(165, 192, 255, ${Math.min(0.18, 0.015 + (n1.activation + n2.activation) * 0.045)})`;
+          ctx.strokeStyle = `rgba(165, 192, 255, ${Math.min(0.18, (0.015 + (n1.activation + n2.activation) * 0.045) * alpha)})`;
           ctx.lineWidth = 0.55;
           ctx.stroke();
         });
@@ -179,22 +190,23 @@ export default function NeuralBackground() {
 
       if (mouse.x > -1000 && mouse.y > -1000) {
         ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, 4.0, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(165, 192, 255, 0.82)';
-        ctx.shadowBlur = 12;
+        ctx.arc(mouse.x, mouse.y, isMobile ? 2.5 : 4.0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(165, 192, 255, ${0.82 * alpha})`;
+        ctx.shadowBlur = isMobile ? 6 : 12;
         ctx.shadowColor = '#a5c0ff';
         ctx.fill();
         ctx.shadowBlur = 0;
 
+        const interactDist = isMobile ? 100 : 180;
         neurons.forEach(n => {
           const dx = n.x - mouse.x;
           const dy = n.y - mouse.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 180) {
+          if (dist < interactDist) {
             ctx.beginPath();
             ctx.moveTo(n.x, n.y);
             ctx.lineTo(mouse.x, mouse.y);
-            ctx.strokeStyle = `rgba(165, 192, 255, ${0.04 * (1 - dist / 180)})`;
+            ctx.strokeStyle = `rgba(165, 192, 255, ${0.04 * (1 - dist / interactDist) * alpha})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
             n.activation = Math.min(1.0, n.activation + 0.005);
@@ -207,9 +219,9 @@ export default function NeuralBackground() {
         pulse.update();
         const pos = pulse.getPosition();
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y, 2.0, 0, Math.PI * 2);
-        ctx.fillStyle = '#bae6fd';
-        ctx.shadowBlur = 6;
+        ctx.arc(pos.x, pos.y, isMobile ? 1.2 : 2.0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(186, 230, 253, ${alpha})`;
+        ctx.shadowBlur = isMobile ? 3 : 6;
         ctx.shadowColor = '#bae6fd';
         ctx.fill();
         ctx.shadowBlur = 0;
