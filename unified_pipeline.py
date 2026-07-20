@@ -11,7 +11,6 @@ from pathlib import Path
 from Stage_1.Extract_features import extract_features
 from stage_2.baseline import UserBaseline
 from stage_2.temporal_bin import TemporalBinning
-from stage_3.tft_model import run_stage3, build_dataframe, extract_latent_and_attention
 from stage_4.detectors.cusum import CUSUMDetector
 from stage_4.anomaly_pipeline import MultiDetectorPipeline
 from stage_4.config import PipelineConfig
@@ -251,6 +250,8 @@ class UnifiedJournalPipeline:
                 raise ValueError(
                     f"Need at least 1 user for training, got {len(self.normalized_vectors)}"
                 )
+
+            from stage_3.tft_model import run_stage3
 
             patched_data = self._create_patched_data(num_patches)
             
