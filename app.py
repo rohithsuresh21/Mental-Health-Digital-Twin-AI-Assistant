@@ -914,7 +914,20 @@ def diagnose():
                         if _delay == 1.0: pass
                         else: time.sleep(_delay)
         else:
-            result = run_pipeline(user_id)  # demo mode
+            # demo mode — create dummy entries so file_path is not required
+            fd, tmp_path = tempfile.mkstemp(suffix=".txt")
+            os.close(fd)
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                f.write("Today was a normal day. Feeling okay.\nYesterday was good, productive.\nTomorrow will be better.")
+            try:
+                result = run_pipeline(user_id, file_path=tmp_path)
+            finally:
+                for _delay in [0, 0.5, 1.0]:
+                    try:
+                        os.unlink(tmp_path); break
+                    except PermissionError:
+                        if _delay == 1.0: pass
+                        else: time.sleep(_delay)
 
         result["cusum_status"] = build_cusum_status(
             result.get("cusum_alert_upper", []),
