@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://blackjack-ward-complement-surgical.trycloudflare.com/$1"
+      "destination": "https://currencies-celtic-reunion-dividend.trycloudflare.com/$1"
     },
     {
       "source": "/(.*)",
