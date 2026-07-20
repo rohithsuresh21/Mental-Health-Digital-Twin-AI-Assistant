@@ -9,8 +9,14 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 CORS(app)
 
-from unified_pipeline import UnifiedJournalPipeline
-_pipeline = UnifiedJournalPipeline()
+_pipeline = None
+
+def get_pipeline():
+    global _pipeline
+    if _pipeline is None:
+        from unified_pipeline import UnifiedJournalPipeline
+        _pipeline = UnifiedJournalPipeline()
+    return _pipeline
 
 from daily_portal.routes import daily
 from daily_portal.db import init_db
@@ -936,7 +942,7 @@ def internal_feature_extractor():
             except Exception:
                 pass
 
-        result = _pipeline.process_entry(
+        result = get_pipeline().process_entry(
             user_id=user_id,
             text=text,
             timestamp=ts,
@@ -946,7 +952,7 @@ def internal_feature_extractor():
             music_mood_score=body.get("music_mood_score"),
         )
 
-        ub = _pipeline.user_baselines.get(user_id)
+        ub = get_pipeline().user_baselines.get(user_id)
         return jsonify({
             "user_id": user_id,
             "feature_vector_shape": result["stage_1"]["feature_vector_shape"],
@@ -970,12 +976,12 @@ def internal_forecaster():
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
 
-        n = len(_pipeline.normalized_vectors.get(user_id, []))
+        n = len(get_pipeline().normalized_vectors.get(user_id, []))
         if n < 3:
             return jsonify({"error": f"Need at least 3 entries, got {n}"}), 400
 
         num_patches = min(10, max(3, n - 1))
-        tft = _pipeline.train_tft_model(
+        tft = get_pipeline().train_tft_model(
             num_patches=num_patches,
             hidden_size=32,
             max_epochs=5,
@@ -1003,26 +1009,26 @@ def internal_consensus():
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
 
-        if user_id not in _pipeline.normalized_vectors or len(_pipeline.normalized_vectors[user_id]) == 0:
+        if user_id not in get_pipeline().normalized_vectors or len(get_pipeline().normalized_vectors[user_id]) == 0:
             return jsonify({"error": f"No normalized vectors for user {user_id}"}), 400
 
-        all_vecs = _pipeline.get_batch_consistent_vectors(user_id)
+        all_vecs = get_pipeline().get_batch_consistent_vectors(user_id)
 
-        if not _pipeline.anomaly_detector:
+        if not get_pipeline().anomaly_detector:
             n_train = max(10, int(len(all_vecs) * 0.7))
             from stage_4.anomaly_pipeline import MultiDetectorPipeline
             X_train = np.array(all_vecs[:n_train])
-            _pipeline.anomaly_detector = MultiDetectorPipeline()
-            _pipeline.anomaly_detector.fit(X_train)
+            get_pipeline().anomaly_detector = MultiDetectorPipeline()
+            get_pipeline().anomaly_detector.fit(X_train)
             print(f"[consensus] Trained fresh detector on {n_train}/{len(all_vecs)} vectors")
         anomaly_results = []
         for vec in all_vecs:
-            anomaly_results.append(_pipeline.detect_anomalies(vec))
+            anomaly_results.append(get_pipeline().detect_anomalies(vec))
 
-        _pipeline.anomaly_scores[user_id] = anomaly_results
+        get_pipeline().anomaly_scores[user_id] = anomaly_results
 
-        cusum_results = _pipeline.fit_and_run_cusum(user_id)
-        cusum_threshold = round(float(_pipeline.cusum_detectors[user_id].h), 4)
+        cusum_results = get_pipeline().fit_and_run_cusum(user_id)
+        cusum_threshold = round(float(get_pipeline().cusum_detectors[user_id].h), 4)
 
         return jsonify({
             "user_id": user_id,
@@ -1050,8 +1056,8 @@ def internal_risk_calculator():
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
 
-        vecs = _pipeline.normalized_vectors.get(user_id, [])
-        anomalies = _pipeline.anomaly_scores.get(user_id, [])
+        vecs = get_pipeline().normalized_vectors.get(user_id, [])
+        anomalies = get_pipeline().anomaly_scores.get(user_id, [])
         if len(vecs) < 5:
             return jsonify({
                 "user_id": user_id,
@@ -1062,8 +1068,8 @@ def internal_risk_calculator():
                 "intervention_recommended": False,
             })
 
-        features = _pipeline.assemble_stage5_features(vecs, anomalies)
-        prediction = _pipeline.predict_classification(features)
+        features = get_pipeline().assemble_stage5_features(vecs, anomalies)
+        prediction = get_pipeline().predict_classification(features)
         return jsonify({
             "user_id": user_id,
             "n_entries": len(vecs),
@@ -1090,8 +1096,8 @@ def internal_calibration():
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
 
-        vecs = _pipeline.normalized_vectors.get(user_id, [])
-        anomalies = _pipeline.anomaly_scores.get(user_id, [])
+        vecs = get_pipeline().normalized_vectors.get(user_id, [])
+        anomalies = get_pipeline().anomaly_scores.get(user_id, [])
         if len(vecs) < 5:
             return jsonify({
                 "user_id": user_id,
@@ -1101,8 +1107,8 @@ def internal_calibration():
                 "risk_level": "LOW",
             })
 
-        features = _pipeline.assemble_stage5_features(vecs, anomalies)
-        prediction = _pipeline.predict_classification(features, calibration=calibration_method)
+        features = get_pipeline().assemble_stage5_features(vecs, anomalies)
+        prediction = get_pipeline().predict_classification(features, calibration=calibration_method)
         return jsonify({
             "user_id": user_id,
             "calibration_method": calibration_method,
@@ -1129,8 +1135,8 @@ def internal_explainer():
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
 
-        vecs = _pipeline.normalized_vectors.get(user_id, [])
-        anomalies = _pipeline.anomaly_scores.get(user_id, [])
+        vecs = get_pipeline().normalized_vectors.get(user_id, [])
+        anomalies = get_pipeline().anomaly_scores.get(user_id, [])
         if len(vecs) < 5:
             return jsonify({
                 "user_id": user_id,
@@ -1141,8 +1147,8 @@ def internal_explainer():
                 "explanation": "Not enough journal entries to generate a meaningful explanation."
             })
 
-        features = _pipeline.assemble_stage5_features(vecs, anomalies)
-        prediction = _pipeline.predict_classification(features, calibration=calibration_method)
+        features = get_pipeline().assemble_stage5_features(vecs, anomalies)
+        prediction = get_pipeline().predict_classification(features, calibration=calibration_method)
 
         # Simple feature-level explanation based on aggregate anomaly signals
         latest_anomaly = anomalies[-1] if anomalies else {}
