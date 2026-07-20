@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://currencies-celtic-reunion-dividend.trycloudflare.com/$1"
+      "destination": "https://christina-considering-scanned-favourites.trycloudflare.com/$1"
     },
     {
       "source": "/(.*)",
