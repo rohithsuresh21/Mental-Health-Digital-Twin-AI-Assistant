@@ -750,7 +750,8 @@ export default function App() {
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 120000);
-      const res = await fetch('/api/diagnose', {
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const res = await fetch(`${apiBase}/diagnose`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(inputs),
