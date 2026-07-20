@@ -144,12 +144,16 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     else:
         num_patches = min(10, max(3, n - 1)); hidden_size = 32; max_epochs = 5; batch_size = 8
 
-    tft = pipeline.train_tft_model(
-        num_patches=num_patches,
-        hidden_size=hidden_size,
-        max_epochs=max_epochs,
-        batch_size=batch_size,
-    )
+    try:
+        tft = pipeline.train_tft_model(
+            num_patches=num_patches,
+            hidden_size=hidden_size,
+            max_epochs=max_epochs,
+            batch_size=batch_size,
+        )
+    except Exception as e:
+        print(f"TFT model training skipped ({e}) — continuing without TFT latents")
+        tft = None
 
     model_dir = Path("calibration/models")
     detectors_file = model_dir / "stage4_detectors.pkl"
@@ -255,7 +259,7 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         "cusum_threshold":     cusum_threshold,
         "persistent_anomaly_flags": [bool(a.get("is_persistent_anomaly", False)) for a in anomaly_results],
         "prediction":          prediction,
-        "tft_latent_shape":    list(tft["latents"].shape),
+        "tft_latent_shape":    list(tft["latents"].shape) if tft is not None else None,
         "xgb_auroc":           round(xgb["auroc"], 4) if xgb["auroc"] is not None and xgb["auroc"] == xgb["auroc"] else 0.0,
         "calibration_status":  calibration_status,
         "baseline_deviation_series": deviation_series,
