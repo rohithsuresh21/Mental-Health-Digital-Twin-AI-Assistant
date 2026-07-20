@@ -1,9 +1,6 @@
 import numpy as np
-import torch
 import nltk
 nltk.download('punkt_tab')
-from transformers import pipeline
-from sentence_transformers import SentenceTransformer
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from nltk.tokenize import sent_tokenize
 import re
@@ -12,9 +9,32 @@ import textstat
 from pathlib import Path
 
 
-emotion_classifier = pipeline(task="text-classification", model="SamLowe/roberta-base-go_emotions", top_k=None)
-model=SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-vader_analyzer   = SentimentIntensityAnalyzer()
+_emotion_classifier = None
+_model = None
+_vader_analyzer = None
+
+
+def _get_emotion_classifier():
+    global _emotion_classifier
+    if _emotion_classifier is None:
+        from transformers import pipeline
+        _emotion_classifier = pipeline(task="text-classification", model="SamLowe/roberta-base-go_emotions", top_k=None)
+    return _emotion_classifier
+
+
+def _get_sentence_model():
+    global _model
+    if _model is None:
+        from sentence_transformers import SentenceTransformer
+        _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+    return _model
+
+
+def _get_vader():
+    global _vader_analyzer
+    if _vader_analyzer is None:
+        _vader_analyzer = SentimentIntensityAnalyzer()
+    return _vader_analyzer
 
 audio_path="/teamspace/studios/this_studio/audio_clip.ogg"
 
@@ -33,7 +53,7 @@ def get_vader(text) ->np.ndarray:
 
     if not sentences:
         return np.zeros(7)
-    all_scores = [vader_analyzer.polarity_scores(s) for s in sentences]
+    all_scores = [_get_vader().polarity_scores(s) for s in sentences]
     neg  = np.mean([s['neg']      for s in all_scores])
     neu  = np.mean([s['neu']      for s in all_scores])
     pos  = np.mean([s['pos']      for s in all_scores])
@@ -262,8 +282,8 @@ def extract_features(text, timestamp=None, prev_timestamp=None,audio_path= None,
                      activity_level=None, music_mood_score=None):
     if timestamp is None:
         timestamp=datetime.now()
-    sbert_embedding=model.encode(text,convert_to_numpy=True).astype(np.float32)
-    emotions=emotion_classifier(text)[0] 
+    sbert_embedding=_get_sentence_model().encode(text,convert_to_numpy=True).astype(np.float32)
+    emotions=_get_emotion_classifier()(text)[0] 
     score_map={r['label']: r['score'] for r in emotions}
     emotion_vec=np.array([score_map.get(e,0.0) for e in emotion_order],dtype=np.float32)  
     vader_vec=get_vader(text)
