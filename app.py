@@ -882,6 +882,51 @@ def index():
     })
 
 
+@app.route("/diagnose", methods=["POST"])
+def diagnose():
+    try:
+        body = request.get_json(force=True, silent=True) or {}
+        user_id = body.get("fullName", "user_demo").strip() or "user_demo"
+
+        text_parts = [
+            body.get("communicationLogs", ""),
+            body.get("voiceRecordingsText", ""),
+            body.get("clinicalReportsText", ""),
+            body.get("docFileContent", ""),
+        ]
+        text = "\n\n".join(p for p in text_parts if p)
+
+        from pipeline_runner import run_pipeline
+        import tempfile, os
+
+        if text.strip():
+            fd, tmp_path = tempfile.mkstemp(suffix=".txt")
+            os.close(fd)
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                f.write(text)
+            try:
+                result = run_pipeline(user_id, file_path=tmp_path)
+            finally:
+                for _delay in [0, 0.5, 1.0]:
+                    try:
+                        os.unlink(tmp_path); break
+                    except PermissionError:
+                        if _delay == 1.0: pass
+                        else: time.sleep(_delay)
+        else:
+            result = run_pipeline(user_id)  # demo mode
+
+        result["cusum_status"] = build_cusum_status(
+            result.get("cusum_alert_upper", []),
+            result.get("cusum_alert_lower", []),
+            result.get("timestamps", []),
+        )
+        return jsonify(result)
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/run", methods=["POST"])
 def run():
     try:
