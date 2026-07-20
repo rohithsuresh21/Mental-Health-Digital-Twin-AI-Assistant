@@ -19,6 +19,7 @@ from stage_4.config import PipelineConfig
 try:
     import xgboost as xgb
     from scipy.special import expit
+    from sklearn.isotonic import IsotonicRegression
     STAGE5_AVAILABLE = True
 except ImportError:
     STAGE5_AVAILABLE = False
@@ -38,6 +39,7 @@ class UnifiedJournalPipeline:
         self.tft_model = None
         self.anomaly_detector = None
         self.xgb_model = None
+        self.isotonic_calibrator = None
         self.temperature = None
         self.scaler = None
         self.pca = None
@@ -111,6 +113,16 @@ class UnifiedJournalPipeline:
                 print(f"[Stage 5] Loaded Platt calibrator (A={A:.4f}, B={B:.4f})")
             except Exception as e:
                 print(f"[Stage 5] Failed to load Platt calibrator: {e}")
+
+        # Isotonic calibrator
+        isotonic_path = os.path.join(DAIC_MODEL_DIR, "isotonic_new.pkl")
+        if os.path.exists(isotonic_path):
+            try:
+                with open(isotonic_path, "rb") as f:
+                    self.isotonic_calibrator = pickle.load(f)
+                print(f"[Stage 5] Loaded isotonic calibrator")
+            except Exception as e:
+                print(f"[Stage 5] Failed to load isotonic calibrator: {e}")
 
     def _normalize_user_id(self, user_id: str) -> str:
         if user_id not in self._user_id_mapping:
@@ -231,7 +243,8 @@ class UnifiedJournalPipeline:
         num_patches: int = 10,
         hidden_size: int = 64,
         max_epochs: int = 30,
-        batch_size: int = 64
+        batch_size: int = 64,
+        n_entries: int = 100
     ) -> Dict[str, Any]:
         try:
             if not self.normalized_vectors or len(self.normalized_vectors) < 1:
@@ -250,7 +263,8 @@ class UnifiedJournalPipeline:
                 num_patches=num_patches,
                 hidden_size=hidden_size,
                 max_epochs=max_epochs,
-                batch_size=batch_size
+                batch_size=batch_size,
+                n_entries=n_entries
             )
 
             import torch
@@ -640,6 +654,8 @@ class UnifiedJournalPipeline:
                 A = self.platt_params.get("A", 1.0)
                 B = self.platt_params.get("B", 0.0)
                 p_calibrated = float(expit(A * p_raw + B))
+            elif calibration == "isotonic" and hasattr(self, 'isotonic_calibrator') and self.isotonic_calibrator is not None:
+                p_calibrated = float(self.isotonic_calibrator.predict([[p_raw]])[0])
             else:
                 p_calibrated = p_raw
             
