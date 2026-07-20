@@ -18,9 +18,14 @@ node_modules/
 User Interface/dist/
 dist/
 
-# ML artifacts
+# ML artifacts (except those tracked for deployment)
 *.ckpt
+!tft_checkpoint.ckpt
 *.pkl
+!Stage_5/pca.pkl
+!Stage_5/platt_new.pkl
+!Stage_5/isotonic_new.pkl
+!Stage_5/platt (1).pkl
 *.pt
 *.npy
 *.npz

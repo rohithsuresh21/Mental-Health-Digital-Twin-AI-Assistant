@@ -1674,7 +1674,8 @@ refreshStatus();
 
 
 if __name__ == "__main__":
-    print("Flask API running on http://localhost:5000")
+    port = int(os.environ.get("PORT", 5000))
+    print(f"Flask API running on http://0.0.0.0:{port}")
     print("  GET /             — API info")
     print("  POST /run         — Run full pipeline (file upload / demo)")
     print("  POST /daily/submit   — Submit daily entry")
@@ -1683,4 +1684,4 @@ if __name__ == "__main__":
     print("  POST /daily/delete   — Delete user data")
     print("")
     print("Frontend: cd User Interface && npm run dev  →  http://localhost:3000")
-    app.run(debug=False, port=5000, threaded=True, host='0.0.0.0')
+    app.run(debug=False, port=port, threaded=True, host='0.0.0.0')
