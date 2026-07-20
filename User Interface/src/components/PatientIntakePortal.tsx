@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Upload, Activity, Trash2 } from 'lucide-react';
 import { usePatientData, PatientStatus } from '../hooks/usePatientData';
 
-const BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+const BASE = '/api';
 const MIN_ENTRIES = 14;
 
 function calColor(count: number, calibrated: boolean): string {

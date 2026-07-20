@@ -4,6 +4,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://b19590c17fbca08f-49-47-218-215.serveousercontent.com/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

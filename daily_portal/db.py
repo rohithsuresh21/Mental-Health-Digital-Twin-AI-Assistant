@@ -2,10 +2,11 @@ import json, os
 from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
-import psycopg2
-import psycopg2.extras
 
 _DATABASE_URL = os.environ.get("DATABASE_URL")
+if _DATABASE_URL:
+    import psycopg2
+    import psycopg2.extras
 
 
 def _conn():
