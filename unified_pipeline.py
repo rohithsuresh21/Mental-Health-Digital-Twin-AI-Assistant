@@ -53,8 +53,6 @@ class UnifiedJournalPipeline:
         self.cusum_detectors = {}
 
         self._load_daic_model()
-        
-        print("Pipeline initialized")
 
     def _load_daic_model(self):
         """Load pretrained DAIC-WOZ XGBoost model, PCA preprocessor, and calibrators."""
@@ -170,7 +168,7 @@ class UnifiedJournalPipeline:
                 "has_audio": audio_path is not None
             })
             
-            print(f"Stage 1 complete for user {user_id}: extracted 466 features")
+            pass  # progress handled by pipeline_runner
             
             return feature_vec, readable_data
             
@@ -209,7 +207,7 @@ class UnifiedJournalPipeline:
             self.calibration_flags[user_id].append(was_calibrated)
             self.raw_feature_vectors[user_id].append(feature_vec.copy())
 
-            print(f"Stage 2 complete for user {user_id}: normalized features")
+            pass  # progress handled by pipeline_runner
 
             return {
                 "user_id": user_id,
@@ -255,8 +253,8 @@ class UnifiedJournalPipeline:
 
             patched_data = self._create_patched_data(num_patches)
             
-            print(f"Created patched data for TFT: {len(patched_data)} users")
-            print(f"User ID mapping: {self._user_id_mapping}")
+            print(f"  Created patched data for TFT: {len(patched_data)} users")
+            print(f"  User ID mapping: {self._user_id_mapping}")
             
             self.tft_model = run_stage3(
                 patched_data=patched_data,
@@ -277,9 +275,9 @@ class UnifiedJournalPipeline:
                 "umap_coords": self.tft_model["umap_coords"],
             }, model_path)
             
-            print(f"Stage 3 complete: TFT model trained and saved")
-            print(f"- Latent shape: {self.tft_model['latents'].shape}")
-            print(f"- Attention shape: {self.tft_model['attention'].shape}")
+            print(f"  Model saved to {model_path}")
+            print(f"  Latent shape: {list(self.tft_model['latents'].shape)}")
+            print(f"  Attention shape: {list(self.tft_model['attention'].shape)}")
             
             return self.tft_model
             
@@ -417,9 +415,7 @@ class UnifiedJournalPipeline:
         label: Optional[int] = None
     ) -> Dict[str, Any]:
         
-        print(f"\n{'='*60}")
-        print(f"Processing entry for user: {user_id}")
-        print(f"{'='*60}")
+        pass  # progress handled by pipeline_runner
         
         feature_vec, readable = self.extract_user_entry(
             user_id=user_id,
@@ -530,7 +526,7 @@ class UnifiedJournalPipeline:
 
         feature_vector = np.nan_to_num(np.array(features))
 
-        print(f"Stage 5 features assembled: shape {feature_vector.shape}")
+        print(f"  Stage 5 features assembled: shape {feature_vector.shape}")
 
         return feature_vector
     
@@ -587,7 +583,7 @@ class UnifiedJournalPipeline:
             
             pos_weight = (y_train == 0).sum() / max(1, (y_train == 1).sum())
             
-            print(f"\nTraining XGBoost on {len(X_train)} samples...")
+            print(f"  Training XGBoost on {len(X_train)} samples, validating on {len(X_val)}...")
             self.xgb_model = xgb.XGBClassifier(
                 n_estimators=n_estimators,
                 max_depth=max_depth,
@@ -619,7 +615,8 @@ class UnifiedJournalPipeline:
             
 
             
-            print(f"Stage 5 complete: XGBoost model trained")
+            print(f"  Model saved to {model_path}")
+            print(f"  AUROC: {auroc:.4f}" if auroc else "  AUROC: N/A")
             
             return {
                 "model": self.xgb_model,

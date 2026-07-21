@@ -1,9 +1,35 @@
-import os, json
+import os, json, time
 import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 from collections import Counter
+
+
+W = 64
+
+def _hdr(title):
+    print(f"\n{'='*W}")
+    print(f"  {title}")
+    print(f"{'='*W}")
+
+def _sec(title):
+    print(f"\n  [{title}]")
+
+def _ok(msg):
+    print(f"    ✓ {msg}")
+
+def _info(msg):
+    print(f"      {msg}")
+
+def _warn(msg):
+    print(f"    ⚠ {msg}")
+
+def _fail(msg):
+    print(f"    ✗ {msg}")
+
+def _elapsed(t):
+    return f"{time.time()-t:.1f}s"
 
 
 def _sf(val):
@@ -95,7 +121,10 @@ def load_any_file(path: str) -> list[dict]:
 def run_pipeline(user_id: str, file_path: str) -> dict:
     from unified_pipeline import UnifiedJournalPipeline
 
-    pipeline = UnifiedJournalPipeline()
+    t_start = time.time()
+    _hdr(f"MENTAL HEALTH DIGITAL TWIN  —  Pipeline Run")
+    print(f"  User:       {user_id}")
+    print(f"  Timestamp:  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     path = Path(file_path)
     if not path.exists():
@@ -106,12 +135,25 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     if len(records) < 3:
         raise ValueError(f"Need at least 3 entries, got {len(records)}")
 
+    suffix = Path(file_path).suffix.lower()
+    print(f"  Source:     {Path(file_path).name} ({suffix})")
+    print(f"  Entries:    {len(records)} journal entries loaded")
+
+    t_load = time.time()
+    pipeline = UnifiedJournalPipeline()
+
+    # ── Stage 1 + 2: Feature extraction + Normalization ──
+    _sec("Stage 1 + 2 — Feature Extraction & Normalization")
+    t_s12 = time.time()
+    print(f"  Extracting text, sentiment, emotion, and audio features...")
+    print(f"  Normalizing against user baseline...")
+
     prev_ts = None
     sentiment_series, sleep_series, activity_series, music_series = [], [], [], []
     emotions_series, timestamps = [], []
     context_bin_series = []
 
-    for rec in records:
+    for i, rec in enumerate(records, 1):
         result = pipeline.process_entry(
             user_id=user_id,
             text=rec["text"],
@@ -135,7 +177,21 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         if rec["music_mood_score"] is not None:
             music_series.append((rec["timestamp"], rec["music_mood_score"]))
 
+    cal = pipeline.calibration_flags.get(user_id, [])
+    cal_count = sum(1 for c in cal if c)
+    _ok(f"{len(records)} entries processed — 466 features extracted per entry")
+    _ok(f"Normalization: {cal_count}/{len(records)} entries z-scored (baseline {'calibrated' if cal_count > 0 else 'still collecting'})")
+    _info(f"Time: {_elapsed(t_s12)}")
+
     n = len(records)
+    emotions_unique = Counter(emotions_series)
+    top_emotions = ", ".join(f"{e} ({c})" for e, c in emotions_unique.most_common(5))
+    _info(f"Top emotions: {top_emotions}")
+    _info(f"Sentiment range: {min(sentiment_series):.3f} to {max(sentiment_series):.3f} (avg {np.mean(sentiment_series):.3f})")
+
+    # ── Stage 3: TFT ──
+    _sec("Stage 3 — Temporal Fusion Transformer (Forecasting)")
+    t_s3 = time.time()
 
     if n >= 60:
         num_patches = 14; hidden_size = 64; max_epochs = 10; batch_size = 16
@@ -144,6 +200,8 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     else:
         num_patches = min(10, max(3, n - 1)); hidden_size = 32; max_epochs = 5; batch_size = 8
 
+    _info(f"Config: {num_patches} patches, hidden={hidden_size}, epochs={max_epochs}, batch={batch_size}")
+
     try:
         tft = pipeline.train_tft_model(
             num_patches=num_patches,
@@ -151,9 +209,17 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
             max_epochs=max_epochs,
             batch_size=batch_size,
         )
+        _ok(f"TFT model trained successfully")
+        _info(f"Latent shape: {list(tft['latents'].shape)}")
+        _info(f"Time: {_elapsed(t_s3)}")
     except Exception as e:
-        print(f"TFT model training skipped ({e}) — continuing without TFT latents")
+        _warn(f"TFT training failed: {e}")
+        _info(f"Continuing without TFT latent features")
         tft = None
+
+    # ── Stage 4: Anomaly Detection + CUSUM ──
+    _sec("Stage 4 — Anomaly Detection & CUSUM Monitoring")
+    t_s4 = time.time()
 
     model_dir = Path("calibration/models")
     detectors_file = model_dir / "stage4_detectors.pkl"
@@ -168,10 +234,12 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
             pipeline.detectors = pickle.load(f)
         with open(threshold_file, "rb") as f:
             pipeline.threshold_engine = pickle.load(f)
+        _info("Loaded pretrained anomaly detectors")
     else:
         n_train = max(10, int(n_total * 0.7))
         train_vecs = all_vecs[:n_train]
         X_train = np.array(train_vecs)
+        _info(f"Training fresh detectors on {n_train} vectors...")
 
         from stage_4.anomaly_pipeline import MultiDetectorPipeline
         pipeline.anomaly_detector = MultiDetectorPipeline()
@@ -180,7 +248,9 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         import pickle as _pkl
         detector_path = os.path.join(pipeline.output_dir, "anomaly_detector.pkl")
         pipeline.anomaly_detector.save(detector_path)
+        _info("Detectors trained and saved")
 
+    print(f"  Running 4-detector consensus on {n_total} entries...")
     anomaly_results = []
     for vec in all_vecs:
         anomaly_results.append(pipeline.detect_anomalies(vec))
@@ -189,6 +259,23 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
 
     cusum_results = pipeline.fit_and_run_cusum(user_id)
     cusum_threshold = round(float(pipeline.cusum_detectors[user_id].h), 4)
+
+    avg_risk = np.mean([a["overall_risk_score"] for a in anomaly_results])
+    max_risk = max(a["overall_risk_score"] for a in anomaly_results)
+    n_anomalies = sum(1 for a in anomaly_results if a.get("is_anomaly"))
+    if isinstance(n_anomalies, (list, np.ndarray)):
+        n_anomalies = sum(1 for a in anomaly_results if any(a.get("is_anomaly", [])))
+    n_cusum_alerts = sum(1 for c in cusum_results if c["cusum_alert_upper"] or c["cusum_alert_lower"])
+
+    _ok(f"Anomaly detection complete: avg risk {avg_risk:.3f}, max {max_risk:.3f}")
+    _ok(f"Anomalies flagged: {n_anomalies}/{n_total} entries")
+    _ok(f"CUSUM threshold: {cusum_threshold}, alerts triggered: {n_cusum_alerts}/{n_total}")
+    _info(f"Detectors: Mahalanobis, Copula, Isolation Forest, KNN")
+    _info(f"Time: {_elapsed(t_s4)}")
+
+    # ── Stage 5: Risk Classification ──
+    _sec("Stage 5 — Risk Classification (XGBoost)")
+    t_s5 = time.time()
 
     xgb = pipeline.train_xgboost_classifier()
 
@@ -200,10 +287,23 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
             "risk_level": "LOW", "intervention_recommended": False,
             "prediction": 0, "note": "insufficient entries for reliable classification"
         }
+        _warn(f"Not enough entries ({len(vecs)}) for classification — defaulting to LOW")
     else:
         features = pipeline.assemble_stage5_features(vecs, anomalies)
         prediction = pipeline.predict_classification(features)
+        prob_pct = prediction['probability'] * 100
+        risk = prediction['risk_level']
+        intervention = "Yes" if prediction['intervention_recommended'] else "No"
+        _ok(f"Risk assessment: {risk} ({prob_pct:.1f}%)")
+        _info(f"Intervention recommended: {intervention}")
+        _info(f"Raw probability: {prediction['probability_raw']:.4f} → Calibrated: {prediction['probability']:.4f}")
 
+    if xgb["auroc"] is not None and xgb["auroc"] == xgb["auroc"]:
+        _info(f"Model AUROC: {xgb['auroc']:.4f}")
+    _info(f"Time: {_elapsed(t_s5)}")
+
+    # ── Baseline Summary ──
+    _sec("Baseline & Context Summary")
     ub = pipeline.user_baselines[user_id]
     calibration_status = ub.calibration_status()
     cutoff = ub.min_entries_to_fit - 1
@@ -233,6 +333,15 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     else:
         baseline_trend = "insufficient_data"
 
+    trend_labels = {
+        "stable": "Stable — staying within baseline",
+        "moving_away": "Drifting away from baseline",
+        "returning_to_normal": "Returning toward normal",
+        "insufficient_data": "Insufficient data — still calibrating",
+    }
+    _info(f"Calibration: {calibration_status['calibration_progress']}")
+    _info(f"Baseline trend: {trend_labels.get(baseline_trend, baseline_trend)}")
+
     bin_labels = {
         "Morning_Weekday": "Morning (Weekday)", "Afternoon_Weekday": "Afternoon (Weekday)",
         "Evening_Weekday": "Evening (Weekday)", "Morning_Weekend": "Morning (Weekend)",
@@ -240,6 +349,21 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     }
     bin_counts_raw = Counter(context_bin_series)
     context_bin_counts = {bin_labels.get(k, k): bin_counts_raw.get(k, 0) for k in bin_labels}
+    active_bins = {k: v for k, v in context_bin_counts.items() if v > 0}
+    if active_bins:
+        _info(f"Temporal context: {', '.join(f'{k}: {v}' for k, v in active_bins.items())}")
+
+    # ── Final Summary ──
+    t_total = time.time() - t_start
+    print(f"\n{'─'*W}")
+    print(f"  Pipeline complete in {_elapsed(t_start)}")
+    print(f"  Entries analyzed:  {len(records)}")
+    print(f"  Risk level:        {prediction['risk_level']} ({prediction['probability']*100:.1f}%)")
+    print(f"  Anomalies:         {n_anomalies}/{n_total} entries flagged")
+    print(f"  CUSUM alerts:      {n_cusum_alerts}/{n_total}")
+    if tft:
+        print(f"  TFT latent shape:  {list(tft['latents'].shape)}")
+    print(f"{'─'*W}\n")
 
     return {
         "user_id":             user_id,

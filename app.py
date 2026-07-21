@@ -1747,5 +1747,5 @@ if __name__ == "__main__":
     print("  POST /daily/calibrate — Force baseline calibration")
     print("  POST /daily/delete   — Delete user data")
     print("")
-    print("Frontend: cd User Interface && npm run dev  →  http://localhost:3000")
+    print("Frontend: cd User Interface && npm run dev  ->  http://localhost:3000")
     app.run(debug=False, port=port, threaded=True, host='0.0.0.0')
