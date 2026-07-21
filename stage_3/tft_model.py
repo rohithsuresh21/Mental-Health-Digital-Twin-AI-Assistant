@@ -198,24 +198,42 @@ def run_stage3(
     val_dataset   = TimeSeriesDataSet.from_dataset(train_dataset, val_df, predict=True)
 
     if os.path.exists(checkpoint_path):
-        print(f"[TFT] Checkpoint found — loading and fine-tuning (frozen encoder).")
-        tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path)
-        tft = tft.cpu()
+        try:
+            print(f"[TFT] Checkpoint found — attempting to load for fine-tuning.")
+            tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path)
+            tft = tft.cpu()
 
-        frozen_count = 0
-        for name, param in tft.named_parameters():
-            if any(x in name for x in ["lstm_encoder", "input_embeddings", "prescalers", "static_covariates_encoder"]):
-                param.requires_grad = False
-                frozen_count += 1
-        print(f"[TFT] Froze {frozen_count} encoder parameter tensors. Fine-tuning decoder only.")
+            expected_encoder_len = num_patches - 1
+            actual_encoder_len = tft.hparams.encoder_max_length if hasattr(tft.hparams, 'encoder_max_length') else None
+            if actual_encoder_len and actual_encoder_len != expected_encoder_len:
+                raise ValueError(
+                    f"Checkpoint encoder length ({actual_encoder_len}) != "
+                    f"current config ({expected_encoder_len}). Retraining from scratch."
+                )
 
-        tft = train_tft(
-            tft, train_dataset, val_dataset,
-            max_epochs=max(2, max_epochs // 3),
-            batch_size=batch_size,
-            checkpoint_path=checkpoint_path,
-            learning_rate=1e-4,
-        )
+            frozen_count = 0
+            for name, param in tft.named_parameters():
+                if any(x in name for x in ["lstm_encoder", "input_embeddings", "prescalers", "static_covariates_encoder"]):
+                    param.requires_grad = False
+                    frozen_count += 1
+            print(f"[TFT] Froze {frozen_count} encoder parameter tensors. Fine-tuning decoder only.")
+
+            tft = train_tft(
+                tft, train_dataset, val_dataset,
+                max_epochs=max(2, max_epochs // 3),
+                batch_size=batch_size,
+                checkpoint_path=checkpoint_path,
+                learning_rate=1e-4,
+            )
+        except Exception as e:
+            print(f"[TFT] Checkpoint incompatible ({e}) — training from scratch.")
+            tft = build_tft(train_dataset, hidden_size=hidden_size, n_entries=n_entries)
+            tft = train_tft(
+                tft, train_dataset, val_dataset,
+                max_epochs=max_epochs,
+                batch_size=batch_size,
+                checkpoint_path=checkpoint_path,
+            )
 
     else:
         print("[TFT] No checkpoint found — training from scratch.")
