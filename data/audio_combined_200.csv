@@ -1,0 +1,201 @@
+entry_id,category,speech_rate_wpm,pause_ratio,avg_pause_length_sec,pitch_mean_hz,pitch_variability,loudness_mean,loudness_variability,text_snippet
+1,at_risk,131.1,0.1097,0.6939,139.7,38.8,0.011,0.043,The irritability is off the charts. Everything and everyone is annoying me.
+2,healthy,124.7,0.1049,0.281,180.6,16.2,0.0587,0.0145,Went to a local theater production. The performances were outstanding.
+3,healthy,154.8,0.1222,0.3168,123.1,30.3,0.0715,0.017,Had a wonderful morning walk through the botanical gardens.
+4,healthy,140.6,0.1404,0.4934,182.0,22.1,0.0624,0.0103,Got positive feedback from my manager on the quarterly review.
+5,healthy,139.5,0.0547,0.3777,165.7,24.2,0.0828,0.0242,Went for a hike with my dog. The trail was peaceful and scenic.
+6,at_risk,78.2,0.3062,1.4925,237.9,19.7,0.0414,0.0303,Avoided another phone call. The thought of talking to someone makes me freeze.
+7,healthy,182.2,0.091,0.3232,122.6,30.2,0.0584,0.0191,Went to a farmers market and bought fresh flowers for my apartment.
+8,at_risk,98.4,0.2112,1.3466,215.3,52.6,0.0407,0.0334,Had to leave work early. The pressure was building and I couldn't breathe.
+9,healthy,146.9,0.0781,0.5945,134.4,34.3,0.0761,0.0236,Had a productive day at work. Crossed everything off my to-do list.
+10,at_risk,147.1,0.2932,0.777,228.7,66.6,0.0033,0.0158,The isolation is comfortable but I know it's not healthy. I just can't stop.
+11,at_risk,103.8,0.3977,0.7429,207.6,42.1,0.0441,0.0189,My patience is gone. I snap at the smallest things and then hate myself for it.
+12,at_risk,80.6,0.197,1.5437,208.3,45.5,0.0268,0.0488,My self-esteem is at rock bottom. I don't recognize the person I've become.
+13,at_risk,97.8,0.1634,0.9315,155.6,49.3,0.0374,0.0314,The anxiety is constant. It's like a weight on my chest that never lifts.
+14,healthy,159.5,0.2335,0.1733,171.4,22.8,0.0599,0.0185,Went to a wine tasting event. Learning about different vintages was fascinating.
+15,at_risk,109.4,0.3912,0.9702,218.7,63.8,0.0319,0.0282,My chest feels tight. I keep getting these waves of dread for no reason.
+16,healthy,144.4,0.0277,0.4418,156.8,30.2,0.0519,0.0195,Had a meaningful conversation about mental health with a close friend.
+17,healthy,153.3,0.1281,0.661,174.2,24.8,0.0258,0.0179,Had a productive brainstorming session for a personal project.
+18,healthy,180.0,0.0686,0.2845,193.7,40.6,0.0406,0.0348,Went for a hike in the mountains. The views were breathtaking.
+19,healthy,150.7,0.0972,0.5824,121.6,29.3,0.0628,0.0202,Went for a morning run and felt energized throughout the day.
+20,healthy,154.0,0.116,0.6842,255.8,24.4,0.0736,0.0212,Went swimming at the local pool. The exercise really cleared my head.
+21,healthy,145.6,0.0754,0.1602,146.7,27.5,0.0647,0.0221,Spent the weekend camping. Disconnecting from technology was refreshing.
+22,at_risk,100.7,0.3268,1.5154,220.7,32.4,0.0073,0.0216,I keep comparing myself to everyone around me. I'm falling behind in everything.
+23,at_risk,84.3,0.2631,0.9616,140.0,31.1,0.0125,0.0499,Had a moment of derealization today. Everything felt unreal for about an hour.
+24,at_risk,114.9,0.2462,0.737,180.4,36.4,0.0378,0.0384,Skipped lunch again. Food has no appeal anymore. Everything tastes like nothing.
+25,healthy,160.7,0.0687,0.0916,159.2,46.1,0.0614,0.0132,Had a deep conversation with my partner about our future plans.
+26,at_risk,69.2,0.2212,1.6782,166.3,39.9,0.0359,0.0381,Avoided another gathering. The thought of making small talk makes me nauseous.
+27,healthy,141.8,0.0923,0.504,147.6,19.1,0.0703,0.0257,Finished my quilt project. The hand-stitching was surprisingly relaxing.
+28,healthy,184.9,0.1315,0.4015,163.1,36.9,0.0545,0.0282,Spent the afternoon at a bookstore. Found several books on my wish list.
+29,healthy,145.7,0.1033,0.2906,146.2,20.5,0.0812,0.025,Had a productive meeting with my team about a new project.
+30,at_risk,131.7,0.3273,0.6827,216.4,33.7,0.0234,0.031,The perfectionism is making me miss deadlines. I'd rather submit nothing than so
+31,at_risk,111.5,0.1341,0.7778,177.5,58.3,0.0378,0.0281,Can't stop replaying embarrassing moments from years ago. Why now?
+32,at_risk,113.2,0.2619,0.8862,174.1,31.7,0.0317,0.0454,Couldn't concentrate on anything at work. Stared at my screen for hours.
+33,healthy,164.3,0.0949,0.4967,153.4,30.3,0.0447,0.0196,Went to a food festival downtown. Trying new cuisines was an adventure.
+34,at_risk,116.0,0.3015,1.1562,185.1,48.0,0.0267,0.024,The self-sabotage is real. Things start going well and I find a way to ruin it.
+35,at_risk,109.7,0.3414,1.5122,209.5,40.0,0.0286,0.0391,My body hurts everywhere. Stress is doing something physical to me.
+36,healthy,163.6,0.1909,0.6034,191.2,20.4,0.0499,0.0139,Had a great conversation with my sister. We laughed about old memories.
+37,at_risk,105.1,0.4878,1.2779,183.4,44.6,0.0187,0.0383,My memory is terrible lately. I forgot an important deadline. Again.
+38,at_risk,103.2,0.2715,1.0907,208.4,60.1,0.0264,0.0162,I keep replaying that conversation from last week. I said something wrong. I kno
+39,healthy,169.9,0.1084,0.2425,147.3,17.3,0.0772,0.0182,Went to a art gallery opening. The work was inspiring and thought-provoking.
+40,at_risk,91.3,0.2666,1.2956,198.4,46.7,0.0583,0.0314,The self-doubt is paralyzing. I feel like a fraud at work and in life.
+41,at_risk,117.3,0.3919,0.8479,113.4,47.4,0.0274,0.0315,The emotional numbness is scary. I can't feel happiness or sadness. Just nothing
+42,at_risk,131.2,0.2634,1.1137,217.4,64.1,0.0482,0.0325,The motivation to do anything is completely gone. I'm just going through the mot
+43,at_risk,126.9,0.1981,1.2563,165.9,46.8,0.0355,0.0242,I keep apologizing for things that aren't my fault. It's automatic now.
+44,healthy,132.7,0.1971,0.4125,124.0,19.2,0.0556,0.0256,Had a wonderful evening cooking with my partner. We tried a new cuisine.
+45,healthy,130.0,0.1247,0.2772,125.6,12.4,0.0618,0.0148,Learned to play a new song on the guitar. Progress feels rewarding.
+46,healthy,147.2,0.1142,0.4998,125.4,29.5,0.0245,0.0204,Had a wonderful evening watching a documentary about ocean conservation.
+47,at_risk,92.3,0.3815,1.4269,197.7,38.9,0.0422,0.0391,Called in sick again. I'm not sick. I just can't do it today.
+48,healthy,182.3,0.0911,0.6225,139.1,21.5,0.0536,0.0276,Had a productive conversation with my boss about career advancement.
+49,healthy,177.5,0.1011,0.3365,116.2,29.7,0.0325,0.0171,Spent the day at the beach. The waves and sun were exactly what I needed.
+50,at_risk,98.7,0.2794,0.5068,205.6,64.4,0.045,0.0411,Had a panic attack during a Zoom call. Had to blame it on internet issues.
+51,at_risk,127.0,0.2773,1.1313,202.5,55.3,0.0273,0.0452,The idea of going to work tomorrow makes me want to cry. I don't know how much l
+52,at_risk,141.5,0.2961,1.0372,163.6,53.8,0.0412,0.0399,The intrusive thoughts are getting worse. I don't want to be alone with my mind.
+53,at_risk,109.1,0.3529,1.024,141.1,44.1,0.0418,0.0306,The dread before social events is getting worse. I almost cancelled again tonigh
+54,at_risk,87.6,0.2193,0.5522,109.4,51.3,0.0382,0.0309,I keep making small mistakes at work. My boss noticed. Of course they noticed.
+55,at_risk,131.6,0.3478,1.2948,75.6,51.8,0.0365,0.0211,The loneliness is crushing even when I'm surrounded by people.
+56,healthy,127.9,0.1398,0.4035,187.8,28.4,0.0592,0.0177,Volunteered at the community center today. Helping others feels meaningful.
+57,healthy,141.8,0.0912,0.6389,239.6,13.2,0.073,0.0203,Had a productive brainstorming session with my team at work.
+58,at_risk,146.4,0.2285,1.4984,165.8,63.1,0.0236,0.0464,I keep starting and stopping medications. Nothing seems to work long enough.
+59,healthy,164.5,0.1746,0.3548,151.8,18.0,0.068,0.0105,Went to a pottery workshop. Creating something with clay was grounding.
+60,healthy,157.5,0.1305,0.3134,211.7,25.9,0.0725,0.0087,Went to a community clean-up event. Making a difference felt rewarding.
+61,healthy,161.2,0.1377,0.5393,208.6,25.7,0.038,0.0132,Went to the gym and hit a new personal record on my squat.
+62,healthy,124.9,0.1728,0.5253,132.1,16.8,0.0557,0.0249,Started a new book before bed. Looking forward to continuing tomorrow.
+63,healthy,142.0,0.0739,0.3673,176.1,31.5,0.0606,0.0089,Took a different route on my commute and discovered a nice cafe.
+64,at_risk,102.2,0.2533,0.6862,152.6,37.7,0.0243,0.0224,Had a fight with my partner over something stupid. I started it. I always start 
+65,at_risk,136.6,0.1895,0.8811,204.4,58.2,0.0375,0.0324,My body is keeping score. Every stress I ignore shows up as physical pain.
+66,healthy,125.7,0.2073,0.7814,231.1,30.6,0.035,0.0189,Went to a friend's housewarming party. The atmosphere was warm and welcoming.
+67,healthy,151.9,0.128,0.508,184.3,26.9,0.0361,0.0224,Had a great therapy session. Gained some new insights about myself.
+68,healthy,149.4,0.1559,0.5033,141.2,27.0,0.0555,0.0179,Completed a 10K run. My training is really paying off.
+69,at_risk,100.3,0.4048,0.0076,155.7,64.3,0.0339,0.0461,Had a good cry in the car. Sometimes the release is the only thing that helps.
+70,at_risk,92.7,0.1747,0.9882,185.6,70.7,0.0311,0.0204,The muscle tension in my neck and shoulders is unbearable.
+71,healthy,146.0,0.0728,0.452,162.8,28.3,0.0473,0.0264,Went to a jazz club downtown. The live music was incredible.
+72,healthy,163.7,0.1278,0.3954,227.4,19.1,0.0464,0.0216,Spent the day at a wellness retreat. Feeling completely restored.
+73,healthy,130.3,0.1112,0.3007,207.6,16.6,0.0601,0.0092,Had a great workout class. The instructor was motivating and supportive.
+74,at_risk,127.0,0.0651,1.1707,143.0,51.2,0.0335,0.0299,I cried during my commute. In traffic. With other drivers watching.
+75,healthy,141.6,0.0434,0.5265,219.3,24.6,0.024,0.0116,Completed a creative writing workshop. The feedback was encouraging.
+76,healthy,177.0,0.0871,0.3584,204.8,24.0,0.0683,0.024,Completed my first meditation retreat. The experience was transformative.
+77,at_risk,127.0,0.2762,0.3948,198.9,41.0,0.033,0.0515,The fear of abandonment is pushing people away. I'm creating the very thing I fe
+78,at_risk,84.1,0.3117,1.8225,211.6,54.7,0.0436,0.0274,My confidence is completely gone. I second-guess every decision.
+79,at_risk,86.8,0.2342,1.665,169.4,41.2,0.0189,0.0359,Had a nightmare that woke me up and I couldn't go back to sleep.
+80,at_risk,86.4,0.1952,1.2063,209.8,35.1,0.0405,0.0209,I don't enjoy anything anymore. Things I used to love feel pointless.
+81,at_risk,97.7,0.3113,0.7048,154.1,63.9,0.0225,0.0228,Woke up crying and I don't even know why. The sadness just comes in waves.
+82,at_risk,78.2,0.2523,0.5976,126.5,26.4,0.0459,0.044,The overthinking is constant. Every interaction gets dissected for hours.
+83,healthy,157.4,0.172,0.4062,141.9,28.4,0.0758,0.022,Completed my first 5K race. The sense of achievement is incredible.
+84,healthy,145.4,0.1432,0.4131,213.4,19.2,0.0514,0.0099,Went out for brunch with friends. The food and conversation were great.
+85,at_risk,75.9,0.3298,0.7825,179.2,47.1,0.033,0.0254,Woke up at 3am again. Couldn't stop thinking about everything that's wrong.
+86,at_risk,118.0,0.3244,0.8302,203.6,49.5,0.0383,0.0399,Had a moment where I forgot what I was saying mid-sentence. Brain fog is real.
+87,at_risk,109.7,0.3146,0.9571,219.0,35.0,0.028,0.0384,The brain fog is affecting my work. I'm making mistakes I never would have made 
+88,healthy,150.9,0.0929,0.534,201.3,31.9,0.0636,0.0178,Had a productive meeting at work. My ideas were well received.
+89,at_risk,119.8,0.4077,0.7003,120.0,39.4,0.0389,0.0454,Spent the afternoon on the bathroom floor. I don't know why the floor feels safe
+90,at_risk,118.3,0.2032,1.3537,200.3,76.1,0.0313,0.0605,The fatigue is bone-deep. It's not just being tired. It's exhaustion.
+91,healthy,144.9,0.0932,0.2023,198.2,22.2,0.0635,0.0178,Went to a live music event with friends. The energy was incredible.
+92,healthy,142.4,0.1579,0.421,150.0,15.3,0.0307,0.0251,Made time for meditation this morning. Feeling centered and calm.
+93,healthy,149.4,0.1205,0.1748,218.3,25.3,0.0599,0.0252,Took my dog for a long walk along the river. Fresh air did wonders.
+94,healthy,143.0,0.0575,0.2845,193.2,34.1,0.0446,0.017,Finished a project at work ahead of schedule. Feeling accomplished.
+95,at_risk,141.5,0.317,0.788,186.8,50.9,0.0396,0.0274,My sleep is destroyed. I fall asleep at 4am and wake up exhausted at 6.
+96,healthy,145.8,0.07,0.5354,132.4,36.0,0.0536,0.0233,Had a great time at a friend's wedding celebration.
+97,healthy,150.3,0.0761,0.461,267.1,14.5,0.0651,0.0276,Called an old friend we caught up for over an hour. Felt really good.
+98,at_risk,113.1,0.2769,1.0796,225.4,32.0,0.0132,0.046,The depression is making me forget things. Important things. Work things.
+99,healthy,142.6,0.0551,0.1936,136.6,26.8,0.0618,0.0237,Organized my closet and donated clothes I don't wear anymore.
+100,healthy,130.5,0.1025,0.3264,153.8,18.3,0.0713,0.0277,Went to a outdoor concert in the park. The music under the stars was magical.
+101,healthy,149.4,0.1151,0.1077,220.9,25.3,0.063,0.0178,Had a great workout at the new gym that just opened nearby.
+102,healthy,183.2,0.1091,0.5007,134.6,37.0,0.0617,0.0258,Had a wonderful dinner at a new restaurant downtown with my partner.
+103,at_risk,99.4,0.3293,1.6173,172.9,54.2,0.056,0.019,I keep looking at flights to somewhere far away. Not to travel. Just to escape.
+104,at_risk,134.5,0.1953,0.9036,117.7,28.7,0.0286,0.0232,Cancelled all my plans today. Just couldn't face being around people.
+105,healthy,157.2,0.1284,0.5567,151.2,26.3,0.0781,0.0207,Went to a comedy show downtown. Laughed so hard my cheeks hurt.
+106,at_risk,97.2,0.1714,-0.0172,116.3,42.6,0.0227,0.0309,Woke up with a sense of dread. No specific reason. Just dread.
+107,at_risk,136.5,0.2364,1.2223,132.1,0.4,0.0511,0.0327,Had to leave a party early. The noise and crowds were overwhelming.
+108,healthy,172.4,0.0829,0.4796,155.6,21.2,0.0573,0.0251,Finished organizing my home office. It feels much more productive now.
+109,healthy,148.6,0.1213,0.4711,152.8,37.9,0.0639,0.0252,Went for a bike ride along the lake trail. The sunset was beautiful.
+110,healthy,147.8,0.1471,0.5013,199.5,35.4,0.0741,0.0233,Took a long bath with essential oils. Perfect way to unwind.
+111,at_risk,119.6,0.1799,0.8469,178.9,53.6,0.0406,0.0332,My sleep schedule is completely inverted. I'm awake when everyone else is sleepi
+112,healthy,154.2,0.0843,0.6807,149.5,14.0,0.0619,0.013,Finished building a model airplane. The attention to detail was meditative.
+113,at_risk,102.6,0.2639,1.1967,197.4,48.2,0.0314,0.0506,Had to ask my friend to repeat themselves three times. My brain couldn't process
+114,healthy,174.2,0.0883,0.4953,172.6,29.8,0.0483,0.0185,Went to a farmers market and found organic produce at great prices.
+115,healthy,145.0,0.1322,0.4513,130.4,24.4,0.0582,0.0134,Had a productive day organizing my digital files and photos.
+116,healthy,167.8,0.1605,0.3072,242.3,19.7,0.0472,0.0213,Had a productive planning session for my upcoming vacation.
+117,healthy,152.5,0.1374,0.4036,140.8,28.6,0.0784,0.0175,Had a wonderful day exploring the city with my visiting parents.
+118,healthy,141.2,0.0635,0.5647,211.5,39.3,0.072,0.0216,Had a relaxing evening watching the sunset from my balcony.
+119,at_risk,63.4,0.3595,1.1095,113.4,46.4,0.0283,0.0317,The fear of failure is preventing me from even starting things now.
+120,at_risk,127.1,0.2731,1.1374,131.3,40.4,0.0122,0.0342,Had a breakdown in the bathroom at work. Pulled myself together after 10 minutes
+121,healthy,159.9,0.0875,0.4837,157.6,26.6,0.0466,0.0162,Spent the morning journaling. It helps me process my thoughts.
+122,healthy,129.9,0.1738,0.427,164.7,15.3,0.0484,0.0165,Cooked a new recipe tonight. It turned out better than expected.
+123,at_risk,121.5,0.355,1.1286,187.9,55.7,0.0352,0.0367,The morning anxiety is the worst. Waking up and immediately feeling overwhelmed.
+124,at_risk,137.8,0.289,1.75,114.9,66.5,0.0371,0.0411,The anxiety is louder than my own thoughts. I can't hear myself think.
+125,healthy,164.2,0.1176,0.4831,212.2,23.7,0.0695,0.0127,Had a really good night's sleep. Woke up before my alarm feeling rested.
+126,healthy,136.9,0.1294,0.46,229.1,39.8,0.0573,0.0155,Baked cookies for my neighbors. They were thrilled with the surprise.
+127,at_risk,98.2,0.2632,1.8626,141.5,67.4,0.0374,0.0223,Spent the night Googling my symptoms. Health anxiety is making everything worse.
+128,healthy,168.2,0.1919,0.6759,212.3,39.5,0.041,0.0099,Finished my home renovation project. The transformation is amazing.
+129,healthy,201.7,0.1,0.6767,182.2,36.2,0.0868,0.0209,Had a great time at a friend's birthday celebration.
+130,healthy,140.6,0.0921,0.5506,159.8,24.1,0.0799,0.022,Completed a 30-day fitness challenge. Feeling strong and accomplished.
+131,at_risk,119.2,0.3719,1.1877,173.4,53.6,0.0116,0.0506,The intrusive thoughts about harm are getting more frequent. They scare me.
+132,at_risk,67.8,0.3213,0.9198,158.7,49.1,0.0481,0.0397,My heart rate spiked for no reason. Sitting still and my heart is pounding.
+133,at_risk,110.2,0.1649,0.6308,193.3,38.7,0.0454,0.0296,Couldn't get out of the house today. The door felt like it weighed a thousand po
+134,healthy,127.6,0.0884,0.4539,233.3,20.0,0.0703,0.0208,Went to a pottery class. Making something with my hands was therapeutic.
+135,healthy,158.7,0.1963,0.3483,155.4,8.1,0.0448,0.0156,Went to a yoga class after work. My body feels limber and relaxed.
+136,healthy,163.5,0.1311,0.497,194.2,33.5,0.0396,0.0215,Had a wonderful day at the aquarium with my niece and nephew.
+137,at_risk,89.9,0.3202,0.4924,219.5,38.0,0.0401,0.0365,Sat in my car for 20 minutes after work before I could go inside.
+138,at_risk,138.6,0.259,1.2284,99.2,43.3,0.0411,0.0127,I can't remember the last time I felt genuinely happy. Not just pretending.
+139,at_risk,116.3,0.2978,1.3597,199.0,38.9,0.044,0.0411,The social battery is completely drained after a 5-minute phone call.
+140,healthy,129.1,0.1104,0.6818,178.4,24.9,0.0579,0.009,Got a promotion at work. All the hard work is paying off.
+141,healthy,162.6,0.1218,0.5651,178.6,16.3,0.071,0.0168,Went for a morning swim at sunrise. The water was refreshing.
+142,healthy,136.0,0.0525,0.4298,198.5,28.4,0.0599,0.0143,Spent the afternoon gardening. My tomatoes are finally coming in.
+143,at_risk,75.1,0.2661,1.1307,155.0,48.4,0.025,0.0415,Lost my temper with my kids again. They didn't deserve that. I feel terrible.
+144,healthy,173.8,0.1112,0.3526,191.9,22.2,0.0531,0.0188,Spent the day at a botanical garden. The flowers were in full bloom.
+145,at_risk,112.6,0.2761,1.381,151.0,25.1,0.0439,0.0207,I keep making promises to myself to do better tomorrow. Tomorrow never comes.
+146,at_risk,129.8,0.2109,1.0168,207.4,11.9,0.0519,0.0553,Cancelled my therapy appointment. Irony isn't lost on me.
+147,healthy,139.8,0.1694,0.2863,128.5,30.4,0.0587,0.0152,Finished a painting I've been working on for weeks. Proud of the result.
+148,at_risk,125.7,0.2945,1.2776,84.4,54.5,0.0397,0.0376,Couldn't finish my meal. My stomach is in knots constantly.
+149,at_risk,105.2,0.2733,0.9268,168.1,79.9,0.048,0.0335,Everything feels overwhelming. Even answering a text feels like too much effort.
+150,at_risk,124.2,0.2636,0.9716,179.8,43.9,0.0429,0.0271,My thoughts are racing. I can't hold onto one thought long enough to process it.
+151,healthy,154.0,0.1362,0.2834,204.8,40.4,0.0516,0.0223,Had a wonderful evening of board games and laughter with friends.
+152,at_risk,119.9,0.1654,1.36,148.0,23.5,0.0229,0.0288,Haven't exercised in weeks. I used to love running. Now I can't even think about
+153,at_risk,103.6,0.2211,1.3217,195.6,23.0,0.0479,0.0133,My relationship is suffering because I can't communicate what I'm feeling.
+154,at_risk,102.9,0.3445,0.7944,133.4,32.7,0.0447,0.0275,My appetite is all over the place. Either I can't eat or I can't stop eating.
+155,at_risk,100.3,0.1599,0.9381,167.9,50.1,0.0431,0.0481,I'm so tired of pretending I'm okay. The mask is exhausting.
+156,healthy,135.7,0.0351,0.5364,191.8,21.7,0.0705,0.0188,Finished reading a book that changed my perspective on several things.
+157,at_risk,121.0,0.2335,0.8696,120.0,37.3,0.0168,0.0374,I snapped at a coworker for something minor. I couldn't control it.
+158,healthy,167.1,0.1707,0.4409,153.4,26.7,0.0614,0.0156,Spent the afternoon reading in the park. The weather was perfect.
+159,healthy,139.1,0.1293,0.2831,209.2,20.4,0.0365,0.0139,Went to a cooking class with my partner. We learned to make pasta from scratch.
+160,at_risk,132.5,0.3296,0.7835,236.9,67.1,0.0257,0.0497,Woke up with a headache from clenching my jaw all night.
+161,at_risk,102.5,0.2829,0.8157,129.4,62.7,0.0522,0.0383,Went to the store and had to leave because the fluorescent lights felt unbearabl
+162,at_risk,99.7,0.3166,1.1209,170.7,41.8,0.053,0.043,Everything feels far away. Like I'm watching my life from behind glass.
+163,at_risk,104.9,0.2385,0.9244,208.6,40.2,0.0275,0.0287,My inner critic never shuts up. It's louder than any external voice.
+164,healthy,123.0,0.1416,0.2511,160.9,20.2,0.0582,0.0215,Went to a photography workshop. Learning new techniques was exciting.
+165,at_risk,144.4,0.284,1.1987,137.9,45.5,0.0402,0.0085,I keep checking my phone hoping for a message that will make me feel less alone.
+166,at_risk,138.5,0.2528,1.3231,144.5,75.5,0.0416,0.017,Had a panic attack in the grocery store. Had to leave my cart and leave.
+167,healthy,154.5,0.141,0.3882,214.8,20.2,0.0563,0.0217,Had a productive conversation with my mentor about career goals.
+168,healthy,168.1,0.1388,0.4215,202.3,28.9,0.0493,0.0225,Went to a farmer's market and found the perfect avocados.
+169,at_risk,93.0,0.3369,1.7726,153.5,41.2,0.0383,0.0367,The guilt from yesterday is eating me alive. I keep thinking about what I said.
+170,at_risk,126.6,0.0942,0.4349,120.6,34.7,0.0393,0.03,Spent the entire day in bed. The curtains are closed. I don't want to see daylig
+171,at_risk,136.2,0.2524,1.7133,130.5,67.7,0.0318,0.028,Couldn't drive past a certain point today. Had to turn around and go home.
+172,at_risk,134.7,0.3322,0.8669,112.6,46.5,0.0226,0.0266,Sat in the shower for an hour. The hot water was the only thing that felt good.
+173,healthy,134.1,0.1585,0.472,171.5,26.2,0.0806,0.0234,Went to a morning yoga class. Starting the day this way makes a difference.
+174,at_risk,99.6,0.2698,0.4289,157.5,50.3,0.033,0.0405,I forgot to eat today. Not intentionally. I just didn't think about food.
+175,at_risk,111.6,0.3013,1.5787,119.4,44.1,0.0243,0.0325,I keep saying yes to things and then cancelling last minute. People are noticing
+176,healthy,171.2,0.1232,0.2684,135.1,19.7,0.0887,0.0214,Went for a scenic drive through the countryside. The fall colors were stunning.
+177,healthy,144.5,0.146,0.1333,134.4,25.1,0.0829,0.0187,Spent the evening stargazing from my rooftop. The sky was crystal clear.
+178,at_risk,83.1,0.2282,1.3388,245.5,46.1,0.0421,0.0378,My hands were shaking during the meeting. Nobody noticed but it terrified me.
+179,at_risk,102.7,0.247,1.1498,145.5,62.0,0.0107,0.0353,Spent 3 hours scrolling on my phone. I don't even remember what I was looking at
+180,at_risk,118.0,0.2692,0.7587,135.5,54.3,0.0351,0.0432,Can't stop picking at my skin. The anxiety has to go somewhere.
+181,at_risk,83.1,0.3163,1.0045,238.2,59.9,0.0329,0.0403,The negative thoughts are relentless. I can't shut them off.
+182,healthy,164.1,0.0549,0.4419,160.0,12.1,0.0746,0.0206,Spent the evening playing board games with my family. Lots of laughs.
+183,healthy,165.4,0.0664,0.6277,197.3,24.1,0.0486,0.0146,Finished writing a short story I've been working on for months.
+184,healthy,153.7,0.0814,0.5946,224.7,31.8,0.0655,0.0227,Went to a comedy open mic night. Some of the performers were hilarious.
+185,at_risk,133.5,0.2876,1.0282,106.3,82.0,0.0233,0.0269,Lost interest in the project I was passionate about. Everything feels meaningles
+186,healthy,162.4,0.0863,0.2952,253.8,29.4,0.0455,0.0243,Finished my tax return early. Glad to have that off my mind.
+187,at_risk,117.4,0.3605,1.0708,190.2,27.7,0.0342,0.0292,"The rumination is the worst part. Same thoughts on repeat, all day, every day."
+188,at_risk,81.4,0.1734,0.3575,135.3,49.0,0.0415,0.022,The guilt about being unproductive is making me more unproductive. Vicious cycle
+189,healthy,139.7,0.0646,0.3786,197.7,22.4,0.0496,0.0101,Went to the farmers market and picked up fresh produce for the week.
+190,at_risk,80.5,0.2869,1.0471,100.7,18.6,0.0222,0.043,The perfectionism is destroying me. Nothing I do is ever good enough for myself.
+191,healthy,164.7,0.0918,0.509,164.4,24.9,0.0727,0.0272,Completed a challenging puzzle over the weekend. The satisfaction was worth it.
+192,at_risk,104.1,0.2291,1.3305,223.8,28.0,0.0495,0.0425,Another day where getting out of bed felt like climbing a mountain.
+193,at_risk,113.1,0.2075,1.515,167.5,34.7,0.0412,0.0534,Had a good 10 minutes today where I felt normal. Then it passed.
+194,healthy,147.8,0.1352,0.4506,116.2,23.2,0.059,0.017,Had a relaxing evening with a good book and chamomile tea.
+195,healthy,133.5,0.1642,0.4805,157.0,11.0,0.0684,0.0207,Completed my weekly meal prep. Feeling organized and ready for the week.
+196,healthy,154.8,0.1477,0.6808,226.8,20.3,0.0453,0.015,Went to a farmers market and bought ingredients for a special dinner.
+197,healthy,156.1,0.1023,0.4109,228.8,19.2,0.0767,0.0126,Had a great conversation with my neighbor about community projects.
+198,healthy,153.1,0.1314,0.4815,171.4,25.5,0.0667,0.0198,Had a great day at the spa. My body feels completely rejuvenated.
+199,at_risk,107.6,0.2786,0.1603,90.6,60.5,0.0294,0.0295,Had to pull over on the drive home because I couldn't stop crying.
+200,healthy,163.6,0.0621,0.6787,164.4,7.6,0.0526,0.0158,Tried a new coffee shop downtown. The barista was friendly and the espresso was 

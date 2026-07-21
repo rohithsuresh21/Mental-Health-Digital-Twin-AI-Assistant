@@ -1,0 +1,125 @@
+entry_id,category,speech_rate_wpm,pause_ratio,avg_pause_length_sec,pitch_mean_hz,pitch_variability,loudness_mean,loudness_variability,text_snippet
+1,at_risk,123.7,0.131,1.5839,111.1,33.2,0.0258,0.0185,Woke up at 3am again. Couldn't stop thinking about everything that's wrong.
+2,at_risk,127.0,0.2371,1.2896,224.3,45.8,0.0327,0.0193,Cancelled all my plans today. Just couldn't face being around people.
+3,at_risk,104.5,0.4615,1.0074,192.0,30.7,0.0362,0.0126,Another day where getting out of bed felt like climbing a mountain.
+4,at_risk,85.3,0.3935,1.4121,161.4,25.7,0.0323,0.0469,My chest feels tight. I keep getting these waves of dread for no reason.
+5,at_risk,82.8,0.2639,1.1169,170.3,33.9,0.0191,0.0222,Skipped lunch again. Food has no appeal anymore. Everything tastes like nothing.
+6,at_risk,103.6,0.1488,0.5359,162.4,46.1,0.048,0.0277,Sat in my car for 20 minutes after work before I could go inside.
+7,at_risk,100.9,0.3451,1.4309,192.1,38.1,0.0198,0.0292,Had a panic attack in the grocery store. Had to leave my cart and leave.
+8,at_risk,143.1,0.2726,1.6623,102.2,35.3,0.0299,0.0508,The idea of going to work tomorrow makes me want to cry. I don't know how much l
+9,at_risk,132.7,0.2957,1.2118,142.2,44.7,0.0516,0.0338,Called in sick again. I'm not sick. I just can't do it today.
+10,at_risk,125.2,0.2741,0.5565,132.5,23.0,0.0299,0.0395,My hands were shaking during the meeting. Nobody noticed but it terrified me.
+11,at_risk,113.0,0.2225,1.3063,222.8,84.0,0.0319,0.0197,Spent the entire day in bed. The curtains are closed. I don't want to see daylig
+12,at_risk,89.0,0.35,0.5301,167.7,59.8,0.0339,0.029,Everything feels overwhelming. Even answering a text feels like too much effort.
+13,at_risk,76.1,0.2079,1.3954,141.6,60.8,0.0393,0.0238,Had a fight with my partner over something stupid. I started it. I always start 
+14,at_risk,113.4,0.4514,0.811,184.9,31.4,0.0338,0.0473,The anxiety is constant. It's like a weight on my chest that never lifts.
+15,at_risk,94.9,0.3063,1.2149,171.5,8.2,0.0293,0.0451,Couldn't concentrate on anything at work. Stared at my screen for hours.
+16,at_risk,124.1,0.1863,1.713,123.5,35.2,0.0322,0.0529,My sleep is destroyed. I fall asleep at 4am and wake up exhausted at 6.
+17,at_risk,109.1,0.3859,0.5179,204.1,32.9,0.0168,0.0201,Went to the store and had to leave because the fluorescent lights felt unbearabl
+18,at_risk,106.2,0.3493,1.0852,204.4,45.3,0.0226,0.0415,I keep replaying that conversation from last week. I said something wrong. I kno
+19,at_risk,102.7,0.2116,1.0528,176.2,41.2,0.0322,0.0174,Lost my temper with my kids again. They didn't deserve that. I feel terrible.
+20,at_risk,86.4,0.3024,1.6293,205.3,43.3,0.0258,0.0291,Haven't exercised in weeks. I used to love running. Now I can't even think about
+21,at_risk,112.5,0.1648,1.1839,179.9,50.0,0.0442,0.0329,The intrusive thoughts are getting worse. I don't want to be alone with my mind.
+22,at_risk,103.3,0.0295,1.4773,121.8,24.2,0.0362,0.0273,Spent 3 hours scrolling on my phone. I don't even remember what I was looking at
+23,at_risk,113.1,0.2167,1.4667,144.5,43.6,0.0569,0.0367,Had to leave work early. The pressure was building and I couldn't breathe.
+24,at_risk,116.8,0.3331,1.0655,187.7,39.3,0.0227,0.0323,My memory is terrible lately. I forgot an important deadline. Again.
+25,at_risk,102.8,0.2551,0.8109,201.9,66.9,0.0433,0.0353,I don't enjoy anything anymore. Things I used to love feel pointless.
+26,at_risk,106.2,0.1636,1.1084,219.2,48.5,0.0412,0.0423,Woke up crying and I don't even know why. The sadness just comes in waves.
+27,at_risk,108.7,0.2843,0.9192,153.6,25.1,0.046,0.0365,Avoided another phone call. The thought of talking to someone makes me freeze.
+28,at_risk,103.0,0.2919,1.4895,137.4,37.5,-0.0012,0.0282,My appetite is all over the place. Either I can't eat or I can't stop eating.
+29,at_risk,101.5,0.3388,2.3828,164.0,25.5,0.0526,0.0247,The self-doubt is paralyzing. I feel like a fraud at work and in life.
+30,at_risk,142.4,0.2843,0.7697,133.3,31.8,0.0296,0.0279,Sat in the shower for an hour. The hot water was the only thing that felt good.
+31,at_risk,102.7,0.3042,0.9269,108.2,36.0,0.038,0.0372,Had a nightmare that woke me up and I couldn't go back to sleep.
+32,at_risk,111.0,0.339,1.0933,204.5,24.2,0.0039,0.0351,Everything feels far away. Like I'm watching my life from behind glass.
+33,at_risk,129.7,0.0869,1.4622,197.3,42.2,0.023,0.0385,I snapped at a coworker for something minor. I couldn't control it.
+34,at_risk,138.3,0.0922,0.9626,95.0,39.4,0.0355,0.0388,Cancelled my therapy appointment. Irony isn't lost on me.
+35,at_risk,107.9,0.1877,1.9659,141.5,46.0,0.0523,0.0491,The loneliness is crushing even when I'm surrounded by people.
+36,at_risk,112.6,0.4025,0.6818,158.6,26.7,0.0554,0.0422,Can't stop picking at my skin. The anxiety has to go somewhere.
+37,at_risk,130.3,0.3507,0.992,189.0,30.1,0.0545,0.0342,My thoughts are racing. I can't hold onto one thought long enough to process it.
+38,at_risk,89.8,0.3681,1.5179,106.9,79.9,0.0358,0.038,Had to pull over on the drive home because I couldn't stop crying.
+39,at_risk,113.3,0.3056,0.9993,236.6,38.8,0.0403,0.0355,The guilt from yesterday is eating me alive. I keep thinking about what I said.
+40,at_risk,136.4,0.3747,1.6261,124.6,51.2,0.0386,0.0322,Spent the afternoon on the bathroom floor. I don't know why the floor feels safe
+41,at_risk,155.6,0.2883,0.9559,162.7,35.8,0.0151,0.0298,Woke up with a headache from clenching my jaw all night.
+42,at_risk,111.6,0.3196,1.3489,196.0,54.3,0.0292,0.0224,I keep making small mistakes at work. My boss noticed. Of course they noticed.
+43,at_risk,104.4,0.1722,1.737,219.6,28.3,0.0425,0.0455,The dread before social events is getting worse. I almost cancelled again tonigh
+44,at_risk,164.9,0.3899,1.0193,164.7,43.5,0.0186,0.0381,My body hurts everywhere. Stress is doing something physical to me.
+45,at_risk,111.7,0.3055,1.2728,144.2,59.9,0.0276,0.0472,Couldn't finish my meal. My stomach is in knots constantly.
+46,at_risk,148.2,0.3518,1.2268,194.7,65.8,0.0452,0.028,The negative thoughts are relentless. I can't shut them off.
+47,at_risk,115.2,0.296,0.8718,191.6,39.3,0.0346,0.036,Had a good 10 minutes today where I felt normal. Then it passed.
+48,at_risk,131.6,0.2069,0.8997,149.5,38.5,0.0416,0.0396,I'm so tired of pretending I'm okay. The mask is exhausting.
+49,at_risk,111.7,0.3623,1.3607,245.1,40.7,0.033,0.0286,"The rumination is the worst part. Same thoughts on repeat, all day, every day."
+50,at_risk,115.5,0.2413,0.941,179.1,47.6,0.029,0.0412,Couldn't get out of the house today. The door felt like it weighed a thousand po
+51,at_risk,107.4,0.2975,0.8051,186.5,29.8,0.0377,0.0355,My heart rate spiked for no reason. Sitting still and my heart is pounding.
+52,at_risk,95.9,0.2669,1.3243,186.9,35.5,0.0216,0.029,Lost interest in the project I was passionate about. Everything feels meaningles
+53,at_risk,112.6,0.3617,0.3111,188.2,28.5,0.0372,0.0455,Had to ask my friend to repeat themselves three times. My brain couldn't process
+54,at_risk,111.9,0.322,0.8833,204.9,78.8,0.0601,0.0277,The irritability is off the charts. Everything and everyone is annoying me.
+55,at_risk,126.7,0.2304,2.2845,156.1,29.2,0.0347,0.0207,Spent the night Googling my symptoms. Health anxiety is making everything worse.
+56,at_risk,132.5,0.268,0.9284,231.2,57.5,0.0307,0.0254,I keep comparing myself to everyone around me. I'm falling behind in everything.
+57,at_risk,113.8,0.3539,1.2017,287.4,40.7,0.0288,0.0224,The fear of failure is preventing me from even starting things now.
+58,at_risk,116.6,0.0906,0.5505,220.1,62.9,0.0447,0.0536,My sleep schedule is completely inverted. I'm awake when everyone else is sleepi
+59,at_risk,88.2,0.1907,1.662,195.3,38.3,0.0212,0.0302,Had a moment where I forgot what I was saying mid-sentence. Brain fog is real.
+60,at_risk,142.0,0.2447,0.5783,145.1,67.0,0.0271,0.0288,The perfectionism is destroying me. Nothing I do is ever good enough for myself.
+61,at_risk,131.9,0.2403,1.4213,182.3,32.6,0.044,0.0442,Avoided another gathering. The thought of making small talk makes me nauseous.
+62,at_risk,114.9,0.2054,0.5987,137.0,36.9,0.0274,0.0457,I keep apologizing for things that aren't my fault. It's automatic now.
+63,at_risk,90.6,0.1746,1.1116,84.4,45.5,0.0147,0.0258,The emotional numbness is scary. I can't feel happiness or sadness. Just nothing
+64,at_risk,148.6,0.1961,1.0906,175.9,56.8,0.0124,0.0348,My confidence is completely gone. I second-guess every decision.
+65,at_risk,85.8,0.2984,1.4911,147.3,29.8,0.0482,0.0253,Had a breakdown in the bathroom at work. Pulled myself together after 10 minutes
+66,at_risk,58.2,0.3184,0.9268,156.2,52.8,0.0481,0.0577,The overthinking is constant. Every interaction gets dissected for hours.
+67,at_risk,120.6,0.3023,1.2726,204.2,55.5,0.0634,0.0453,I forgot to eat today. Not intentionally. I just didn't think about food.
+68,at_risk,112.9,0.2036,0.2556,159.1,56.8,0.0427,0.0359,The muscle tension in my neck and shoulders is unbearable.
+69,at_risk,145.6,0.2999,1.3464,168.9,25.7,0.0267,0.0376,Had a good cry in the car. Sometimes the release is the only thing that helps.
+70,at_risk,87.5,0.2304,0.6755,103.8,50.1,0.0432,0.0299,My patience is gone. I snap at the smallest things and then hate myself for it.
+71,at_risk,113.5,0.2244,0.8714,149.9,52.3,0.0429,0.0484,The social battery is completely drained after a 5-minute phone call.
+72,at_risk,102.5,0.3327,1.5194,212.7,66.0,0.0526,0.025,Can't stop replaying embarrassing moments from years ago. Why now?
+73,at_risk,115.3,0.3139,1.6225,193.7,38.1,0.0409,0.0311,The fatigue is bone-deep. It's not just being tired. It's exhaustion.
+74,at_risk,81.5,0.3248,1.0688,225.5,42.2,0.0369,0.0366,I keep making promises to myself to do better tomorrow. Tomorrow never comes.
+75,at_risk,141.1,0.2226,1.9682,176.5,63.5,0.0322,0.0206,The anxiety is louder than my own thoughts. I can't hear myself think.
+76,at_risk,108.7,0.2319,1.9164,137.1,-3.0,0.0243,0.0195,Had a moment of derealization today. Everything felt unreal for about an hour.
+77,at_risk,103.9,0.1008,0.9967,205.4,66.9,0.0395,0.0367,My self-esteem is at rock bottom. I don't recognize the person I've become.
+78,at_risk,113.0,0.2383,0.91,179.2,63.2,0.04,0.0465,The isolation is comfortable but I know it's not healthy. I just can't stop.
+79,at_risk,116.7,0.1461,1.1559,144.8,28.3,0.0079,0.0449,Woke up with a sense of dread. No specific reason. Just dread.
+80,at_risk,107.0,0.1714,1.1326,169.8,52.7,0.0198,0.0445,I keep starting and stopping medications. Nothing seems to work long enough.
+81,at_risk,92.2,0.3147,1.4668,196.8,26.9,0.0402,0.0395,The brain fog is affecting my work. I'm making mistakes I never would have made 
+82,at_risk,150.9,0.2756,0.686,215.8,65.7,0.0505,0.0253,Had to leave a party early. The noise and crowds were overwhelming.
+83,at_risk,77.4,0.358,0.9181,187.0,63.3,0.0339,0.0231,My body is keeping score. Every stress I ignore shows up as physical pain.
+84,at_risk,150.0,0.2146,0.8905,182.2,35.8,0.0411,0.0449,The guilt about being unproductive is making me more unproductive. Vicious cycle
+85,at_risk,69.6,0.2065,1.3369,239.9,17.1,0.0363,0.0307,I keep looking at flights to somewhere far away. Not to travel. Just to escape.
+86,at_risk,135.1,0.1488,1.1243,198.7,36.6,0.0297,0.0486,The morning anxiety is the worst. Waking up and immediately feeling overwhelmed.
+87,at_risk,103.3,0.2488,0.9339,177.2,63.0,0.0255,0.0517,I can't remember the last time I felt genuinely happy. Not just pretending.
+88,at_risk,116.0,0.0677,1.1464,116.5,58.1,0.0265,0.038,The self-sabotage is real. Things start going well and I find a way to ruin it.
+89,at_risk,88.8,0.0809,1.2608,113.0,56.6,0.036,0.0301,Had a panic attack during a Zoom call. Had to blame it on internet issues.
+90,at_risk,104.5,0.1607,1.249,217.4,49.6,0.0154,0.0162,My inner critic never shuts up. It's louder than any external voice.
+91,at_risk,125.8,0.3,0.9972,187.3,27.3,0.0203,0.0301,The motivation to do anything is completely gone. I'm just going through the mot
+92,at_risk,103.0,0.2493,1.4131,141.1,33.6,0.0313,0.026,I keep checking my phone hoping for a message that will make me feel less alone.
+93,at_risk,91.8,0.264,1.2344,205.7,47.8,0.0228,0.0402,The fear of abandonment is pushing people away. I'm creating the very thing I fe
+94,at_risk,104.3,0.299,1.5637,143.9,26.6,0.024,0.0121,Couldn't drive past a certain point today. Had to turn around and go home.
+95,at_risk,127.9,0.176,0.8871,152.0,51.5,0.032,0.0363,The perfectionism is making me miss deadlines. I'd rather submit nothing than so
+96,at_risk,112.7,0.209,1.6,125.8,60.9,0.0035,0.0312,I cried during my commute. In traffic. With other drivers watching.
+97,at_risk,118.0,0.3402,1.093,182.4,37.1,0.0178,0.0326,The intrusive thoughts about harm are getting more frequent. They scare me.
+98,at_risk,122.8,0.3635,1.0502,138.7,46.9,0.0223,0.036,My relationship is suffering because I can't communicate what I'm feeling.
+99,at_risk,111.7,0.2995,0.8119,166.7,48.7,0.0331,0.0345,The depression is making me forget things. Important things. Work things.
+100,at_risk,112.7,0.3138,1.2172,120.8,39.8,0.0336,0.0329,I keep saying yes to things and then cancelling last minute. People are noticing
+101,at_risk,130.2,0.385,1.0099,227.4,61.0,0.0185,0.026,The morning routine that used to take 30 minutes now takes 2 hours.
+102,at_risk,94.5,0.4146,1.4082,96.0,40.7,0.0422,0.0336,I'm sleeping 12+ hours a day and still exhausted. The fatigue is relentless.
+103,at_risk,110.0,0.2726,0.9598,78.9,55.1,0.024,0.033,The derealization episodes are getting longer. I feel disconnected from my own b
+104,at_risk,97.9,0.2624,0.931,161.1,43.2,0.0228,0.0341,I can't concentrate long enough to read a single page of a book.
+105,at_risk,111.2,0.2107,0.6266,201.4,37.0,0.0426,0.0343,"The physical symptoms are terrifying. Chest pain, dizziness, numbness."
+106,at_risk,101.8,0.2012,1.1156,191.7,22.2,0.0397,0.029,I keep imagining worst-case scenarios for everything. My brain won't stop catast
+107,at_risk,61.6,0.4075,0.3908,156.6,56.5,0.0081,0.0339,The emotional regulation is completely gone. I go from zero to sobbing in second
+108,at_risk,112.4,0.2252,0.5692,157.8,41.8,0.0438,0.0418,Had a flashback during a work meeting. Had to pretend I was fine.
+109,at_risk,91.3,0.0725,1.0546,142.3,38.5,0.041,0.0409,The avoidance is getting worse. I'm running out of things I can avoid.
+110,at_risk,146.7,0.232,1.2648,152.5,45.1,0.0366,0.0216,I'm losing weight because I forget to eat. Or I can't eat because of anxiety.
+111,at_risk,111.4,0.1364,1.4517,126.8,87.3,0.024,0.0294,The dissociation is making me feel like I'm watching my life from outside my bod
+112,at_risk,109.2,0.2408,1.1574,202.2,80.6,0.0543,0.038,I keep picking fights with people I love. It's like I want them to leave.
+113,at_risk,121.4,0.1978,1.3478,137.6,39.1,0.044,0.0229,The anxiety dreams are so vivid I wake up exhausted from sleeping.
+114,at_risk,86.4,0.2286,0.6891,174.6,47.6,0.0208,0.0352,I can't make decisions anymore. Even small ones feel paralyzing.
+115,at_risk,74.9,0.2416,1.0269,133.8,75.8,0.0336,0.043,The negative self-talk is constant. I'm my own worst enemy.
+116,at_risk,124.9,0.3321,0.7548,211.3,64.7,0.0396,0.0146,I had to leave the cinema because the darkness felt suffocating.
+117,at_risk,120.9,0.3529,0.9481,157.9,29.2,0.0292,0.0233,The emotional flatness is scaring me. I should feel something but I don't.
+118,at_risk,101.7,0.179,1.1969,213.4,49.0,0.0252,0.0297,My hands are trembling right now as I write this. The anxiety is physical.
+119,at_risk,94.8,0.1579,1.0694,143.7,54.9,0.0433,0.0398,I keep checking the locks multiple times. I know I locked them. But I check anyw
+120,at_risk,85.3,0.2907,0.5422,125.1,65.3,0.0315,0.0368,The fatigue isn't physical. It's emotional exhaustion manifesting in my body.
+121,at_risk,110.5,0.3385,1.0359,144.7,50.0,0.0307,0.041,I feel like I'm drowning in responsibilities and nobody can see it.
+122,at_risk,131.8,0.3939,1.2363,169.0,43.5,0.0484,0.0364,The perfectionism is keeping me awake at night. Replaying everything I did wrong
+123,at_risk,127.3,0.2897,0.781,185.6,22.1,0.0363,0.0382,I had a rare moment of clarity today. It lasted about 5 minutes before the fog r
+124,at_risk,132.5,0.3247,0.5502,174.8,82.7,0.0401,0.0486,The hypervigilance is exhausting. I'm constantly scanning for threats that aren'

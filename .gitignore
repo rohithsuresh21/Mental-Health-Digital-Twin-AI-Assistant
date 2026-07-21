@@ -55,6 +55,9 @@ uploads/
 .DS_Store
 Thumbs.db
 
+# Local tunnel (binary too large for git)
+cloudflared/
+
 # Env
 .env
 .env.*
