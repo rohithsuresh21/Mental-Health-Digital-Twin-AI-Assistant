@@ -1,5 +1,8 @@
 import numpy as np
-import librosa
+try:
+    import librosa
+except ImportError:
+    librosa = None
 import whisper
 from transformers import pipeline as hf_pipeline
 import soundfile as sf
@@ -81,6 +84,8 @@ def transcribe_audio(audio_path:str)-> dict[str,Any]:
     return result
 
 def extract_acoustic_measurements(audio_path: str,transcript: dict) -> np.ndarray:
+    if librosa is None:
+        return np.zeros(7, dtype=np.float32)
     duration = sf.info(audio_path).duration
 
     if duration <= 0:

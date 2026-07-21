@@ -150,7 +150,12 @@ def extract_latent_and_attention(
 
 
 def project_umap(latents: torch.Tensor, n_components: int = 2, random_state: int = 42):
-    from umap import UMAP
+    try:
+        from umap import UMAP
+    except ImportError:
+        print("[UMAP] Not available — returning zeros")
+        data = latents.numpy()
+        return np.zeros((data.shape[0], n_components), dtype=np.float32)
     data = latents.numpy()
     if data.shape[0] <= n_components + 1:
         return np.zeros((data.shape[0], n_components), dtype=np.float32)
@@ -224,11 +229,16 @@ def run_stage3(
 
     latents, attentions = extract_latent_and_attention(tft, full_dataset, batch_size)
 
-    mean_attention = attentions.mean(dim=0).numpy()
+    mean_attention = attentions.mean(dim=0)
+    # Handle both 1D and multi-dimensional attention
+    if mean_attention.dim() > 1:
+        mean_attention = mean_attention.mean(dim=1)
+    mean_attention_np = mean_attention.numpy()
     print(f"[TFT] Mean attention weight per patch position (1=most recent):")
-    for i, w in enumerate(mean_attention):
-        bar = "█" * int(w * 40)
-        print(f"  Patch {i+1:2d}: {w:.4f}  {bar}")
+    for i, w in enumerate(mean_attention_np):
+        w_scalar = float(w.item() if hasattr(w, 'item') else w)
+        bar = "█" * int(w_scalar * 40)
+        print(f"  Patch {i+1:2d}: {w_scalar:.4f}  {bar}")
 
     umap_coords = project_umap(latents)
 
