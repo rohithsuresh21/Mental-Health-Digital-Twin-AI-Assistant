@@ -331,8 +331,8 @@ export default function App() {
 
       update(time: number, mouseX: number, mouseY: number, isDragged: boolean) {
         // Dynamic target floating rest baseline position
-        const oscX = isMobile ? 8 : 12;
-        const oscY = isMobile ? 10 : 16;
+        const oscX = isMobile ? 4 : 6;
+        const oscY = isMobile ? 5 : 8;
         const targetX = this.baseX + Math.sin(time * 0.4 + this.id * 1.5) * oscX;
         const targetY = this.baseY + Math.cos(time * 0.35 + this.id * 2.2) * oscY;
 
@@ -364,7 +364,7 @@ export default function App() {
 
         // Decaying activation back to stable passive level
         if (this.activation > 0.02) {
-          this.activation -= 0.008;
+          this.activation -= 0.015;
         } else {
           this.activation = 0.01 + Math.sin(time * 0.6 + this.id) * 0.015; // idle breathing twinkle
         }
@@ -413,7 +413,7 @@ export default function App() {
         this.fromNode = fromNode;
         this.toNode = toNode;
         this.progress = 0;
-        this.speed = speed;
+        this.speed = 0.008 + Math.random() * 0.006;
         this.color = '#bae6fd'; // soft blue/sky color
       }
 
@@ -473,13 +473,13 @@ export default function App() {
       if (nextLayerNodes.length === 0) return;
 
       // Select 1 or 2 random target parameters in the next layer to fire to
-      const targetCount = 1 + Math.floor(Math.random() * 2);
+      const targetCount = 1;
       const shuffled = [...nextLayerNodes].sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, Math.min(targetCount, shuffled.length));
 
       selected.forEach(target => {
         // Enforce a safe cap on parallel pulse entities to prevent rendering bottlenecks
-        const maxPulses = isMobile ? 20 : 35;
+        const maxPulses = isMobile ? 12 : 20;
         if (pulses.length < maxPulses) {
           pulses.push(new ActivationPulse(fromNeuron, target));
         }
