@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://curious-inexpensive-summit-guests.trycloudflare.com/$1"
+      "destination": "https://biodiversity-hotels-found-distances.trycloudflare.com/$1"
     },
     {
       "source": "/(.*)",
