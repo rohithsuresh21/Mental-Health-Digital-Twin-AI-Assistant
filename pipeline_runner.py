@@ -8,25 +8,29 @@ from collections import Counter
 
 W = 64
 
+def _p(*a, **kw):
+    kw.setdefault("flush", True)
+    print(*a, **kw)
+
 def _hdr(title):
-    print(f"\n{'='*W}")
-    print(f"  {title}")
-    print(f"{'='*W}")
+    _p(f"\n{'='*W}")
+    _p(f"  {title}")
+    _p(f"{'='*W}")
 
 def _sec(title):
-    print(f"\n  [{title}]")
+    _p(f"\n  [{title}]")
 
 def _ok(msg):
-    print(f"    ✓ {msg}")
+    _p(f"    \u2713 {msg}")
 
 def _info(msg):
-    print(f"      {msg}")
+    _p(f"      {msg}")
 
 def _warn(msg):
-    print(f"    ⚠ {msg}")
+    _p(f"    ! {msg}")
 
 def _fail(msg):
-    print(f"    ✗ {msg}")
+    _p(f"    X {msg}")
 
 def _elapsed(t):
     return f"{time.time()-t:.1f}s"
@@ -123,8 +127,8 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
 
     t_start = time.time()
     _hdr(f"MENTAL HEALTH DIGITAL TWIN  —  Pipeline Run")
-    print(f"  User:       {user_id}")
-    print(f"  Timestamp:  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    _p(f"  User:       {user_id}")
+    _p(f"  Timestamp:  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     path = Path(file_path)
     if not path.exists():
@@ -136,8 +140,8 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         raise ValueError(f"Need at least 3 entries, got {len(records)}")
 
     suffix = Path(file_path).suffix.lower()
-    print(f"  Source:     {Path(file_path).name} ({suffix})")
-    print(f"  Entries:    {len(records)} journal entries loaded")
+    _p(f"  Source:     {Path(file_path).name} ({suffix})")
+    _p(f"  Entries:    {len(records)} journal entries loaded")
 
     t_load = time.time()
     pipeline = UnifiedJournalPipeline()
@@ -145,8 +149,8 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     # ── Stage 1 + 2: Feature extraction + Normalization ──
     _sec("Stage 1 + 2 — Feature Extraction & Normalization")
     t_s12 = time.time()
-    print(f"  Extracting text, sentiment, emotion, and audio features...")
-    print(f"  Normalizing against user baseline...")
+    _p(f"  Extracting text, sentiment, emotion, and audio features...")
+    _p(f"  Normalizing against user baseline...")
 
     prev_ts = None
     sentiment_series, sleep_series, activity_series, music_series = [], [], [], []
@@ -250,7 +254,7 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         pipeline.anomaly_detector.save(detector_path)
         _info("Detectors trained and saved")
 
-    print(f"  Running 4-detector consensus on {n_total} entries...")
+    _p(f"  Running 4-detector consensus on {n_total} entries...")
     anomaly_results = []
     for vec in all_vecs:
         anomaly_results.append(pipeline.detect_anomalies(vec))
@@ -355,15 +359,15 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
 
     # ── Final Summary ──
     t_total = time.time() - t_start
-    print(f"\n{'─'*W}")
-    print(f"  Pipeline complete in {_elapsed(t_start)}")
-    print(f"  Entries analyzed:  {len(records)}")
-    print(f"  Risk level:        {prediction['risk_level']} ({prediction['probability']*100:.1f}%)")
-    print(f"  Anomalies:         {n_anomalies}/{n_total} entries flagged")
-    print(f"  CUSUM alerts:      {n_cusum_alerts}/{n_total}")
+    _p(f"\n{'-'*W}")
+    _p(f"  Pipeline complete in {_elapsed(t_start)}")
+    _p(f"  Entries analyzed:  {len(records)}")
+    _p(f"  Risk level:        {prediction['risk_level']} ({prediction['probability']*100:.1f}%)")
+    _p(f"  Anomalies:         {n_anomalies}/{n_total} entries flagged")
+    _p(f"  CUSUM alerts:      {n_cusum_alerts}/{n_total}")
     if tft:
-        print(f"  TFT latent shape:  {list(tft['latents'].shape)}")
-    print(f"{'─'*W}\n")
+        _p(f"  TFT latent shape:  {list(tft['latents'].shape)}")
+    _p(f"{'-'*W}\n")
 
     return {
         "user_id":             user_id,

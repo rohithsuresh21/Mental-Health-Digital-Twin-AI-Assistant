@@ -8,6 +8,9 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(line_buffering=True)
+
 from Stage_1.Extract_features import extract_features
 from stage_2.baseline import UserBaseline
 from stage_2.temporal_bin import TemporalBinning
