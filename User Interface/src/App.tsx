@@ -761,7 +761,8 @@ export default function App() {
         const errData = await res.json();
         throw new Error(errData.error || `Server responded ${res.status}`);
       }
-      result = await res.json();
+      const rawResult = await res.json();
+      result = mapFlaskRunResponse(rawResult, inputs);
 
       setAnalysisProgress(90);
       setAnalysisStage('Mapping pipeline output to dashboard...');
