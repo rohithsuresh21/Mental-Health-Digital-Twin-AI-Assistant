@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://biodiversity-hotels-found-distances.trycloudflare.com/$1"
+      "destination": "https://gray-prescribed-timing-enzyme.trycloudflare.com/$1"
     },
     {
       "source": "/(.*)",
