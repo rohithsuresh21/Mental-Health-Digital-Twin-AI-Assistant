@@ -32,8 +32,8 @@ export default function NeuralBackground() {
       }
 
       update(time: number) {
-        const oscX = isMobile ? 8 : 12;
-        const oscY = isMobile ? 10 : 16;
+        const oscX = isMobile ? 4 : 6;
+        const oscY = isMobile ? 5 : 8;
         const targetX = this.baseX + Math.sin(time * 0.4 + this.id * 1.5) * oscX;
         const targetY = this.baseY + Math.cos(time * 0.35 + this.id * 2.2) * oscY;
         const springK = 0.08;
@@ -45,7 +45,7 @@ export default function NeuralBackground() {
         this.x += this.vx;
         this.y += this.vy;
         if (this.activation > 0.02) {
-          this.activation -= 0.008;
+          this.activation -= 0.015;
         } else {
           this.activation = 0.01 + Math.sin(time * 0.6 + this.id) * 0.015;
         }
@@ -77,7 +77,7 @@ export default function NeuralBackground() {
       progress: number; speed: number;
       constructor(from: ArtificialNeuron, to: ArtificialNeuron) {
         this.fromNode = from; this.toNode = to;
-        this.progress = 0; this.speed = 0.015 + Math.random() * 0.012;
+        this.progress = 0;         this.speed = 0.008 + Math.random() * 0.008;
       }
       update() { this.progress += this.speed; }
       getPosition() {
@@ -120,13 +120,13 @@ export default function NeuralBackground() {
     };
     window.addEventListener('resize', handleResize);
 
-    const maxPulses = isMobile ? 20 : 35;
+    const maxPulses = isMobile ? 12 : 20;
 
     const triggerForwardCascade = (fromNeuron: ArtificialNeuron) => {
       if (fromNeuron.layer >= layerCount - 1) return;
       const nextLayerNodes = neurons.filter(n => n.layer === fromNeuron.layer + 1);
       if (nextLayerNodes.length === 0) return;
-      const targetCount = 1 + Math.floor(Math.random() * 2);
+      const targetCount = 1;
       const shuffled = [...nextLayerNodes].sort(() => 0.5 - Math.random());
       shuffled.slice(0, Math.min(targetCount, shuffled.length)).forEach(target => {
         if (pulses.length < maxPulses) pulses.push(new ActivationPulse(fromNeuron, target));
@@ -162,7 +162,7 @@ export default function NeuralBackground() {
 
       const time = Date.now() * 0.001;
 
-      if (Date.now() - lastInferenceTime > 1400) {
+      if (Date.now() - lastInferenceTime > 2500) {
         const inputNodes = neurons.filter(n => n.layer === 0);
         if (inputNodes.length > 0) {
           const ri = inputNodes[Math.floor(Math.random() * inputNodes.length)];
