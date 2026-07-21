@@ -220,7 +220,7 @@ def run_stage3(
 
             tft = train_tft(
                 tft, train_dataset, val_dataset,
-                max_epochs=1,
+                max_epochs=max(2, max_epochs // 3),
                 batch_size=batch_size,
                 checkpoint_path=checkpoint_path,
                 learning_rate=1e-4,
