@@ -407,4 +407,19 @@
   fill: #f1f5f9 !important;
 }
 
+/* Dark theme select dropdown styling */
+select {
+  color-scheme: dark;
+}
+select option {
+  background-color: #0D1017;
+  color: #d1d5db;
+  padding: 8px 12px;
+}
+select option:hover,
+select option:checked {
+  background-color: #1a2332;
+  color: #e2e8f0;
+}
+
 

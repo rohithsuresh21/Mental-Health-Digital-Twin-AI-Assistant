@@ -352,24 +352,30 @@ export default function App() {
     }
   }, [diagnosticData]);
 
-  // Initialize chart viewport when data loads and viewport is still default
+  // Initialize chart viewport when data loads — zoomed in to last ~40% by default
   useEffect(() => {
     if (chartViewport[0] === -1) {
       const dates = diagnosticData.metrics?.dates || [];
       if (dates.length > 0) {
-        setChartViewport([0, dates.length - 1]);
+        const visibleCount = Math.max(8, Math.round(dates.length * 0.4));
+        const end = dates.length - 1;
+        const start = Math.max(0, end - visibleCount + 1);
+        setChartViewport([start, end]);
       }
     }
   }, [chartViewport, diagnosticData.metrics?.dates]);
 
-  // Initialize CUSUM viewport when data loads
+  // Initialize CUSUM viewport when data loads — zoomed in to last ~40%
   useEffect(() => {
     if (cusumViewport[0] === -1) {
       const upper = diagnosticData.pipeline?.pipelineCusumUpper || [];
       const lower = diagnosticData.pipeline?.pipelineCusumLower || [];
       const len = Math.max(upper.length, lower.length);
       if (len > 0) {
-        setCusumViewport([0, len - 1]);
+        const visibleCount = Math.max(8, Math.round(len * 0.4));
+        const end = len - 1;
+        const start = Math.max(0, end - visibleCount + 1);
+        setCusumViewport([start, end]);
       }
     }
   }, [cusumViewport, diagnosticData.pipeline?.pipelineCusumUpper, diagnosticData.pipeline?.pipelineCusumLower]);
@@ -377,7 +383,7 @@ export default function App() {
   // Canvas constellation animation background
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Canvas planetary atmosphere animation — clean, elegant design
+  // Canvas planetary atmosphere animation — always rendered, soft and integrated
   const atmosphereCanvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     const canvas = atmosphereCanvasRef.current;
@@ -386,127 +392,122 @@ export default function App() {
     if (!ctx) return;
 
     let animFrameId: number;
-    const W = 1400;
-    const H = 420;
+    const W = 1600;
+    const H = 500;
     canvas.width = W;
     canvas.height = H;
 
-    // Floating particles in the atmosphere
-    const particles = Array.from({ length: 20 }, () => ({
+    const particles = Array.from({ length: 16 }, () => ({
       x: Math.random() * W,
       y: 0,
-      size: 0.4 + Math.random() * 1.2,
-      alpha: 0.08 + Math.random() * 0.2,
+      size: 0.3 + Math.random() * 0.9,
+      alpha: 0.05 + Math.random() * 0.15,
       phase: Math.random() * Math.PI * 2,
-      drift: (Math.random() - 0.5) * 0.2,
+      drift: (Math.random() - 0.5) * 0.15,
     }));
 
-    // Smooth parabolic horizon: convex at center, tapers at edges
+    // Very wide, gentle curve — much softer than before
+    const baseY = H * 0.55;
+    const curveAmp = H * 0.25;
     const curveY = (x: number) => {
       const n = (x - W / 2) / (W / 2);
       return baseY + n * n * curveAmp;
     };
 
-    const baseY = H * 0.32;
-    const curveAmp = H * 0.58;
-
     const draw = (t: number) => {
       const time = t * 0.001;
       ctx.clearRect(0, 0, W, H);
 
-      // ─── PLANET BODY (solid dark fill below curve) ───
+      // ─── WIDE DIFFUSE GLOW ABOVE THE CURVE ───
+      // Large, soft radial gradient — the main atmospheric presence
+      const pulse = 0.05 + Math.sin(time * 0.35) * 0.015;
+      const glow = ctx.createRadialGradient(W / 2, baseY, 0, W / 2, baseY - H * 0.15, W * 0.55);
+      glow.addColorStop(0, `rgba(40, 140, 220, ${pulse * 2})`);
+      glow.addColorStop(0.25, `rgba(30, 110, 200, ${pulse * 1.2})`);
+      glow.addColorStop(0.5, `rgba(20, 70, 160, ${pulse * 0.5})`);
+      glow.addColorStop(1, 'rgba(10, 30, 80, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
+
+      // Second wider, subtler glow layer for depth
+      const glow2 = ctx.createRadialGradient(W / 2, baseY + 20, 0, W / 2, baseY - H * 0.1, W * 0.7);
+      glow2.addColorStop(0, `rgba(25, 100, 180, ${pulse * 0.6})`);
+      glow2.addColorStop(0.5, `rgba(15, 60, 130, ${pulse * 0.2})`);
+      glow2.addColorStop(1, 'rgba(8, 25, 60, 0)');
+      ctx.fillStyle = glow2;
+      ctx.fillRect(0, 0, W, H);
+
+      // ─── PLANET BODY (very soft dark fill, gradual fade) ───
       ctx.beginPath();
       ctx.moveTo(0, curveY(0));
-      for (let x = 1; x <= W; x += 2) {
+      for (let x = 2; x <= W; x += 3) {
         ctx.lineTo(x, curveY(x));
       }
       ctx.lineTo(W, H);
       ctx.lineTo(0, H);
       ctx.closePath();
 
-      const bodyGrad = ctx.createLinearGradient(0, baseY - 10, 0, H);
-      bodyGrad.addColorStop(0, 'rgba(5, 8, 18, 0.7)');
-      bodyGrad.addColorStop(0.2, 'rgba(3, 5, 12, 0.92)');
-      bodyGrad.addColorStop(0.5, 'rgba(2, 3, 8, 0.98)');
+      const bodyGrad = ctx.createLinearGradient(0, baseY - 20, 0, H);
+      bodyGrad.addColorStop(0, 'rgba(4, 7, 16, 0.5)');
+      bodyGrad.addColorStop(0.15, 'rgba(3, 5, 12, 0.75)');
+      bodyGrad.addColorStop(0.4, 'rgba(2, 3, 8, 0.92)');
       bodyGrad.addColorStop(1, '#010103');
       ctx.fillStyle = bodyGrad;
       ctx.fill();
 
-      // ─── SOFT ATMOSPHERIC GLOW (gradient above curve) ───
-      // Single radial glow centered at the top of the curve
-      const glowGrad = ctx.createRadialGradient(W / 2, baseY - 20, 0, W / 2, baseY - 20, W * 0.5);
-      const glowPulse = 0.07 + Math.sin(time * 0.4) * 0.02;
-      glowGrad.addColorStop(0, `rgba(56, 189, 248, ${glowPulse * 1.5})`);
-      glowGrad.addColorStop(0.3, `rgba(56, 189, 248, ${glowPulse})`);
-      glowGrad.addColorStop(0.7, `rgba(30, 100, 200, ${glowPulse * 0.3})`);
-      glowGrad.addColorStop(1, 'rgba(15, 50, 120, 0)');
-      ctx.fillStyle = glowGrad;
-      ctx.fillRect(0, 0, W, H);
-
-      // Thin luminous edge along the curve (the main "rim light")
+      // ─── SINGLE SOFT RIM LIGHT ───
+      // A very thin, gentle luminous edge — just enough to define the curvature
       ctx.beginPath();
-      for (let x = 0; x <= W; x += 2) {
+      for (let x = 0; x <= W; x += 3) {
         const y = curveY(x);
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
-      const rimAlpha = 0.25 + Math.sin(time * 0.5) * 0.08;
-      ctx.strokeStyle = `rgba(100, 200, 255, ${rimAlpha})`;
-      ctx.lineWidth = 1.2;
-      ctx.shadowColor = 'rgba(56, 189, 248, 0.5)';
-      ctx.shadowBlur = 12;
+      const rimPulse = 0.12 + Math.sin(time * 0.4) * 0.04;
+      ctx.strokeStyle = `rgba(80, 180, 255, ${rimPulse})`;
+      ctx.lineWidth = 0.8;
+      ctx.shadowColor = 'rgba(56, 160, 240, 0.35)';
+      ctx.shadowBlur = 16;
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // ─── TWO GENTLE ENERGY WAVES flowing along the curve ───
-      for (let w = 0; w < 2; w++) {
-        const waveOffset = -8 - w * 14;
-        const freq = 0.004 + w * 0.001;
-        const speed = time * (0.15 + w * 0.05);
-        const amp = 3 + w * 2 + Math.sin(time * 0.3 + w) * 1;
-        const alpha = (0.12 - w * 0.04) * (0.8 + 0.2 * Math.sin(time * 0.4 + w * 2));
+      // ─── ONE GENTLE ENERGY WAVE ───
+      const waveOff = -12;
+      const wFreq = 0.003;
+      const wSpeed = time * 0.12;
+      const wAmp = 2.5 + Math.sin(time * 0.25) * 1;
+      const wAlpha = 0.07 * (0.85 + 0.15 * Math.sin(time * 0.35));
 
-        ctx.beginPath();
-        for (let x = 0; x <= W; x += 3) {
-          const base = curveY(x) + waveOffset;
-          const wave = Math.sin(x * freq + speed) * amp;
-          const y = base + wave;
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = `rgba(100, 200, 255, ${alpha})`;
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 4) {
+        const y = curveY(x) + waveOff + Math.sin(x * wFreq + wSpeed) * wAmp;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
       }
+      ctx.strokeStyle = `rgba(80, 180, 255, ${wAlpha})`;
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
 
-      // ─── FLOATING PARTICLES (sparse, subtle) ───
+      // ─── FLOATING PARTICLES ───
       particles.forEach(p => {
         const cy = curveY(p.x);
-        const minBound = Math.max(5, cy - 100);
-        const maxBound = cy - 8;
+        const minY = Math.max(5, cy - 70);
+        const maxY = cy - 5;
 
-        p.x += p.drift + Math.sin(time * 0.2 + p.phase) * 0.1;
-        p.y += Math.cos(time * 0.15 + p.phase) * 0.04;
-
+        p.x += p.drift + Math.sin(time * 0.15 + p.phase) * 0.06;
+        p.y += Math.cos(time * 0.1 + p.phase) * 0.02;
         if (p.x < -5) p.x = W + 5;
         if (p.x > W + 5) p.x = -5;
-        if (p.y < minBound || p.y > maxBound || p.y === 0) {
-          p.y = minBound + Math.random() * (maxBound - minBound);
+        if (p.y < minY || p.y > maxY || p.y === 0) {
+          p.y = minY + Math.random() * (maxY - minY);
         }
 
-        const breathe = 0.5 + 0.5 * Math.sin(time * 0.6 + p.phase);
+        const b = 0.5 + 0.5 * Math.sin(time * 0.5 + p.phase);
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(160, 210, 255, ${p.alpha * breathe})`;
+        ctx.fillStyle = `rgba(140, 200, 255, ${p.alpha * b})`;
         ctx.fill();
       });
-
-      // ─── SUBTLE STATUS TEXT on planet body ───
-      ctx.font = '7px monospace';
-      ctx.fillStyle = `rgba(52, 211, 153, ${0.2 + Math.sin(time * 0.5) * 0.06})`;
-      ctx.fillText('System Online', W * 0.06, baseY + 55);
-      ctx.fillStyle = `rgba(56, 189, 248, ${0.15 + Math.sin(time * 0.7) * 0.05})`;
-      ctx.fillText('Model v3.5 · Ready', W * 0.06, baseY + 67);
 
       animFrameId = requestAnimationFrame(draw);
     };
@@ -1862,6 +1863,15 @@ export default function App() {
 
         {/* SCREEN SCROLL CONTAINER */}
         <div className={`flex-1 overflow-y-auto relative ${activeTab === 'dashboard' ? 'p-0' : 'px-10 py-8'}`}>
+
+          {/* PERMANENT ATMOSPHERIC BACKGROUND — always rendered, visible on all tabs */}
+          <div className={`absolute bottom-0 left-0 right-0 pointer-events-none z-0 overflow-hidden transition-opacity duration-700 ${activeTab === 'dashboard' ? 'opacity-100 h-[500px]' : 'opacity-30 h-[350px]'}`}>
+            <canvas 
+              ref={atmosphereCanvasRef} 
+              className="w-full h-full"
+              style={{ imageRendering: 'auto' }}
+            />
+          </div>
           
           {/* TAB 0: PORTAL GATEWAY DASHBOARD */}
           {activeTab === 'dashboard' && (
@@ -1893,15 +1903,6 @@ export default function App() {
                 </button>
               </div>
 
-              {/* MAJESTIC CUSTOM COGNITIVE BIOMETRIC HORIZON */}
-              {/* Animated planetary atmosphere canvas */}
-              <div className="absolute bottom-0 left-0 right-0 h-[420px] pointer-events-none z-0 overflow-hidden">
-                <canvas 
-                  ref={atmosphereCanvasRef} 
-                  className="w-full h-full"
-                  style={{ imageRendering: 'auto' }}
-                />
-              </div>
             </div>
           )}
 
@@ -1974,36 +1975,48 @@ export default function App() {
                       </div>
                       <div>
                         <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Gender</label>
-                        <select
-                          value={inputs.gender}
-                          onChange={(e) => setInputs({...inputs, gender: e.target.value})}
-                          className="w-full bg-[#0D1017]/40 border border-[#232B3B]/60 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none cursor-pointer"
-                          required
-                        >
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                          <option value="Other">Other</option>
-                        </select>
+                        <div className="relative">
+                          <select
+                            value={inputs.gender}
+                            onChange={(e) => setInputs({...inputs, gender: e.target.value})}
+                            className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-4 py-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
+                            style={{ colorScheme: 'dark' }}
+                            required
+                          >
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Blood Type</label>
-                        <select
-                          value={inputs.bloodType}
-                          onChange={(e) => setInputs({...inputs, bloodType: e.target.value})}
-                          className="w-full bg-[#0D1017]/40 border border-[#232B3B]/60 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none cursor-pointer"
-                        >
-                          <option value="A+">A+</option>
-                          <option value="A-">A-</option>
-                          <option value="B+">B+</option>
-                          <option value="B-">B-</option>
-                          <option value="AB+">AB+</option>
-                          <option value="AB-">AB-</option>
-                          <option value="O+">O+</option>
-                          <option value="O-">O-</option>
-                        </select>
+                        <div className="relative">
+                          <select
+                            value={inputs.bloodType}
+                            onChange={(e) => setInputs({...inputs, bloodType: e.target.value})}
+                            className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-4 py-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
+                            style={{ colorScheme: 'dark' }}
+                          >
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                          </div>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Cognitive Latency / Clinical Symptoms</label>
