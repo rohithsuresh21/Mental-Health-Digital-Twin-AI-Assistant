@@ -88,12 +88,25 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [modalContent, setModalContent] = useState<'docs' | 'privacy' | 'terms' | null>(null);
   const [tabTransitionKey, setTabTransitionKey] = useState(0);
+  const [heroTransition, setHeroTransition] = useState<'idle' | 'compressing' | 'radiating' | 'revealing' | 'done'>('idle');
 
   // Browser back/forward: sync tab with history
   const setActiveTab = (tab: Tab) => {
     setActiveTabState(tab);
     setTabTransitionKey(k => k + 1);
     history.pushState({ tab }, '', `#${tab}`);
+  };
+
+  // Cinematic hero transition: compress -> radiate -> reveal -> switch
+  const handleGetStarted = () => {
+    if (heroTransition !== 'idle') return;
+    setHeroTransition('compressing');
+    setTimeout(() => setHeroTransition('radiating'), 400);
+    setTimeout(() => setHeroTransition('revealing'), 1100);
+    setTimeout(() => {
+      setHeroTransition('done');
+      setActiveTab('profile');
+    }, 1700);
   };
 
   useEffect(() => {
@@ -1829,31 +1842,81 @@ export default function App() {
           
           {/* TAB 0: PORTAL GATEWAY DASHBOARD */}
           {activeTab === 'dashboard' && (
-            <div className="w-full min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center relative overflow-hidden px-8 py-16 bg-transparent" id="dashboard-landing">
+            <div className={`w-full min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center relative overflow-hidden px-8 py-16 bg-transparent transition-opacity duration-700 ${heroTransition === 'radiating' || heroTransition === 'revealing' ? 'opacity-0' : ''}`} id="dashboard-landing">
 
-              {/* Static ambient blue light node on landing page (it should not move on the landing page) */}
+              {/* Static ambient blue light node */}
               <div className="absolute top-12 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#a5c0ff] shadow-[0_0_12px_#a5c0ff,0_0_24px_#3b82f6] opacity-65" />
 
+              {/* Radial mask reveal overlay */}
+              {heroTransition === 'revealing' && (
+                <div className="fixed inset-0 z-50 pointer-events-none" style={{
+                  background: 'radial-gradient(circle at 50% 50%, transparent 0%, rgba(3,4,10,0.95) 0%)',
+                  animation: 'heroRadialReveal 0.6s cubic-bezier(0.22,1,0.36,1) forwards'
+                }} />
+              )}
+
               {/* CENTERED HERO SECTION */}
-              <div className="text-center z-10 max-w-4xl px-4 flex flex-col items-center my-auto">
-                {/* Best Unique font style using Outfit paired with elegant Playfair Display Serif */}
+              <div className={`text-center z-10 max-w-4xl px-4 flex flex-col items-center my-auto transition-all duration-700 ${
+                heroTransition === 'compressing' || heroTransition === 'radiating' 
+                  ? 'scale-[0.97] opacity-60 blur-[1px]' 
+                  : heroTransition === 'revealing' 
+                    ? 'scale-95 opacity-0 blur-[3px]' 
+                    : ''
+              }`}>
+                {/* Hero heading with cinematic text transformation */}
                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-sans font-extrabold tracking-tight text-white mb-8 leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]">
-                  Your Personal <span className="font-sans font-normal italic text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 drop-shadow-[0_0_25px_rgba(59,130,246,0.45)] px-1">Digital Health</span> AI Assistant
+                  <span className={`inline-block transition-all duration-500 ${
+                    heroTransition === 'radiating' || heroTransition === 'revealing'
+                      ? 'opacity-0 -translate-y-4'
+                      : ''
+                  }`}>Your Personal </span>
+                  <span className={`font-sans font-normal italic text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 drop-shadow-[0_0_25px_rgba(59,130,246,0.45)] px-1 inline-block transition-all duration-700 ${
+                    heroTransition === 'compressing'
+                      ? 'drop-shadow-[0_0_40px_rgba(59,130,246,0.8)] scale-105'
+                      : heroTransition === 'radiating'
+                        ? 'drop-shadow-[0_0_60px_rgba(59,130,246,1)] scale-110 brightness-150'
+                        : heroTransition === 'revealing'
+                          ? 'opacity-0 scale-110'
+                          : ''
+                  }`}>Digital Health</span>
+                  <span className={`inline-block transition-all duration-500 ${
+                    heroTransition === 'radiating' || heroTransition === 'revealing'
+                      ? 'opacity-0 -translate-y-4'
+                      : ''
+                  }`}> AI Assistant</span>
                 </h1>
 
-                {/* HELLO THERE! GREETING */}
-                <p className="text-lg md:text-xl font-semibold text-sky-200 tracking-wider mb-12 select-none font-sans uppercase">
+                {/* HELLO THERE greeting */}
+                <p className={`text-lg md:text-xl font-semibold text-sky-200 tracking-wider mb-12 select-none font-sans uppercase transition-all duration-500 ${
+                  heroTransition === 'radiating' || heroTransition === 'revealing'
+                    ? 'opacity-0 -translate-y-3'
+                    : ''
+                }`}>
                   {inputs.fullName && inputs.fullName.trim() !== "" ? `Hello there, ${inputs.fullName}!` : "Hello there!"}
                 </p>
 
                 {/* MAIN GET STARTED BUTTON */}
                 <button
-                  onClick={() => setActiveTab('profile')}
-                  className="group relative inline-flex items-center gap-3 px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all duration-300 hover:shadow-[0_0_35px_rgba(37,99,235,0.6)] active:scale-95 shadow-lg shadow-blue-950/20 cursor-pointer overflow-hidden z-20"
+                  onClick={handleGetStarted}
+                  className={`group relative inline-flex items-center gap-3 px-10 py-4 bg-blue-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl cursor-pointer overflow-hidden z-20 transition-all duration-400 ${
+                    heroTransition === 'compressing'
+                      ? 'scale-90 shadow-[0_0_50px_rgba(37,99,235,0.8)] bg-blue-500'
+                      : heroTransition === 'radiating'
+                        ? 'scale-95 shadow-[0_0_80px_rgba(37,99,235,1)] bg-blue-400'
+                        : heroTransition === 'revealing'
+                          ? 'scale-110 opacity-0'
+                          : 'hover:bg-blue-500 hover:shadow-[0_0_35px_rgba(37,99,235,0.6)] active:scale-95 shadow-lg shadow-blue-950/20'
+                  }`}
                 >
                   <span className="relative z-10">Let's Get Started</span>
                   <Compass className="h-4.5 w-4.5 relative z-10 group-hover:rotate-45 transition-transform duration-300" />
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {/* Blue light ripple effect */}
+                  {heroTransition === 'radiating' && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-4 h-4 rounded-full bg-blue-400/60" style={{ animation: 'heroRipple 0.7s ease-out forwards' }} />
+                    </div>
+                  )}
                 </button>
               </div>
 
@@ -1877,6 +1940,29 @@ export default function App() {
                 {/* Visual synaptic accent */}
                 <div className="animate-flow-dot" />
 
+                {/* Workflow Progress Indicator */}
+                <div className="flex items-center gap-2 mb-8 text-[10px] font-bold tracking-widest uppercase">
+                  <span className="flex items-center gap-1.5 text-indigo-400">
+                    <span className="h-5 w-5 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-[8px]">01</span>
+                    Patient Profile
+                  </span>
+                  <span className="h-px flex-1 bg-[#1B2030]/60" />
+                  <span className="flex items-center gap-1.5 text-gray-600">
+                    <span className="h-5 w-5 rounded-full bg-[#1B2030]/40 border border-[#1B2030]/60 flex items-center justify-center text-[8px]">02</span>
+                    Documents
+                  </span>
+                  <span className="h-px flex-1 bg-[#1B2030]/60" />
+                  <span className="flex items-center gap-1.5 text-gray-600">
+                    <span className="h-5 w-5 rounded-full bg-[#1B2030]/40 border border-[#1B2030]/60 flex items-center justify-center text-[8px]">03</span>
+                    Analysis
+                  </span>
+                  <span className="h-px flex-1 bg-[#1B2030]/60" />
+                  <span className="flex items-center gap-1.5 text-gray-600">
+                    <span className="h-5 w-5 rounded-full bg-[#1B2030]/40 border border-[#1B2030]/60 flex items-center justify-center text-[8px]">04</span>
+                    Overview
+                  </span>
+                </div>
+
                 <div className="flex items-center gap-4 mb-8">
                   <div className="relative">
                     <div className="h-14 w-14 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.15)] overflow-hidden">
@@ -1892,19 +1978,19 @@ export default function App() {
                     </label>
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 via-purple-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(99,102,241,0.25)]">Patient Profile Settings</h2>
-                    <p className="text-[#A5C0FF]/60 text-xs">Enter patient details and clinical background information.</p>
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 via-purple-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(99,102,241,0.25)]">Initialize Patient Profile</h2>
+                    <p className="text-[#A5C0FF]/60 text-xs">Establish the baseline information required for personalized longitudinal health analysis.</p>
                     <p className="text-[#A5C0FF]/40 text-[10px] mt-0.5">Click the camera icon to upload a profile photo.</p>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  {/* PATIENT DETAILS FIELDS */}
+                  {/* PATIENT IDENTITY */}
                   <div className="space-y-4">
-                    <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest font-sans">1. Patient Credentials</h3>
+                    <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest font-sans">Patient Identity</h3>
                     
                     <div>
-                      <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Patient Full Name</label>
+                      <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Full Name</label>
                       <input 
                         type="text"
                         placeholder="e.g. Dr. Alexander Mercer"
@@ -1944,7 +2030,12 @@ export default function App() {
                         </div>
                       </div>
                     </div>
+                  </div>
 
+                  {/* CLINICAL BASELINE */}
+                  <div className="space-y-4 pt-4 border-t border-[#1B2030]/40">
+                    <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest font-sans">Clinical Baseline</h3>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Blood Type</label>
@@ -1991,17 +2082,20 @@ export default function App() {
 
                   <div className="pt-6 border-t border-[#1B2030]/60 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="text-xs text-[#A5C0FF]/60 font-semibold tracking-wide">
-                      Changes are securely synced to your session memory.
+                      Your information is securely saved to this patient profile.
                     </div>
-                    <button
-                      onClick={() => {
-                        setActiveTab(isPatient ? 'intake' : 'clinical');
-                      }}
-                      className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      <ArrowRight className="h-4 w-4" />
-                      {isPatient ? 'Save & Continue to Daily Alignment Portal' : 'Save & Continue to Document Upload'}
-                    </button>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <button
+                        onClick={() => {
+                          setActiveTab(isPatient ? 'intake' : 'clinical');
+                        }}
+                        className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        Save Profile & Continue
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
+                      <span className="text-[10px] text-gray-600">Next: Upload patient documents</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2529,10 +2623,13 @@ export default function App() {
                     className="flex items-center justify-between cursor-pointer group"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, moodRisk: !prev.moodRisk }))}
                   >
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
-                      <Activity className="h-4.5 w-4.5 text-blue-400" />
-                      Mood and Risk Over Time
-                    </h3>
+                    <div>
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
+                        <Activity className="h-4.5 w-4.5 text-blue-400" />
+                        Emotional Tone &amp; Risk Trajectory
+                      </h3>
+                      <p className="text-[10px] text-gray-500 mt-1 ml-7">Daily emotional tone and broader direction</p>
+                    </div>
                     <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
                       {collapsedSections.moodRisk ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                     </button>
@@ -2616,12 +2713,19 @@ export default function App() {
                       {/* LEFT CHART: SENTIMENT */}
                       <div className="glass-panel rounded-xl p-5">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-gray-300">How your tone has shifted day to day</span>
-                          <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
-                            <span className="inline-block w-4 h-2 bg-blue-500/25 border border-blue-500 rounded-sm" />
-                            <span>Sentiment</span>
+                          <span className="text-xs font-bold text-gray-300">Daily emotional tone</span>
+                          <div className="flex items-center gap-2.5 text-[10px] text-gray-400">
+                            <div className="flex items-center gap-1">
+                              <span className="inline-block w-4 h-0.5 bg-blue-500 rounded-sm" />
+                              <span>Raw</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="inline-block w-4 h-0.5 bg-blue-400 rounded-sm" style={{ borderTop: '1px dashed #60a5fa' }} />
+                              <span>Trend</span>
+                            </div>
                           </div>
                         </div>
+                        <p className="text-[10px] text-gray-500 mb-3">Y-axis: +1.0 strongly positive · 0 neutral · −1.0 strongly negative</p>
 
                         <div className="relative h-60 w-full" onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
                           {/* SVG Sentiment Chart */}
@@ -2679,9 +2783,38 @@ export default function App() {
                               })()}
                               fill="none"
                               stroke="#3b82f6"
-                              strokeWidth="2.5"
-                              className="drop-shadow-[0_0_6px_rgba(59,130,246,0.5)]"
+                              strokeWidth="2"
+                              className="drop-shadow-[0_0_3px_rgba(59,130,246,0.3)]"
                             />
+
+                            {/* Smoothed Trend Line (5-point moving average) */}
+                            {(() => {
+                              const sliced = sentimentData.slice(vpStart, vpEnd + 1);
+                              const windowSize = 5;
+                              const smoothed: number[] = [];
+                              for (let i = 0; i < sliced.length; i++) {
+                                const start = Math.max(0, i - Math.floor(windowSize / 2));
+                                const end = Math.min(sliced.length, i + Math.ceil(windowSize / 2));
+                                const avg = sliced.slice(start, end).reduce((a, b) => a + b, 0) / (end - start);
+                                smoothed.push(avg);
+                              }
+                              let pathStr = "";
+                              smoothed.forEach((val, idx) => {
+                                const x = 35 + (idx / vpLastIdx) * 450;
+                                const y = 15 + ((1.0 - val) / 2.0) * 185;
+                                pathStr += (idx === 0 ? "M" : "L") + ` ${x} ${y}`;
+                              });
+                              return (
+                                <path
+                                  d={pathStr}
+                                  fill="none"
+                                  stroke="#60a5fa"
+                                  strokeWidth="1.5"
+                                  strokeDasharray="4 3"
+                                  opacity="0.5"
+                                />
+                              );
+                            })()}
 
                             {/* Peak/Valley anchor diamonds (viewport-sliced) */}
                             {(() => {
@@ -2734,34 +2867,79 @@ export default function App() {
                           </svg>
 
                           {/* Interactive Tooltip Overlay (viewport-aware) */}
-                          {hoveredPointIndex !== null && hoveredPointIndex >= vpStart && hoveredPointIndex <= vpEnd && (
-                            <div 
-                              className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 p-2.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
-                              style={{ 
-                                left: `${Math.min(72, Math.max(5, ((hoveredPointIndex - vpStart) / vpLastIdx) * 100))}%`,
-                                top: "20px"
-                              }}
-                            >
-                              <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex]}</div>
-                              <div>Sentiment: <span className="text-blue-400 font-bold">{((sentimentData[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
-                            </div>
-                          )}
+                          {hoveredPointIndex !== null && hoveredPointIndex >= vpStart && hoveredPointIndex <= vpEnd && (() => {
+                            const val = sentimentData[hoveredPointIndex] ?? 0;
+                            let status = 'Neutral';
+                            let statusColor = 'text-gray-400';
+                            if (val > 0.3) { status = 'Positive'; statusColor = 'text-emerald-400'; }
+                            else if (val > 0.05) { status = 'Mildly positive'; statusColor = 'text-emerald-400'; }
+                            else if (val < -0.3) { status = 'Negative'; statusColor = 'text-rose-400'; }
+                            else if (val < -0.05) { status = 'Mildly negative'; statusColor = 'text-amber-400'; }
+                            return (
+                              <div 
+                                className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 p-2.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
+                                style={{ 
+                                  left: `${Math.min(72, Math.max(5, ((hoveredPointIndex - vpStart) / vpLastIdx) * 100))}%`,
+                                  top: "20px"
+                                }}
+                              >
+                                <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex]}</div>
+                                <div>Sentiment: <span className="text-blue-400 font-bold">{val.toFixed(2)}</span></div>
+                                <div>Status: <span className={`font-bold ${statusColor}`}>{status}</span></div>
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         <p className="text-[10px] text-gray-500 leading-relaxed mt-4">
-                          Each point is one journal entry, in order by date (X-axis). The Y-axis is the sentiment of that entry's writing, from -1 (very negative tone) to +1 (very positive tone), with 0 being neutral.
+                          Each point is one journal entry, in order by date (X-axis). The Y-axis is the sentiment of that entry's writing, from -1 (very negative tone) to +1 (very positive tone), with 0 being neutral. The dashed line shows the smoothed trend.
                         </p>
+
+                        {(() => {
+                          const sliced = sentimentData.slice(vpStart, vpEnd + 1);
+                          if (sliced.length < 3) return null;
+                          const firstHalf = sliced.slice(0, Math.floor(sliced.length / 2));
+                          const secondHalf = sliced.slice(Math.floor(sliced.length / 2));
+                          const avgFirst = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+                          const avgSecond = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+                          const diff = avgSecond - avgFirst;
+                          const avgRecent = sliced.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, sliced.length);
+                          const currentVal = sliced[sliced.length - 1];
+
+                          let trend = 'relatively stable';
+                          let trendColor = 'text-gray-400';
+                          if (diff > 0.15) { trend = 'improving overall'; trendColor = 'text-emerald-400'; }
+                          else if (diff > 0.05) { trend = 'gradually trending positive'; trendColor = 'text-emerald-400'; }
+                          else if (diff < -0.15) { trend = 'declining overall'; trendColor = 'text-rose-400'; }
+                          else if (diff < -0.05) { trend = 'gradually trending negative'; trendColor = 'text-amber-400'; }
+
+                          let tone = 'neutral';
+                          let toneColor = 'text-gray-400';
+                          if (currentVal > 0.3) { tone = 'positive'; toneColor = 'text-emerald-400'; }
+                          else if (currentVal > 0.05) { tone = 'mildly positive'; toneColor = 'text-emerald-400'; }
+                          else if (currentVal < -0.3) { tone = 'negative'; toneColor = 'text-rose-400'; }
+                          else if (currentVal < -0.05) { tone = 'mildly negative'; toneColor = 'text-amber-400'; }
+
+                          return (
+                            <div className="mt-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                              <p className="text-[11px] text-gray-400 leading-relaxed">
+                                <span className="font-bold text-gray-300">Interpretation:</span> The most recent entry reads as <span className={`font-semibold ${toneColor}`}>{tone}</span>. Over the visible range, emotional tone is <span className={`font-semibold ${trendColor}`}>{trend}</span> — the second half averages {avgSecond > 0 ? '+' : ''}{avgSecond.toFixed(2)} compared to {avgFirst > 0 ? '+' : ''}{avgFirst.toFixed(2)} in the first half{Math.abs(diff) >= 0.05 ? ` (Δ ${diff > 0 ? '+' : ''}${diff.toFixed(2)})` : ''}.
+                              </p>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* RIGHT CHART: ANOMALY RISK */}
                       <div className="glass-panel rounded-xl p-5">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-gray-300">Moments that stood out as unusual</span>
+                          <span className="text-xs font-bold text-gray-300">Unusual behavioral patterns</span>
                           <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
-                            <span className="inline-block w-4 h-2 bg-rose-500/25 border border-rose-500 rounded-sm" />
+                            <span className="inline-block w-4 h-2 bg-red-500/25 border border-red-500 rounded-sm" />
                             <span>Anomaly Risk</span>
                           </div>
                         </div>
+                        <p className="text-[10px] text-gray-500 mb-3">Y-axis: 0.0 typical · 0.5 moderately unusual · 1.0 highly unusual</p>
 
                         <div className="relative h-60 w-full" onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
                           {/* SVG Anomaly Risk Chart */}
@@ -2819,8 +2997,8 @@ export default function App() {
                               })()}
                               fill="none"
                               stroke="#ef4444"
-                              strokeWidth="2.5"
-                              className="drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]"
+                              strokeWidth="2"
+                              className="drop-shadow-[0_0_3px_rgba(239,68,68,0.3)]"
                             />
 
                             {/* Peak/Valley anchor diamonds (viewport-sliced) */}
@@ -2874,18 +3052,26 @@ export default function App() {
                           </svg>
 
                           {/* Interactive Tooltip Overlay (viewport-aware) */}
-                          {hoveredPointIndex !== null && hoveredPointIndex >= vpStart && hoveredPointIndex <= vpEnd && (
-                            <div 
-                              className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 p-2.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
-                              style={{ 
-                                left: `${Math.min(72, Math.max(5, ((hoveredPointIndex - vpStart) / vpLastIdx) * 100))}%`,
-                                top: "20px"
-                              }}
-                            >
-                              <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex]}</div>
-                              <div>Anomaly Risk: <span className="text-rose-400 font-bold">{((anomalyRiskData[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
-                            </div>
-                          )}
+                          {hoveredPointIndex !== null && hoveredPointIndex >= vpStart && hoveredPointIndex <= vpEnd && (() => {
+                            const val = anomalyRiskData[hoveredPointIndex] ?? 0;
+                            let status = 'Typical';
+                            let statusColor = 'text-emerald-400';
+                            if (val >= 0.7) { status = 'Highly unusual'; statusColor = 'text-rose-400'; }
+                            else if (val >= 0.4) { status = 'Moderately unusual'; statusColor = 'text-amber-400'; }
+                            return (
+                              <div 
+                                className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 p-2.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
+                                style={{ 
+                                  left: `${Math.min(72, Math.max(5, ((hoveredPointIndex - vpStart) / vpLastIdx) * 100))}%`,
+                                  top: "20px"
+                                }}
+                              >
+                                <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex]}</div>
+                                <div>Deviation: <span className="text-rose-400 font-bold">{(val * 100).toFixed(0)} / 100</span></div>
+                                <div>Status: <span className={`font-bold ${statusColor}`}>{status}</span></div>
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         <p className="text-[10px] text-gray-500 leading-relaxed mt-4">
@@ -2893,38 +3079,56 @@ export default function App() {
                         </p>
 
                         {(() => {
-                          // Find the single highest-scored entry per risk tier
-                          function bestInRange(min: number, max: number): { date: string; score: number } | null {
-                            let best: { date: string; score: number } | null = null;
-                            anomalyRiskData.forEach((val, idx) => {
-                              if (val >= min && val < max && (!best || val > best.score)) {
-                                best = { date: chartDates[idx], score: val };
-                              }
-                            });
-                            return best;
+                          if (anomalyRiskData.length === 0) return null;
+                          const sorted = [...anomalyRiskData].sort((a, b) => a - b);
+                          const maxVal = sorted[sorted.length - 1];
+                          const maxIdx = anomalyRiskData.indexOf(maxVal);
+                          const recent = anomalyRiskData.slice(-5);
+                          const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+                          const baseline = sorted.slice(0, Math.floor(sorted.length * 0.5));
+                          const baselineAvg = baseline.reduce((a, b) => a + b, 0) / baseline.length;
+                          const baselineMax = Math.max(...baseline);
+
+                          function statusFor(val: number): string {
+                            if (val >= 0.7) return 'highly unusual';
+                            if (val >= 0.4) return 'moderately unusual';
+                            return 'within normal range';
                           }
-                          const peak = { high: bestInRange(0.7, 1.1), moderate: bestInRange(0.4, 0.7), low: bestInRange(0, 0.4) };
+                          function statusColor(val: number): string {
+                            if (val >= 0.7) return 'text-rose-400';
+                            if (val >= 0.4) return 'text-amber-400';
+                            return 'text-emerald-400';
+                          }
+
+                          const recentStatus = statusFor(recentAvg);
+                          const trend = recentAvg > baselineAvg * 1.2 ? 'elevated compared to early entries' : recentAvg < baselineAvg * 0.8 ? 'lower than early entries' : 'consistent with early entries';
+                          const trendColor = recentAvg > baselineAvg * 1.2 ? 'text-amber-400' : recentAvg < baselineAvg * 0.8 ? 'text-emerald-400' : 'text-gray-400';
+
                           return (
-                            <div className="mt-3 space-y-1 text-[10px] font-mono leading-relaxed">
-                              {peak.high && (
-                                <div className="flex gap-2">
-                                  <span className="text-rose-500 font-bold shrink-0">Highest Risk:</span>
-                                  <span className="text-gray-400">{peak.high.date} <span className="text-rose-400">({Math.round(peak.high.score * 100)}%)</span></span>
+                            <>
+                              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                                  <div className="text-[10px] text-gray-500 mb-0.5">Peak unusualness</div>
+                                  <div className="text-sm font-bold text-rose-400">{Math.round(maxVal * 100)} / 100</div>
+                                  <div className="text-[9px] text-gray-500">{chartDates[maxIdx]}</div>
                                 </div>
-                              )}
-                              {peak.moderate && (
-                                <div className="flex gap-2">
-                                  <span className="text-amber-500 font-bold shrink-0">Moderate Risk:</span>
-                                  <span className="text-gray-400">{peak.moderate.date} <span className="text-amber-400">({Math.round(peak.moderate.score * 100)}%)</span></span>
+                                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                                  <div className="text-[10px] text-gray-500 mb-0.5">Recent average</div>
+                                  <div className={`text-sm font-bold ${statusColor(recentAvg)}`}>{Math.round(recentAvg * 100)} / 100</div>
+                                  <div className="text-[9px] text-gray-500">last {recent.length} entries</div>
                                 </div>
-                              )}
-                              {peak.low && (
-                                <div className="flex gap-2">
-                                  <span className="text-emerald-500 font-bold shrink-0">Lowest Risk:</span>
-                                  <span className="text-gray-400">{peak.low.date} <span className="text-emerald-400">({Math.round(peak.low.score * 100)}%)</span></span>
+                                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                                  <div className="text-[10px] text-gray-500 mb-0.5">Baseline range</div>
+                                  <div className="text-sm font-bold text-gray-300">0 – {Math.round(baselineMax * 100)}</div>
+                                  <div className="text-[9px] text-gray-500">first {baseline.length} entries</div>
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                              <div className="mt-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                                <p className="text-[11px] text-gray-400 leading-relaxed">
+                                  <span className="font-bold text-gray-300">Interpretation:</span> Recent entries are <span className={`font-semibold ${statusColor(recentAvg)}`}>{recentStatus}</span>. The overall pattern is <span className={`font-semibold ${trendColor}`}>{trend}</span> — the recent average is {Math.round(recentAvg * 100)} / 100 versus {Math.round(baselineAvg * 100)} / 100 in the first half.
+                                </p>
+                              </div>
+                            </>
                           );
                         })()}
                       </div>
@@ -3004,10 +3208,11 @@ export default function App() {
                     className="flex items-center justify-between cursor-pointer group"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, cusum: !prev.cusum }))}
                   >
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
                       <Activity className="h-4.5 w-4.5 text-blue-400" />
-                      Trend Stability (CUSUM)
+                      Sustained Change from Baseline
                     </h3>
+                    <p className="text-[10px] text-gray-500 mt-1 ml-7">Detects whether recent behavior has shifted consistently away from the established baseline</p>
                     <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
                       {collapsedSections.cusum ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                     </button>
@@ -3067,7 +3272,7 @@ export default function App() {
                       </div>
 
                                        <p className="text-[11px] text-gray-500 leading-relaxed">
-                        A running tally of how far this person's readings have drifted above (red) or below (blue) their own baseline, added up over time rather than looked at one entry at a time. This makes it easier to tell a real sustained shift apart from one noisy day.
+                        This signal detects whether recent behavior has shifted consistently away from the established baseline. A single unusual entry does not trigger sustained drift — the signal increases when the change persists over time. ↑ Upward drift (red) · ↓ Downward drift (blue) · Dashed line = alert threshold.
                       </p>
 
                       {/* Translucent Card wrapper for the CUSUM graph */}
@@ -3076,8 +3281,8 @@ export default function App() {
                         <div className="flex items-center gap-3 flex-wrap">
                           <div className="flex gap-1.5">
                             {[
-                              { key: 0, label: 'Upper CUSUM', desc: 'Drift above baseline' },
-                              { key: 1, label: 'Lower CUSUM', desc: 'Drift below baseline' },
+                              { key: 0, label: '↑ Upward drift', desc: 'Above baseline' },
+                              { key: 1, label: '↓ Downward drift', desc: 'Below baseline' },
                               { key: 2, label: 'Both', desc: 'Show both directions' },
                             ].map((tab) => (
                               <button
@@ -3169,15 +3374,15 @@ export default function App() {
                         <div className="flex flex-wrap items-center gap-6 text-[10px] text-gray-400 font-sans">
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-4 h-0.5 bg-rose-500" />
-                            <span>Upper CUSUM</span>
+                            <span>↑ Upward drift</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-4 h-0.5 bg-blue-500" />
-                            <span>Lower CUSUM</span>
+                            <span>↓ Downward drift</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-4 h-0.5 border-t border-dashed border-gray-500" />
-                            <span>Alert threshold (h)</span>
+                            <span>Alert threshold</span>
                           </div>
                         </div>
 
@@ -3282,7 +3487,7 @@ export default function App() {
                         </div>
 
                         <p className="text-[10px] text-gray-500 leading-relaxed font-sans">
-                          X-axis: date of each entry. Y-axis: cumulative drift score. The dashed line is the alert threshold. Crossing it means the drift has been sustained, not just a single unusual entry.
+                          X-axis: date of each entry. Y-axis: cumulative drift from baseline. The dashed line is the alert threshold — crossing it means the shift has been sustained, not just a single unusual entry.
                         </p>
                       </div>
 
@@ -3339,20 +3544,20 @@ export default function App() {
                       {(() => {
                         const detScores = pipeline?.pipelineDetectorScores;
                         const detLabels: Record<string, { name: string; model: string; desc: string; color: string }> = {
-                          mahalanobis: { name: 'Pattern Deviation', model: 'Mahalanobis Distance', desc: 'This graph tracks how far your daily speech, sleep, and mood patterns have drifted from your personal baseline. A rising line means your recent behavior is becoming increasingly unusual compared to your norm.', color: '#3B82F6' },
-                          copula: { name: 'Behavioral Shift', model: 'Copula Model', desc: 'This graph detects when multiple behaviors shift together in unexpected ways — for example, sleeping less while becoming more withdrawn. A rising line signals unusual combinations of changes across your tracked metrics.', color: '#EF4444' },
-                          isolation_forest: { name: 'Outlier Spike', model: 'Isolation Forest', desc: 'This graph highlights individual days where your behavior looks very different from the rest. Each spike is a moment that stood out as unusual compared to your typical patterns.', color: '#8B5CF6' },
-                          knn: { name: 'Cluster Drift', model: 'K-Nearest Neighbors', desc: 'This graph checks whether your daily patterns still fit within your usual range of behaviors. If the line climbs, your recent patterns are drifting away from where you normally are.', color: '#10B981' },
+                          mahalanobis: { name: 'Pattern Deviation', model: 'Mahalanobis Distance · Measures: Distance from the patient\'s established behavioral baseline', desc: 'This graph tracks how far your daily speech, sleep, and mood patterns have drifted from your personal baseline. A rising line means your recent behavior is becoming increasingly unusual compared to your norm.', color: '#3B82F6' },
+                          copula: { name: 'Behavioral Shift', model: 'Copula Model · Measures: Unexpected co-occurrence of behavioral changes', desc: 'This graph detects when multiple behaviors shift together in unexpected ways — for example, sleeping less while becoming more withdrawn. A rising line signals unusual combinations of changes across your tracked metrics.', color: '#EF4444' },
+                          isolation_forest: { name: 'Outlier Spike', model: 'Isolation Forest · Measures: Individual days that stand out from typical patterns', desc: 'This graph highlights individual days where your behavior looks very different from the rest. Each spike is a moment that stood out as unusual compared to your typical patterns.', color: '#8B5CF6' },
+                          knn: { name: 'Cluster Drift', model: 'K-Nearest Neighbors · Measures: Whether recent patterns fit within the patient\'s usual behavioral range', desc: 'This graph checks whether your daily patterns still fit within your usual range of behaviors. If the line climbs, your recent patterns are drifting away from where you normally are.', color: '#10B981' },
                         };
                         const detectorKeys = ['mahalanobis', 'copula', 'isolation_forest', 'knn'];
                         const lastScores: Record<string, number> = detScores && detScores.length > 0 ? detScores[detScores.length - 1] : {};
 
                         function scoreBadge(val: number): { badge: string; style: string } {
                           const pct = Math.round(val * 100);
-                          if (pct >= 80) return { badge: `Critical • ${pct}%`, style: 'bg-rose-500/10 border-rose-500/30 text-rose-400' };
-                          if (pct >= 60) return { badge: `Elevated • ${pct}%`, style: 'bg-amber-500/10 border-amber-500/30 text-amber-400' };
-                          if (pct >= 40) return { badge: `Moderate • ${pct}%`, style: 'bg-slate-500/10 border-slate-500/30 text-slate-300' };
-                          return { badge: `Stable • ${pct}%`, style: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' };
+                          if (pct >= 80) return { badge: `CRITICAL · ${pct} / 100`, style: 'bg-rose-500/10 border-rose-500/30 text-rose-400' };
+                          if (pct >= 60) return { badge: `ELEVATED · ${pct} / 100`, style: 'bg-amber-500/10 border-amber-500/30 text-amber-400' };
+                          if (pct >= 40) return { badge: `MODERATE · ${pct} / 100`, style: 'bg-slate-500/10 border-slate-500/30 text-slate-300' };
+                          return { badge: `STABLE · ${pct} / 100`, style: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' };
                         }
 
                         function buildSparkline(key: string): number[] {
@@ -3397,7 +3602,7 @@ export default function App() {
                               <div className="flex items-center justify-between">
                                 <div>
                                   <h4 className="text-sm font-bold text-white">{info.name}</h4>
-                                  <span className="text-[10px] font-sans text-gray-500">Model: {info.model}</span>
+                                  <span className="text-[10px] font-sans text-gray-500">{info.model}</span>
                                 </div>
                                 <span className={`text-xs font-mono font-bold border rounded px-2.5 py-0.5 ${style}`}>
                                   {badge}
@@ -3407,7 +3612,7 @@ export default function App() {
                               <div className="space-y-1.5">
                                 <div className="flex justify-between items-center text-[9px] font-sans text-gray-500 uppercase">
                                   <span>Score Timeline</span>
-                                  <span className="font-mono">LATEST: {badge.split(' • ')[1]}</span>
+                                  <span className="font-mono">LATEST: {badge.split(' · ')[1]}</span>
                                 </div>
                                 <div className="glass-inner rounded-lg p-3">
                                   {renderDetectorChart(sparkline, info.color, chartDates, info.name)}
@@ -3417,6 +3622,42 @@ export default function App() {
                                     This detector consistently scores near 100% — may indicate overfitting to this data.
                                   </p>
                                 )}
+
+                                {/* What contributed to this deviation? */}
+                                {detScores && detScores.length > 0 && (() => {
+                                  const latest = detScores[detScores.length - 1];
+                                  const avgScores = detectorKeys.map(key => {
+                                    const vals = detScores.map(s => s[key] ?? 0);
+                                    const sum = vals.reduce((a, b) => a + b, 0);
+                                    return sum / vals.length;
+                                  });
+                                  const maxAvg = Math.max(...avgScores, 0.01);
+                                  const labels = ['Speech Patterns', 'Sleep & Activity', 'Behavioral Co-occurrence', 'Cluster Fit'];
+                                  const colors = ['#3B82F6', '#8B5CF6', '#EF4444', '#10B981'];
+                                  return (
+                                    <div className="mt-3 pt-3 border-t border-white/[0.04]">
+                                      <p className="text-[10px] font-bold text-gray-400 mb-2">What contributed to this deviation?</p>
+                                      <div className="space-y-2">
+                                        {detectorKeys.map((key, i) => {
+                                          const val = latest[key] ?? 0;
+                                          const pct = Math.round(val * 100);
+                                          return (
+                                            <div key={key} className="flex items-center gap-2">
+                                              <span className="text-[9px] text-gray-500 w-24 shrink-0 truncate">{labels[i]}</span>
+                                              <div className="flex-1 h-1.5 bg-white/[0.03] rounded-full overflow-hidden">
+                                                <div
+                                                  className="h-full rounded-full transition-all duration-500"
+                                                  style={{ width: `${Math.max(2, pct)}%`, backgroundColor: colors[i], opacity: 0.7 }}
+                                                />
+                                              </div>
+                                              <span className="text-[9px] font-mono text-gray-400 w-6 text-right">{pct}</span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
                           </>

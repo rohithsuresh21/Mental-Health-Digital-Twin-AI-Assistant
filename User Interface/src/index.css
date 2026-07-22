@@ -27,6 +27,16 @@
   animation: tab-page-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+@keyframes heroRipple {
+  0% { width: 16px; height: 16px; opacity: 0.6; }
+  100% { width: 800px; height: 800px; opacity: 0; }
+}
+
+@keyframes heroRadialReveal {
+  0% { background: radial-gradient(circle at 50% 50%, transparent 0%, rgba(3,4,10,0.95) 0%); }
+  100% { background: radial-gradient(circle at 50% 50%, transparent 100%, rgba(3,4,10,0.95) 100%); }
+}
+
 @keyframes flow-dot {
   0% { left: 0%; top: 0%; opacity: 0; }
   5% { opacity: 1; }
