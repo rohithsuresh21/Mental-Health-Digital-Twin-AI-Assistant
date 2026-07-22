@@ -358,7 +358,7 @@
 }
 
 .light-theme .bg-amber-950\/30,
-.light-theme .bg-[#251c0e] {
+.light-theme .bg-\[\#251c0e\] {
   background-color: #fffbeb !important;
   border-color: #fde68a !important;
 }

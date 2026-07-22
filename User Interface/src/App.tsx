@@ -272,6 +272,16 @@ export default function App() {
     }
   }, [diagnosticData]);
 
+  // Initialize chart viewport when data loads and viewport is still default
+  useEffect(() => {
+    if (chartViewport[0] === -1) {
+      const dates = diagnosticData.metrics?.dates || [];
+      if (dates.length > 0) {
+        setChartViewport([0, dates.length - 1]);
+      }
+    }
+  }, [chartViewport, diagnosticData.metrics?.dates]);
+
   // Canvas constellation animation background
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -284,136 +294,214 @@ export default function App() {
     if (!ctx) return;
 
     let animFrameId: number;
-    const W = 1200;
-    const H = 400;
+    const W = 1400;
+    const H = 420;
     canvas.width = W;
     canvas.height = H;
 
     interface WaveParticle {
       x: number; y: number; vx: number; vy: number; size: number; alpha: number; phase: number;
     }
-    const particles: WaveParticle[] = Array.from({ length: 35 }, () => ({
+    const particles: WaveParticle[] = Array.from({ length: 40 }, () => ({
       x: Math.random() * W,
-      y: H * 0.35 + Math.random() * H * 0.25,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.15,
-      size: 0.8 + Math.random() * 1.5,
-      alpha: 0.15 + Math.random() * 0.35,
+      y: 0,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.1,
+      size: 0.6 + Math.random() * 1.8,
+      alpha: 0.1 + Math.random() * 0.4,
       phase: Math.random() * Math.PI * 2,
     }));
+
+    // Returns the y-coordinate of the planet horizon curve at a given x
+    // At center (x=W/2): returns baseY (highest point, closest to top)
+    // At edges (x=0 or W): returns baseY + curveAmp (lowest point, closest to bottom)
+    const horizonY = (x: number, baseY: number, curveAmp: number) => {
+      const normalX = (x - W / 2) / (W / 2);
+      return baseY + normalX * normalX * curveAmp;
+    };
 
     const draw = (t: number) => {
       const time = t * 0.001;
       ctx.clearRect(0, 0, W, H);
 
-      // Horizon curve baseline
-      const horizonY = H * 0.55;
-      const curveHeight = H * 0.38;
+      // Base position of curve center (from top of canvas)
+      const baseY = H * 0.35;
+      // How much the curve dips at the edges
+      const curveAmp = H * 0.55;
 
-      // Deep atmosphere gradient
-      const atmGrad = ctx.createRadialGradient(W / 2, horizonY, 20, W / 2, horizonY + curveHeight * 0.3, W * 0.6);
-      atmGrad.addColorStop(0, 'rgba(14, 165, 233, 0.06)');
-      atmGrad.addColorStop(0.5, 'rgba(59, 130, 246, 0.03)');
-      atmGrad.addColorStop(1, 'rgba(3, 6, 15, 0)');
-      ctx.fillStyle = atmGrad;
-      ctx.fillRect(0, 0, W, H);
-
-      // Draw flowing waves along the horizon curve
-      for (let w = 0; w < 4; w++) {
-        const waveAlpha = 0.04 + w * 0.015 + Math.sin(time * 0.3 + w) * 0.012;
-        const waveAmp = 6 + w * 3 + Math.sin(time * 0.5 + w * 1.2) * 2;
-        const waveFreq = 0.003 + w * 0.001;
-        const waveSpeed = time * (0.2 + w * 0.08);
-        const yOff = w * 8;
+      // --- ATMOSPHERIC GLOW (above the curve) ---
+      for (let g = 0; g < 5; g++) {
+        const glowSpread = 30 + g * 18;
+        const pulse = Math.sin(time * 0.5 + g * 0.7) * 0.015;
+        const alpha = (0.06 - g * 0.01 + pulse) * (0.7 + 0.3 * Math.sin(time * 0.3 + g));
 
         ctx.beginPath();
-        ctx.moveTo(0, horizonY + yOff);
+        for (let x = 0; x <= W; x += 3) {
+          const y = horizonY(x, baseY, curveAmp) - glowSpread + Math.sin(x * 0.004 + time * 0.2 + g) * 2;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(56, 189, 248, ${alpha})`;
+        ctx.lineWidth = 1.5 + g * 0.3;
+        ctx.filter = `blur(${2 + g}px)`;
+        ctx.stroke();
+      }
+      ctx.filter = 'none';
+
+      // --- CONCENTRIC ARC BORDERS (just above planet edge) ---
+      for (let i = 0; i < 3; i++) {
+        const yShift = 3 + i * 10;
+        ctx.beginPath();
+        for (let x = 0; x <= W; x += 3) {
+          const y = horizonY(x, baseY, curveAmp) - yShift + Math.sin(x * 0.003 + time * 0.3 + i) * 1.5;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(99, 102, 241, ${0.1 - i * 0.025 + Math.sin(time * 0.4 + i) * 0.02})`;
+        ctx.lineWidth = 0.6;
+        ctx.stroke();
+      }
+
+      // --- WAVE LINES along the curve ---
+      for (let w = 0; w < 5; w++) {
+        const waveAlpha = 0.05 + w * 0.012 + Math.sin(time * 0.35 + w * 1.1) * 0.01;
+        const waveAmp = 4 + w * 2.5 + Math.sin(time * 0.5 + w * 1.3) * 1.5;
+        const waveFreq = 0.003 + w * 0.0008;
+        const waveSpeed = time * (0.25 + w * 0.06);
+        const yOff = -2 - w * 6;
+
+        ctx.beginPath();
         for (let x = 0; x <= W; x += 2) {
-          const curveOffset = Math.pow((x - W / 2) / (W / 2), 2) * curveHeight;
-          const wave = Math.sin(x * waveFreq + waveSpeed) * waveAmp + Math.sin(x * waveFreq * 2.3 + waveSpeed * 0.7) * waveAmp * 0.3;
-          const y = horizonY - curveOffset + wave + yOff;
+          const y = horizonY(x, baseY, curveAmp) + yOff
+            + Math.sin(x * waveFreq + waveSpeed) * waveAmp
+            + Math.sin(x * waveFreq * 2.1 + waveSpeed * 0.6) * waveAmp * 0.3;
           if (x === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
         ctx.strokeStyle = `rgba(56, 189, 248, ${waveAlpha})`;
-        ctx.lineWidth = 1 + w * 0.3;
+        ctx.lineWidth = 0.8 + w * 0.25;
         ctx.stroke();
       }
 
-      // Pulsing glow along horizon center
-      const pulseAlpha = 0.08 + Math.sin(time * 0.6) * 0.04 + Math.sin(time * 1.3) * 0.02;
-      const glowGrad = ctx.createRadialGradient(W / 2, horizonY - 20, 10, W / 2, horizonY - 20, W * 0.45);
-      glowGrad.addColorStop(0, `rgba(56, 189, 248, ${pulseAlpha})`);
-      glowGrad.addColorStop(0.4, `rgba(59, 130, 246, ${pulseAlpha * 0.4})`);
-      glowGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
-      ctx.fillStyle = glowGrad;
-      ctx.fillRect(0, 0, W, H);
-
-      // Atmospheric haze band
+      // --- PLANET BODY (dark fill below curve) ---
       ctx.beginPath();
       for (let x = 0; x <= W; x += 2) {
-        const curveOffset = Math.pow((x - W / 2) / (W / 2), 2) * curveHeight;
-        const haze = Math.sin(x * 0.002 + time * 0.15) * 3;
-        const y = horizonY - curveOffset + haze - 2;
+        const y = horizonY(x, baseY, curveAmp) + Math.sin(x * 0.002 + time * 0.12) * 1.5;
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
       ctx.lineTo(W, H);
       ctx.lineTo(0, H);
       ctx.closePath();
-      const hazeGrad = ctx.createLinearGradient(0, horizonY - curveHeight, 0, H);
-      hazeGrad.addColorStop(0, 'rgba(6, 8, 13, 0)');
-      hazeGrad.addColorStop(0.3, 'rgba(6, 8, 13, 0.85)');
-      hazeGrad.addColorStop(1, 'rgba(1, 1, 2, 0.98)');
-      ctx.fillStyle = hazeGrad;
+
+      // Layered dark gradient for planet body depth
+      const bodyGrad = ctx.createLinearGradient(0, baseY, 0, H);
+      bodyGrad.addColorStop(0, 'rgba(6, 8, 15, 0.6)');
+      bodyGrad.addColorStop(0.15, 'rgba(4, 6, 12, 0.88)');
+      bodyGrad.addColorStop(0.4, 'rgba(3, 4, 10, 0.96)');
+      bodyGrad.addColorStop(1, 'rgba(1, 1, 3, 1)');
+      ctx.fillStyle = bodyGrad;
       ctx.fill();
 
-      // Concentric arc borders
-      for (let i = 0; i < 3; i++) {
-        const arcOffset = 6 + i * 14;
+      // Subtle grid on planet body
+      ctx.save();
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 2) {
+        const y = horizonY(x, baseY, curveAmp) + Math.sin(x * 0.002 + time * 0.12) * 1.5;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.globalAlpha = 0.04;
+      for (let gx = 0; gx < W; gx += 40) {
         ctx.beginPath();
-        for (let x = 0; x <= W; x += 3) {
-          const curveOffset = Math.pow((x - W / 2) / (W / 2), 2) * curveHeight;
-          const y = horizonY - curveOffset + arcOffset;
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = `rgba(99, 102, 241, ${0.08 - i * 0.02 + Math.sin(time * 0.4 + i) * 0.02})`;
+        ctx.moveTo(gx, baseY);
+        ctx.lineTo(gx, H);
+        ctx.strokeStyle = '#38bdf8';
         ctx.lineWidth = 0.5;
         ctx.stroke();
       }
+      ctx.globalAlpha = 1;
+      ctx.restore();
 
-      // Sweeping laser
-      const laserX = ((time * 80) % (W * 1.4)) - W * 0.2;
-      const laserGrad = ctx.createLinearGradient(laserX - 120, 0, laserX + 120, 0);
+      // --- SWEEPING LASER along curve edge ---
+      const laserPhase = (time * 0.15) % 1;
+      const laserCenterX = laserPhase * (W + 400) - 200;
+      const laserWidth = 180;
+
+      ctx.save();
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 2) {
+        const y = horizonY(x, baseY, curveAmp) - 6;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+      ctx.closePath();
+      ctx.clip();
+
+      const laserGrad = ctx.createLinearGradient(laserCenterX - laserWidth / 2, 0, laserCenterX + laserWidth / 2, 0);
       laserGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
-      laserGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.12)');
+      laserGrad.addColorStop(0.4, 'rgba(56, 189, 248, 0.18)');
+      laserGrad.addColorStop(0.5, 'rgba(120, 220, 255, 0.25)');
+      laserGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.18)');
       laserGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
       ctx.fillStyle = laserGrad;
-      ctx.fillRect(laserX - 120, horizonY - 4, 240, 3);
+      ctx.fillRect(laserCenterX - laserWidth / 2, baseY - 20, laserWidth, H - baseY + 40);
+      ctx.restore();
 
-      // Floating particles
+      // --- FLOATING PARTICLES in atmosphere zone ---
       particles.forEach(p => {
-        p.x += p.vx + Math.sin(time * 0.4 + p.phase) * 0.15;
-        p.y += p.vy + Math.cos(time * 0.3 + p.phase) * 0.08;
+        // Keep particles in the atmosphere zone (above the curve)
+        const curveAtP = horizonY(p.x, baseY, curveAmp);
+        const minY = Math.max(10, curveAtP - 140);
+        const maxY = curveAtP - 5;
+
+        p.x += p.vx + Math.sin(time * 0.4 + p.phase) * 0.12;
+        p.y += p.vy + Math.cos(time * 0.3 + p.phase) * 0.06;
         if (p.x < -10) p.x = W + 10;
         if (p.x > W + 10) p.x = -10;
-        if (p.y < horizonY - curveHeight * 0.5) p.y = horizonY;
-        if (p.y > H) p.y = horizonY - curveHeight * 0.3;
+        if (p.y < minY || p.y > maxY) {
+          p.y = minY + Math.random() * (maxY - minY);
+          p.x = Math.random() * W;
+        }
 
-        const breathe = 0.5 + Math.sin(time * 0.8 + p.phase) * 0.5;
+        const breathe = 0.4 + Math.sin(time * 0.8 + p.phase) * 0.4;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(165, 192, 255, ${p.alpha * breathe})`;
         ctx.fill();
+
+        // Tiny glow
+        if (p.size > 1.2) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(56, 189, 248, ${p.alpha * breathe * 0.08})`;
+          ctx.fill();
+        }
       });
 
-      // Status text
+      // --- CENTER GLOW (just above curve center) ---
+      const centerPulse = 0.06 + Math.sin(time * 0.6) * 0.03 + Math.sin(time * 1.4) * 0.015;
+      const cGrad = ctx.createRadialGradient(W / 2, baseY - 15, 5, W / 2, baseY - 15, W * 0.4);
+      cGrad.addColorStop(0, `rgba(56, 189, 248, ${centerPulse})`);
+      cGrad.addColorStop(0.5, `rgba(59, 130, 246, ${centerPulse * 0.3})`);
+      cGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
+      ctx.fillStyle = cGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // --- STATUS TEXT on planet body ---
+      const textY = baseY + 50;
       ctx.font = '7px monospace';
-      ctx.fillStyle = `rgba(52, 211, 153, ${0.3 + Math.sin(time * 0.5) * 0.1})`;
-      ctx.fillText('System Online', W * 0.08, horizonY + 14);
-      ctx.fillStyle = `rgba(56, 189, 248, ${0.2 + Math.sin(time * 0.7) * 0.08})`;
-      ctx.fillText('Model v3.5 · Ready', W * 0.08, horizonY + 26);
+      ctx.fillStyle = `rgba(52, 211, 153, ${0.25 + Math.sin(time * 0.5) * 0.08})`;
+      ctx.fillText('System Online', W * 0.06, textY);
+      ctx.fillStyle = `rgba(56, 189, 248, ${0.18 + Math.sin(time * 0.7) * 0.06})`;
+      ctx.fillText('Model v3.5 · Ready', W * 0.06, textY + 12);
 
       animFrameId = requestAnimationFrame(draw);
     };
@@ -552,7 +640,7 @@ export default function App() {
         this.fromNode = fromNode;
         this.toNode = toNode;
         this.progress = 0;
-        this.speed = 0.008 + Math.random() * 0.006;
+        this.speed = speed;
         this.color = '#bae6fd'; // soft blue/sky color
       }
 
@@ -894,10 +982,10 @@ export default function App() {
     }, 2000);
 
     try {
+      let payload = inputs;
       if (docFileObj) {
         const fileText = await docFileObj.text();
-        inputs.docFileContent = fileText;
-        inputs.docFileName = docFileObj.name;
+        payload = { ...inputs, docFileContent: fileText, docFileName: docFileObj.name };
       }
 
       const controller = new AbortController();
@@ -906,7 +994,7 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(inputs),
+        body: JSON.stringify(payload),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -916,7 +1004,7 @@ export default function App() {
         throw new Error(errData.error || `Server responded ${res.status}`);
       }
       const rawResult = await res.json();
-      const result = mapFlaskRunResponse(rawResult, inputs);
+      const result = mapFlaskRunResponse(rawResult, payload);
 
       setAnalysisProgress(95);
       setAnalysisStage('Rendering analytics dashboard...');
@@ -964,7 +1052,6 @@ export default function App() {
         : err.message || 'Pipeline unavailable';
       setDiagnosticData(prev => ({ ...prev, apiError: msg }));
       setIsAnalyzing(false);
-      setAnalysisStage(msg);
       setAnalysisStage(msg);
       setTimeout(() => setAnalysisStage(''), 5000);
     }
@@ -1796,10 +1883,10 @@ export default function App() {
 
               {/* MAJESTIC CUSTOM COGNITIVE BIOMETRIC HORIZON */}
               {/* Animated planetary atmosphere canvas */}
-              <div className="absolute bottom-0 left-0 right-0 h-[400px] pointer-events-none z-0 overflow-hidden">
+              <div className="absolute bottom-0 left-0 right-0 h-[420px] pointer-events-none z-0 overflow-hidden">
                 <canvas 
                   ref={atmosphereCanvasRef} 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full"
                   style={{ imageRendering: 'auto' }}
                 />
               </div>
@@ -2123,7 +2210,7 @@ export default function App() {
 
             // Initialize viewport once when data loads
             const [vpStart, vpEnd] = (chartViewport[0] === -1 && nChart > 0)
-              ? (() => { setChartViewport([0, nChart - 1]); return [0, Math.max(0, nChart - 1)]; })()
+              ? [0, Math.max(0, nChart - 1)]
               : [Math.max(0, Math.min(chartViewport[0], nChart - 1)), Math.max(1, Math.min(chartViewport[1] || nChart - 1, nChart - 1))];
             const vpCount = vpEnd - vpStart + 1;
             const vpLastIdx = Math.max(1, vpCount - 1);
