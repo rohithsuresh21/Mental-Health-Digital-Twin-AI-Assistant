@@ -22,7 +22,8 @@ import {
   Plus,
   Minus,
   Sun,
-  Moon
+  Moon,
+  ScrollText
 } from 'lucide-react';
 import { IngestionInput, DiagnosticData } from './types';
 import { defaultDiagnosticData } from './defaultData';
@@ -81,7 +82,7 @@ export default function App() {
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
-  type Tab = 'dashboard' | 'clinical' | 'analytics' | 'explainable' | 'profile' | 'intake';
+  type Tab = 'dashboard' | 'clinical' | 'analytics' | 'explainable' | 'profile' | 'intake' | 'legal';
   const [activeTab, setActiveTabState] = useState<Tab>('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -94,7 +95,7 @@ export default function App() {
   useEffect(() => {
     // Set initial hash
     const initialHash = window.location.hash.replace('#', '') as Tab;
-    if (initialHash && ['dashboard','clinical','analytics','explainable','profile','intake'].includes(initialHash)) {
+    if (initialHash && ['dashboard','clinical','analytics','explainable','profile','intake','legal'].includes(initialHash)) {
       setActiveTabState(initialHash);
     }
 
@@ -103,7 +104,7 @@ export default function App() {
         setActiveTabState(e.state.tab);
       } else {
         const hash = window.location.hash.replace('#', '') as Tab;
-        if (hash && ['dashboard','clinical','analytics','explainable','profile','intake'].includes(hash)) {
+        if (hash && ['dashboard','clinical','analytics','explainable','profile','intake','legal'].includes(hash)) {
           setActiveTabState(hash);
         }
       }
@@ -510,14 +511,16 @@ export default function App() {
       });
 
       // ─── TOP FADE-OUT: blend glow smoothly into background ───
-      // This eliminates the hard cutoff line at the canvas top edge
-      const fadeGrad = ctx.createLinearGradient(0, 0, 0, H * 0.45);
+      // Extended to 65% of canvas height for a long, seamless dissolve
+      const fadeGrad = ctx.createLinearGradient(0, 0, 0, H * 0.65);
       fadeGrad.addColorStop(0, 'rgba(3, 4, 10, 1)');
-      fadeGrad.addColorStop(0.5, 'rgba(3, 4, 10, 0.85)');
-      fadeGrad.addColorStop(0.8, 'rgba(3, 4, 10, 0.3)');
+      fadeGrad.addColorStop(0.3, 'rgba(3, 4, 10, 0.92)');
+      fadeGrad.addColorStop(0.55, 'rgba(3, 4, 10, 0.6)');
+      fadeGrad.addColorStop(0.75, 'rgba(3, 4, 10, 0.2)');
+      fadeGrad.addColorStop(0.9, 'rgba(3, 4, 10, 0.05)');
       fadeGrad.addColorStop(1, 'rgba(3, 4, 10, 0)');
       ctx.fillStyle = fadeGrad;
-      ctx.fillRect(0, 0, W, H * 0.45);
+      ctx.fillRect(0, 0, W, H * 0.65);
 
       animFrameId = requestAnimationFrame(draw);
     };
@@ -1613,6 +1616,18 @@ export default function App() {
                     <Activity className="h-4 w-4" />
                     Analysis {!patientData.status?.calibrated && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
                   </button>
+
+                  <button id="tab-legal"
+                    onClick={() => { setActiveTab('legal'); setIsMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'legal' 
+                        ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <ScrollText className="h-4 w-4" />
+                    Docs &amp; Legal
+                  </button>
                 </>
               ) : (
                 <>
@@ -1665,6 +1680,18 @@ export default function App() {
                   >
                     <Activity className="h-4 w-4" />
                     Analytics {!hasRunAnalysis && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
+                  </button>
+
+                  <button id="tab-legal"
+                    onClick={() => { setActiveTab('legal'); setIsMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'legal' 
+                        ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <ScrollText className="h-4 w-4" />
+                    Docs &amp; Legal
                   </button>
                 </>
               )}
@@ -1851,6 +1878,15 @@ export default function App() {
               </div>
             )}
 
+          {activeTab === 'legal' && (
+            <div className="flex items-center gap-2.5">
+              <span className="h-2 w-2 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7] animate-pulse" />
+              <h1 className="text-sm font-extrabold tracking-widest bg-gradient-to-r from-purple-400 via-indigo-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(168,85,247,0.3)] uppercase font-sans">
+                Documentation &amp; Legal
+              </h1>
+            </div>
+          )}
+
             <button 
               className="p-1.5 text-gray-400 hover:text-white rounded-full cursor-pointer relative" 
               id="header-settings-button"
@@ -1875,7 +1911,7 @@ export default function App() {
         <div className={`flex-1 overflow-y-auto relative ${activeTab === 'dashboard' ? 'p-0' : 'px-10 py-8'}`}>
 
           {/* PERMANENT ATMOSPHERIC BACKGROUND — always rendered, visible on all tabs */}
-          <div className={`absolute bottom-0 left-0 right-0 pointer-events-none z-0 overflow-hidden transition-opacity duration-700 ${activeTab === 'dashboard' ? 'opacity-100 h-[600px]' : 'opacity-25 h-[400px]'}`}>
+          <div className={`absolute bottom-0 left-0 right-0 pointer-events-none z-0 overflow-hidden transition-opacity duration-700 ${activeTab === 'dashboard' ? 'opacity-100 h-[600px]' : 'opacity-10 h-[300px]'}`}>
             <canvas 
               ref={atmosphereCanvasRef} 
               className="w-full h-full"
@@ -1922,6 +1958,190 @@ export default function App() {
               <div className="glass-panel rounded-2xl p-6">
                 <PatientIntakePortal userId={userId} onCalibrated={() => patientData.refresh()} onNavigateToAnalysis={() => setActiveTab('analytics')} />
               </div>
+            </div>
+          )}
+
+          {/* TAB LEGAL: Documentation, Privacy Policy, Terms of Use */}
+          {activeTab === 'legal' && (
+            <div className="max-w-3xl mx-auto my-2 animate-in fade-in duration-200 space-y-8 pb-12">
+              
+              {/* DOCUMENTATION */}
+              <div className="glass-panel rounded-2xl p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <FileText className="h-5 w-5 text-blue-400" />
+                  <h2 className="text-lg font-bold text-white tracking-wide">Documentation</h2>
+                </div>
+
+                <div className="space-y-5 text-sm text-gray-300 leading-relaxed">
+                  <div>
+                    <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">What This System Does</h3>
+                    <p>Mental Health Digital Twin AI is an AI-powered clinical decision support tool. It analyzes patient communication patterns, behavioral data, and self-reported metrics to generate risk assessments and trend analyses. The system builds a longitudinal "digital twin" profile to track changes over time.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">How to Upload Data</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-400">
+                      <li><strong className="text-gray-300">Journals / Messages:</strong> Paste text or upload CSV/TXT files in the Clinical Upload tab.</li>
+                      <li><strong className="text-gray-300">Audio Recordings:</strong> Upload WAV, MP3, M4A, OGG, or CSV audio transcription files.</li>
+                      <li><strong className="text-gray-300">Clinical Reports:</strong> Upload PDF, DOCX, or TXT clinical documents for NLP extraction.</li>
+                      <li><strong className="text-gray-300">Daily Check-ins:</strong> Use the Patient Intake Portal for daily sleep, mood, and activity logging.</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">Understanding Risk Scores</h3>
+                    <p>The <strong className="text-white">Risk Assessment Score</strong> (0–100%) is produced by an XGBoost classifier calibrated on the DAIC-WOZ clinical dataset. It reflects the probability of clinically significant psychological distress. Scores above 55% indicate moderate concern; above 75% indicates critical concern requiring intervention.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">Anomaly &amp; Detector Results</h3>
+                    <p>The system runs 6 behavioral anomaly detectors (isolation forest, autoencoder, Z-score, MAD, rolling statistics, spectral analysis). Each detector flags deviations from the patient's personal baseline. The <strong className="text-white">Anomaly Consensus Score</strong> averages these detectors. CUSUM charts track sustained drift over time.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">Interpreting the Dashboard</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-400">
+                      <li><strong className="text-gray-300">Mood &amp; Risk Over Time:</strong> Longitudinal sentiment and risk score with zoom/scroll controls.</li>
+                      <li><strong className="text-gray-300">Baseline Shift:</strong> How the patient's metrics compare to their initial baseline.</li>
+                      <li><strong className="text-gray-300">CUSUM:</strong> Cumulative drift detection — crossing the threshold line signals sustained change.</li>
+                      <li><strong className="text-gray-300">What's Driving That Signal:</strong> Individual detector contributions and feature importance.</li>
+                      <li><strong className="text-gray-300">Explainable AI:</strong> SHAP-style feature attributions showing what drove the latest prediction.</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">For Developers</h3>
+                    <p>The system runs a Flask backend (Python) with a React + Vite frontend. The ML pipeline uses PyTorch Temporal Fusion Transformer, XGBoost, Isolation Forest, and scikit-learn. Data is stored locally in SQLite. All inference runs on-device — no external AI API calls are made during analysis.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* PRIVACY POLICY */}
+              <div className="glass-panel rounded-2xl p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <Shield className="h-5 w-5 text-emerald-400" />
+                  <h2 className="text-lg font-bold text-white tracking-wide">Privacy Policy</h2>
+                </div>
+
+                <div className="space-y-5 text-sm text-gray-300 leading-relaxed">
+                  <p className="text-gray-500 text-xs">Last updated: July 2026</p>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">Data Collected</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-400">
+                      <li>Text entries (journals, messages, communication logs)</li>
+                      <li>Audio recordings and their transcriptions</li>
+                      <li>Self-reported metrics: sleep duration, sleep quality, physical activity, mood</li>
+                      <li>Personal identifiers: name, age, gender, blood type</li>
+                      <li>Clinical document uploads (PDF, DOCX)</li>
+                      <li>Profile photos (stored locally as avatar files)</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">Why Data Is Collected</h3>
+                    <p>Data is collected solely to generate personalized mental health risk assessments, trend analyses, and clinical summaries. The system uses your data to build a longitudinal profile that tracks changes in your behavioral and emotional patterns over time.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">Where Data Is Stored</h3>
+                    <p>All data is stored locally on the server machine in an SQLite database (<code className="bg-white/5 px-1.5 py-0.5 rounded text-emerald-300">data/daily_portal.db</code>) and local file system. Profile photos are stored in <code className="bg-white/5 px-1.5 py-0.5 rounded text-emerald-300">data/avatars/</code>. No data is transmitted to external cloud services or third-party servers.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">External AI APIs</h3>
+                    <p><strong className="text-white">No external AI APIs are used.</strong> All machine learning inference (TFT, XGBoost, Isolation Forest, anomaly detection) runs entirely on the local server. No patient data leaves the machine during analysis.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">Data Retention</h3>
+                    <p>Data is retained indefinitely until the user or administrator manually deletes it. There is no automatic expiration. Users can request deletion of their data by contacting the system administrator.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">Who Can Access Data</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-400">
+                      <li><strong className="text-gray-300">The patient:</strong> Can view and manage their own data and daily check-ins.</li>
+                      <li><strong className="text-gray-300">Admin / Clinician:</strong> Can access all patient data for clinical review (requires admin authentication).</li>
+                      <li><strong className="text-gray-300">No third parties:</strong> Data is never shared with external organizations.</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">How to Delete Your Data</h3>
+                    <p>Contact the system administrator to request full deletion of your account data, including all uploaded files, daily logs, and analysis results. Deletion is permanent and irreversible.</p>
+                  </div>
+
+                  <div className="bg-amber-950/30 border border-amber-500/20 rounded-xl p-4 mt-4">
+                    <p className="text-amber-300 text-xs font-bold mb-1">Medical Disclaimer</p>
+                    <p className="text-amber-200/70 text-xs">This system is <strong>not a medical device</strong> and does not provide medical diagnosis, treatment recommendations, or emergency services. Risk scores are algorithmic estimates intended as clinical decision support only. Always consult a qualified healthcare professional for medical decisions. If you are in crisis, contact your local emergency services or crisis hotline immediately.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* TERMS OF USE */}
+              <div className="glass-panel rounded-2xl p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <ScrollText className="h-5 w-5 text-purple-400" />
+                  <h2 className="text-lg font-bold text-white tracking-wide">Terms of Use</h2>
+                </div>
+
+                <div className="space-y-5 text-sm text-gray-300 leading-relaxed">
+                  <p className="text-gray-500 text-xs">Last updated: July 2026</p>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-widest mb-2">Acceptable Use</h3>
+                    <p>This system is designed for use by licensed healthcare providers, clinical researchers, and patients under clinical supervision. By using this system, you agree to use it only for lawful, clinical, and research purposes related to mental health monitoring and assessment.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-widest mb-2">Not a Substitute for Professional Care</h3>
+                    <p>This system is a <strong className="text-white">clinical decision support tool</strong>, not a replacement for professional medical judgment. Risk assessments, anomaly alerts, and trend analyses are algorithmic outputs and should be interpreted by qualified professionals. Never rely solely on this system for clinical decisions.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-widest mb-2">No Emergency Use</h3>
+                    <p>This system is <strong className="text-white">not designed for emergency situations</strong>. If you or someone you know is in immediate danger or experiencing a mental health crisis, contact emergency services (911), your local crisis hotline, or go to the nearest emergency room. This system cannot provide real-time crisis intervention.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-widest mb-2">Accuracy &amp; Limitations</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-400">
+                      <li>AI-generated risk scores are probabilistic estimates, not definitive diagnoses.</li>
+                      <li>Model accuracy depends on the quality and quantity of input data.</li>
+                      <li>The system may produce false positives or false negatives.</li>
+                      <li>Results should be validated against clinical observation and standardized assessments.</li>
+                      <li>The system has been trained on the DAIC-WOZ dataset and may not generalize to all populations.</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-widest mb-2">User Responsibilities</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-400">
+                      <li>Ensure all uploaded data has appropriate patient consent.</li>
+                      <li>Maintain the confidentiality of patient data accessed through this system.</li>
+                      <li>Do not attempt to reverse-engineer, exploit, or bypass system security measures.</li>
+                      <li>Report any security vulnerabilities or data breaches immediately.</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-widest mb-2">Intellectual Property</h3>
+                    <p>The software, ML models, and interface design are the intellectual property of the development team. Unauthorized reproduction, distribution, or commercial use is prohibited without written permission.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-widest mb-2">Limitation of Liability</h3>
+                    <p>To the maximum extent permitted by law, the developers and operators of this system shall not be held liable for any direct, indirect, incidental, or consequential damages arising from the use or misuse of this system, including but not limited to clinical decisions based on algorithmic outputs.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-widest mb-2">Changes to These Terms</h3>
+                    <p>We reserve the right to update these Terms of Use at any time. Continued use of the system after changes constitutes acceptance of the revised terms. Users will be notified of material changes.</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 
@@ -1997,9 +2217,6 @@ export default function App() {
                             <option value="Female">Female</option>
                             <option value="Other">Other</option>
                           </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -2023,9 +2240,6 @@ export default function App() {
                             <option value="O+">O+</option>
                             <option value="O-">O-</option>
                           </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                          </div>
                         </div>
                       </div>
                       <div>
