@@ -226,8 +226,8 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
           </div>
 
           <div className="mb-5">
-            <label className="block text-[11px] text-gray-500 mb-2">Audio Recording (.wav)</label>
-            <input type="file" accept=".wav" onChange={e => setAudioFile(e.target.files?.[0] || null)}
+            <label className="block text-[11px] text-gray-500 mb-2">Audio Recording (.wav/.csv)</label>
+            <input type="file" accept=".wav,.csv" onChange={e => setAudioFile(e.target.files?.[0] || null)}
               className="text-[12px] text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-[#1A202C] file:text-gray-300 hover:file:bg-[#232B3B] cursor-pointer" />
           </div>
 

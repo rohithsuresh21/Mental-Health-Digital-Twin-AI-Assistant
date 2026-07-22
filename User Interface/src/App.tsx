@@ -82,8 +82,35 @@ export default function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   type Tab = 'dashboard' | 'clinical' | 'analytics' | 'explainable' | 'profile' | 'intake';
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [activeTab, setActiveTabState] = useState<Tab>('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Browser back/forward: sync tab with history
+  const setActiveTab = (tab: Tab) => {
+    setActiveTabState(tab);
+    history.pushState({ tab }, '', `#${tab}`);
+  };
+
+  useEffect(() => {
+    // Set initial hash
+    const initialHash = window.location.hash.replace('#', '') as Tab;
+    if (initialHash && ['dashboard','clinical','analytics','explainable','profile','intake'].includes(initialHash)) {
+      setActiveTabState(initialHash);
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state?.tab) {
+        setActiveTabState(e.state.tab);
+      } else {
+        const hash = window.location.hash.replace('#', '') as Tab;
+        if (hash && ['dashboard','clinical','analytics','explainable','profile','intake'].includes(hash)) {
+          setActiveTabState(hash);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStage, setAnalysisStage] = useState('');
@@ -247,6 +274,154 @@ export default function App() {
 
   // Canvas constellation animation background
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Canvas planetary atmosphere animation
+  const atmosphereCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    const canvas = atmosphereCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animFrameId: number;
+    const W = 1200;
+    const H = 400;
+    canvas.width = W;
+    canvas.height = H;
+
+    interface WaveParticle {
+      x: number; y: number; vx: number; vy: number; size: number; alpha: number; phase: number;
+    }
+    const particles: WaveParticle[] = Array.from({ length: 35 }, () => ({
+      x: Math.random() * W,
+      y: H * 0.35 + Math.random() * H * 0.25,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.15,
+      size: 0.8 + Math.random() * 1.5,
+      alpha: 0.15 + Math.random() * 0.35,
+      phase: Math.random() * Math.PI * 2,
+    }));
+
+    const draw = (t: number) => {
+      const time = t * 0.001;
+      ctx.clearRect(0, 0, W, H);
+
+      // Horizon curve baseline
+      const horizonY = H * 0.55;
+      const curveHeight = H * 0.38;
+
+      // Deep atmosphere gradient
+      const atmGrad = ctx.createRadialGradient(W / 2, horizonY, 20, W / 2, horizonY + curveHeight * 0.3, W * 0.6);
+      atmGrad.addColorStop(0, 'rgba(14, 165, 233, 0.06)');
+      atmGrad.addColorStop(0.5, 'rgba(59, 130, 246, 0.03)');
+      atmGrad.addColorStop(1, 'rgba(3, 6, 15, 0)');
+      ctx.fillStyle = atmGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Draw flowing waves along the horizon curve
+      for (let w = 0; w < 4; w++) {
+        const waveAlpha = 0.04 + w * 0.015 + Math.sin(time * 0.3 + w) * 0.012;
+        const waveAmp = 6 + w * 3 + Math.sin(time * 0.5 + w * 1.2) * 2;
+        const waveFreq = 0.003 + w * 0.001;
+        const waveSpeed = time * (0.2 + w * 0.08);
+        const yOff = w * 8;
+
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY + yOff);
+        for (let x = 0; x <= W; x += 2) {
+          const curveOffset = Math.pow((x - W / 2) / (W / 2), 2) * curveHeight;
+          const wave = Math.sin(x * waveFreq + waveSpeed) * waveAmp + Math.sin(x * waveFreq * 2.3 + waveSpeed * 0.7) * waveAmp * 0.3;
+          const y = horizonY - curveOffset + wave + yOff;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(56, 189, 248, ${waveAlpha})`;
+        ctx.lineWidth = 1 + w * 0.3;
+        ctx.stroke();
+      }
+
+      // Pulsing glow along horizon center
+      const pulseAlpha = 0.08 + Math.sin(time * 0.6) * 0.04 + Math.sin(time * 1.3) * 0.02;
+      const glowGrad = ctx.createRadialGradient(W / 2, horizonY - 20, 10, W / 2, horizonY - 20, W * 0.45);
+      glowGrad.addColorStop(0, `rgba(56, 189, 248, ${pulseAlpha})`);
+      glowGrad.addColorStop(0.4, `rgba(59, 130, 246, ${pulseAlpha * 0.4})`);
+      glowGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Atmospheric haze band
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 2) {
+        const curveOffset = Math.pow((x - W / 2) / (W / 2), 2) * curveHeight;
+        const haze = Math.sin(x * 0.002 + time * 0.15) * 3;
+        const y = horizonY - curveOffset + haze - 2;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+      ctx.closePath();
+      const hazeGrad = ctx.createLinearGradient(0, horizonY - curveHeight, 0, H);
+      hazeGrad.addColorStop(0, 'rgba(6, 8, 13, 0)');
+      hazeGrad.addColorStop(0.3, 'rgba(6, 8, 13, 0.85)');
+      hazeGrad.addColorStop(1, 'rgba(1, 1, 2, 0.98)');
+      ctx.fillStyle = hazeGrad;
+      ctx.fill();
+
+      // Concentric arc borders
+      for (let i = 0; i < 3; i++) {
+        const arcOffset = 6 + i * 14;
+        ctx.beginPath();
+        for (let x = 0; x <= W; x += 3) {
+          const curveOffset = Math.pow((x - W / 2) / (W / 2), 2) * curveHeight;
+          const y = horizonY - curveOffset + arcOffset;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(99, 102, 241, ${0.08 - i * 0.02 + Math.sin(time * 0.4 + i) * 0.02})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+
+      // Sweeping laser
+      const laserX = ((time * 80) % (W * 1.4)) - W * 0.2;
+      const laserGrad = ctx.createLinearGradient(laserX - 120, 0, laserX + 120, 0);
+      laserGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+      laserGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.12)');
+      laserGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      ctx.fillStyle = laserGrad;
+      ctx.fillRect(laserX - 120, horizonY - 4, 240, 3);
+
+      // Floating particles
+      particles.forEach(p => {
+        p.x += p.vx + Math.sin(time * 0.4 + p.phase) * 0.15;
+        p.y += p.vy + Math.cos(time * 0.3 + p.phase) * 0.08;
+        if (p.x < -10) p.x = W + 10;
+        if (p.x > W + 10) p.x = -10;
+        if (p.y < horizonY - curveHeight * 0.5) p.y = horizonY;
+        if (p.y > H) p.y = horizonY - curveHeight * 0.3;
+
+        const breathe = 0.5 + Math.sin(time * 0.8 + p.phase) * 0.5;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(165, 192, 255, ${p.alpha * breathe})`;
+        ctx.fill();
+      });
+
+      // Status text
+      ctx.font = '7px monospace';
+      ctx.fillStyle = `rgba(52, 211, 153, ${0.3 + Math.sin(time * 0.5) * 0.1})`;
+      ctx.fillText('System Online', W * 0.08, horizonY + 14);
+      ctx.fillStyle = `rgba(56, 189, 248, ${0.2 + Math.sin(time * 0.7) * 0.08})`;
+      ctx.fillText('Model v3.5 · Ready', W * 0.08, horizonY + 26);
+
+      animFrameId = requestAnimationFrame(draw);
+    };
+
+    animFrameId = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(animFrameId);
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -694,19 +869,32 @@ export default function App() {
   const handleInitializeDiagnosis = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAnalyzing(true);
-    setAnalysisProgress(10);
+    setAnalysisProgress(5);
     setAnalysisStage('Connecting to inference pipeline...');
 
+    const stages = [
+      { progress: 15, stage: 'Initializing ML models...', delay: 800 },
+      { progress: 25, stage: 'Extracting text features (Stage 1)...', delay: 1500 },
+      { progress: 35, stage: 'Normalizing feature vectors (Stage 2)...', delay: 2000 },
+      { progress: 45, stage: 'Running temporal forecasting (Stage 3)...', delay: 3000 },
+      { progress: 55, stage: 'Computing anomaly consensus (Stage 4)...', delay: 2500 },
+      { progress: 65, stage: 'Training TFT model & latent embeddings...', delay: 4000 },
+      { progress: 72, stage: 'Running XGBoost risk classifier (Stage 5)...', delay: 2000 },
+      { progress: 80, stage: 'Computing CUSUM baseline drift...', delay: 1500 },
+      { progress: 85, stage: 'Finalizing risk assessment...', delay: 1000 },
+    ];
+
+    let stageIdx = 0;
+    const progressInterval = setInterval(() => {
+      if (stageIdx < stages.length) {
+        setAnalysisProgress(stages[stageIdx].progress);
+        setAnalysisStage(stages[stageIdx].stage);
+        stageIdx++;
+      }
+    }, 2000);
+
     try {
-      setAnalysisStage('Running ML pipeline on backend...');
-      setAnalysisProgress(30);
-
-      let result: DiagnosticData;
-
-      // Always use Vite middleware (no direct Flask fetch — avoids CORS/IPv6 issues)
-      // Read file content into inputs if present
       if (docFileObj) {
-        console.log('[Diagnosis] Reading uploaded file:', docFileObj.name);
         const fileText = await docFileObj.text();
         inputs.docFileContent = fileText;
         inputs.docFileName = docFileObj.name;
@@ -722,19 +910,21 @@ export default function App() {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
+      clearInterval(progressInterval);
       if (!res.ok) {
         const errData = await res.json();
         throw new Error(errData.error || `Server responded ${res.status}`);
       }
       const rawResult = await res.json();
-      result = mapFlaskRunResponse(rawResult, inputs);
+      const result = mapFlaskRunResponse(rawResult, inputs);
 
-      setAnalysisProgress(90);
-      setAnalysisStage('Mapping pipeline output to dashboard...');
+      setAnalysisProgress(95);
+      setAnalysisStage('Rendering analytics dashboard...');
+      await new Promise(r => setTimeout(r, 300));
       setDiagnosticData(result);
       setHasRunAnalysis(true);
-      setIsAnalyzing(false);
-      setActiveTab('analytics');
+      setAnalysisProgress(100);
+      setAnalysisStage('Analysis complete!');
 
       const generated = result;
       const lastScores = generated.pipelineDetectorScores?.[generated.pipelineDetectorScores.length - 1];
@@ -763,13 +953,18 @@ export default function App() {
         });
       }
       setClinicalAlerts(prev => [...newAlerts, ...prev]);
+      await new Promise(r => setTimeout(r, 500));
+      setIsAnalyzing(false);
+      setActiveTab('analytics');
     } catch (err: any) {
       console.error('Pipeline error:', err);
+      clearInterval(progressInterval);
       const msg = err.name === 'AbortError'
         ? 'Backend took too long (2 min timeout). Falling back to local mock.'
         : err.message || 'Pipeline unavailable';
       setDiagnosticData(prev => ({ ...prev, apiError: msg }));
       setIsAnalyzing(false);
+      setAnalysisStage(msg);
       setAnalysisStage(msg);
       setTimeout(() => setAnalysisStage(''), 5000);
     }
@@ -1209,10 +1404,6 @@ export default function App() {
           ) : (
             <User className="h-4.5 w-4.5 text-blue-400" />
           )}
-          <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-            <Upload className="h-3 w-3 text-white" />
-            <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} onClick={e => e.stopPropagation()} />
-          </label>
         </div>
         <div className="flex-grow min-w-0">
           <div className="text-xs font-bold text-gray-200 truncate group-hover:text-white transition-colors">
@@ -1237,7 +1428,7 @@ export default function App() {
       <div className="fixed top-3 left-4 z-40">
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="h-10 px-4 bg-[#11131C]/65 hover:bg-[#11131C]/85 backdrop-blur-xl border border-[#1B2030]/60 rounded-xl flex items-center gap-2.5 transition-all duration-200 active:scale-95 text-[#A5C0FF] hover:text-white shadow-xl shadow-blue-950/15 cursor-pointer"
+          className="h-10 px-4 bg-[#11131C]/85 hover:bg-[#11131C] backdrop-blur-xl border border-[#1B2030]/60 rounded-xl flex items-center gap-2.5 transition-all duration-200 active:scale-95 text-[#A5C0FF] hover:text-white shadow-xl shadow-blue-950/15 cursor-pointer"
           id="sidebar-toggle-btn"
         >
           <div className="flex flex-col gap-1 w-4 justify-center items-center">
@@ -1252,12 +1443,12 @@ export default function App() {
       {/* ELEGANT POP-UP SIDEBAR MENU OVERLAY */}
       {isMenuOpen && (
         <div 
-          className="fixed inset-0 bg-[#06080C]/45 backdrop-blur-[3px] z-30 transition-opacity duration-300 flex items-start"
+          className="fixed inset-0 bg-[#06080C]/85 backdrop-blur-md z-30 transition-opacity duration-300 flex items-start"
           onClick={() => setIsMenuOpen(false)}
           id="sidebar-overlay"
         >
           <div 
-            className="absolute top-16 left-4 w-72 bg-[#11131C]/92 backdrop-blur-3xl border border-[#1B2030]/70 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.65)] flex flex-col overflow-hidden max-h-[calc(100vh-6rem)] animate-in fade-in slide-in-from-top-4 duration-300"
+            className="absolute top-16 left-4 w-72 bg-[#11131C] backdrop-blur-3xl border border-[#1B2030]/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden max-h-[calc(100vh-6rem)] animate-in fade-in slide-in-from-top-4 duration-300"
             onClick={(e) => e.stopPropagation()}
             id="sidebar-popup-card"
           >
@@ -1604,28 +1795,13 @@ export default function App() {
               </div>
 
               {/* MAJESTIC CUSTOM COGNITIVE BIOMETRIC HORIZON */}
-              {/* Ambient radial diagnostic glows */}
-              <div className="absolute -bottom-[120px] left-1/2 -translate-x-1/2 w-[140vw] h-[300px] rounded-full bg-blue-500/10 blur-3xl pointer-events-none z-0" />
-              <div className="absolute -bottom-[200px] left-1/2 -translate-x-1/2 w-[150vw] h-[400px] rounded-full bg-indigo-500/10 blur-2xl pointer-events-none z-0" />
-
-              {/* The main high-tech curved cybernetic boundary */}
-              <div className="absolute -bottom-[280px] left-1/2 -translate-x-1/2 w-[170vw] h-[550px] rounded-t-[100%] bg-[#06080d]/95 backdrop-blur-[4px] border-t border-sky-500/30 animate-horizon-pulse pointer-events-none z-0 overflow-hidden shadow-[0_-4px_30px_rgba(14,165,233,0.15)]">
-                {/* Embedded holographic digital coordinate grid */}
-                <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #38bdf8 1.2px, transparent 1.2px), linear-gradient(to right, rgba(99,102,241,0.05) 1px, transparent 1px)', backgroundSize: '16px 16px, 40px 100%' }} />
-
-                {/* Concentric glass-line indicators representing biometrics */}
-                <div className="absolute top-[8px] left-1/2 -translate-x-1/2 w-[164vw] h-[530px] rounded-t-[100%] border-t border-indigo-400/15 pointer-events-none" />
-                <div className="absolute top-[24px] left-1/2 -translate-x-1/2 w-[158vw] h-[510px] rounded-t-[100%] border-t border-dashed border-sky-400/10 pointer-events-none" />
-
-                {/* Dynamic sweeping laser scanner node */}
-                <div className="absolute top-[-2px] h-[3px] w-[20%] bg-gradient-to-r from-transparent via-sky-400 to-transparent blur-[2px] animate-laser-sweep pointer-events-none" />
-
-                {/* Inner depth shadow of planetary curve */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#030406]/98 to-[#010102] pointer-events-none" />
-
-                {/* Status indicators */}
-                <div className="absolute top-2 left-[15%] text-[7px] font-mono tracking-widest text-emerald-400/40">System Online</div>
-                <div className="absolute top-4 left-[15%] text-[7px] font-mono tracking-widest text-sky-400/30">Model v3.5 · Ready</div>
+              {/* Animated planetary atmosphere canvas */}
+              <div className="absolute bottom-0 left-0 right-0 h-[400px] pointer-events-none z-0 overflow-hidden">
+                <canvas 
+                  ref={atmosphereCanvasRef} 
+                  className="w-full h-full object-cover"
+                  style={{ imageRendering: 'auto' }}
+                />
               </div>
             </div>
           )}
@@ -1648,12 +1824,23 @@ export default function App() {
                 <div className="animate-flow-dot" />
 
                 <div className="flex items-center gap-4 mb-8">
-                  <div className="h-14 w-14 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.15)]">
-                    <User className="h-7 w-7" />
+                  <div className="relative">
+                    <div className="h-14 w-14 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.15)] overflow-hidden">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
+                      ) : (
+                        <User className="h-7 w-7" />
+                      )}
+                    </div>
+                    <label className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-indigo-600 border border-indigo-400 flex items-center justify-center cursor-pointer hover:bg-indigo-500 transition-colors shadow-lg">
+                      <Upload className="h-3 w-3 text-white" />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                    </label>
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 via-purple-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(99,102,241,0.25)]">Patient Profile Settings</h2>
                     <p className="text-[#A5C0FF]/60 text-xs">Enter patient details and clinical background information.</p>
+                    <p className="text-[#A5C0FF]/40 text-[10px] mt-0.5">Click the camera icon to upload a profile photo.</p>
                   </div>
                 </div>
 
@@ -1787,11 +1974,11 @@ export default function App() {
                       
                       {/* VOICE RECORDINGS */}
                       <div>
-                        <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">VOICE RECORDINGS (.MP3/.WAV)</label>
+                        <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">VOICE RECORDINGS (.MP3/.WAV/.CSV)</label>
                         <input
                           ref={audioInputRef}
                           type="file"
-                          accept=".mp3,.wav,.m4a,.ogg"
+                          accept=".mp3,.wav,.m4a,.ogg,.csv"
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
@@ -3191,6 +3378,15 @@ export default function App() {
           {activeTab === 'explainable' && (
             <div className="space-y-8 animate-in fade-in duration-300" id="explainable-ai-container">
               
+              {/* RETURN TO ANALYSIS BUTTON */}
+              <button
+                onClick={() => setActiveTab('analytics')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#121620]/60 border border-[#20293B]/40 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:border-gray-500 transition-all cursor-pointer"
+              >
+                <ArrowRight className="h-3.5 w-3.5 rotate-180" />
+                Return to Analysis
+              </button>
+
               {/* TOP BANNER */}
               <div className="flex">
                 <div className="bg-[#1C1105]/50 border border-amber-500/20 text-amber-500/90 text-[10px] sm:text-xs font-sans font-bold tracking-wider px-4 py-2 rounded-lg uppercase" id="explainable-preview-banner">

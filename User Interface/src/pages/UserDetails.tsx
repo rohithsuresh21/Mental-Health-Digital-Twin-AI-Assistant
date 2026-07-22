@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import NeuralBackground from '../NeuralBackground';
 
 export default function UserDetails() {
-  const [userId, setUserId] = useState('Alex@1996');
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
+
+  const generateUserId = () => `user_${Date.now().toString(36)}`;
+  const userId = generateUserId();
 
   async function pickRole(role: 'admin' | 'patient') {
     if (role === 'admin') {
@@ -123,19 +125,6 @@ export default function UserDetails() {
           </div>
         ) : (
           <>
-            <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-8 mb-6">
-              <label className="block text-xs text-gray-500 mb-2 font-medium tracking-wider uppercase">
-                User ID
-              </label>
-              <input
-                type="text"
-                value={userId}
-                onChange={e => setUserId(e.target.value)}
-                className="w-full bg-[#0B0E14] border border-[#1A202C] rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-gray-500 transition-colors"
-                placeholder="e.g. patient_001"
-              />
-            </div>
-
             <p className="text-xs text-gray-500 text-center mb-4 uppercase tracking-widest">
               Select your role
             </p>

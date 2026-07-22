@@ -182,15 +182,16 @@ export function mapFlaskRunResponse(pipelineResult: any, input: Partial<Ingestio
   const latestScore = anomalyScores.length > 0 ? anomalyScores[anomalyScores.length - 1] : 0.5;
   const anomalyScore = Math.round(Math.min(99, Math.max(1, latestScore * 100)));
   const prob = pred.probability ?? 0.5;
+  const riskScore = Math.round(Math.min(99, Math.max(1, prob * 100)));
   const nEntries = pipelineResult.n_entries || 0;
   const sleepDur = Number(input.sleepDuration) || 7.0;
   const sleepQual = Number(input.sleepQuality) || 3;
   const physAct = Number(input.physicalActivity) || 3;
 
   let status = 'NOMINAL BASELINE DETECTED';
-  if (anomalyScore > 80) status = 'CRITICAL THRESHOLD VIOLATION';
-  else if (anomalyScore > 65) status = 'MODERATE ANOMALY DETECTED';
-  else if (anomalyScore > 45) status = 'MILD ELEVATION DETECTED';
+  if (riskScore > 80) status = 'CRITICAL THRESHOLD VIOLATION';
+  else if (riskScore > 65) status = 'MODERATE ANOMALY DETECTED';
+  else if (riskScore > 45) status = 'MILD ELEVATION DETECTED';
 
   const direction = anomalyScores.length >= 2 && anomalyScores[anomalyScores.length - 1] > anomalyScores[0] ? 'up' : 'down';
 
@@ -235,10 +236,10 @@ export function mapFlaskRunResponse(pipelineResult: any, input: Partial<Ingestio
 
   const textLen = (input.communicationLogs?.length || 0) + (input.voiceRecordingsText?.length || 0);
   const insights = [
-    `Processed ${nEntries} journal entries through the clinical pipeline. Latest anomaly score: ${anomalyScore}%.`,
+    `Processed ${nEntries} journal entries through the clinical pipeline. Latest risk score: ${riskScore}%.`,
     `Sleep duration of ${sleepDur}h constitutes a ${sleepRoutineDisrupt}% disruption from baseline.`,
     `Syntactic complexity and valence indices align with a ${status.toLowerCase()} profile.`,
-    `Risk assessment: ${(prob * 100).toFixed(1)}% probability — ${pred.risk_level || 'NOMINAL'}.`,
+    `Risk assessment: ${(riskScore).toFixed(1)}% probability — ${pred.risk_level || 'NOMINAL'}.`,
   ];
 
   const validEntries = anomalyScores.filter(s => s !== null && s !== undefined);
@@ -251,9 +252,9 @@ export function mapFlaskRunResponse(pipelineResult: any, input: Partial<Ingestio
     avgDailyVarianceDirection: direction,
     avgDailyVarianceChange: `${direction === 'up' ? '+' : '-'}${(1 + Math.random() * 3).toFixed(2)}%`,
     extractedDimensions: pipelineResult.tft_latent_shape?.[0] || Math.round(300 + Math.random() * 400),
-    anomalyBehaviourScore: anomalyScore,
+    anomalyBehaviourScore: riskScore,
     anomalyStatus: status,
-    anomalyDirection: anomalyScore > 60 ? 'up' : 'down',
+    anomalyDirection: riskScore > 60 ? 'up' : 'down',
     anomalyChange: `+${(0.5 + Math.random() * 2).toFixed(1)}%`,
     temporalCognitiveAnalysis: temporalPoints,
     linguisticShift: lingShift,
