@@ -377,7 +377,7 @@ export default function App() {
   // Canvas constellation animation background
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Canvas planetary atmosphere animation
+  // Canvas planetary atmosphere animation — clean, elegant design
   const atmosphereCanvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     const canvas = atmosphereCanvasRef.current;
@@ -391,209 +391,122 @@ export default function App() {
     canvas.width = W;
     canvas.height = H;
 
-    interface WaveParticle {
-      x: number; y: number; vx: number; vy: number; size: number; alpha: number; phase: number;
-    }
-    const particles: WaveParticle[] = Array.from({ length: 40 }, () => ({
+    // Floating particles in the atmosphere
+    const particles = Array.from({ length: 20 }, () => ({
       x: Math.random() * W,
       y: 0,
-      vx: (Math.random() - 0.5) * 0.35,
-      vy: (Math.random() - 0.5) * 0.1,
-      size: 0.6 + Math.random() * 1.8,
-      alpha: 0.1 + Math.random() * 0.4,
+      size: 0.4 + Math.random() * 1.2,
+      alpha: 0.08 + Math.random() * 0.2,
       phase: Math.random() * Math.PI * 2,
+      drift: (Math.random() - 0.5) * 0.2,
     }));
 
-    // Returns the y-coordinate of the planet horizon curve at a given x
-    // At center (x=W/2): returns baseY (highest point, closest to top)
-    // At edges (x=0 or W): returns baseY + curveAmp (lowest point, closest to bottom)
-    const horizonY = (x: number, baseY: number, curveAmp: number) => {
-      const normalX = (x - W / 2) / (W / 2);
-      return baseY + normalX * normalX * curveAmp;
+    // Smooth parabolic horizon: convex at center, tapers at edges
+    const curveY = (x: number) => {
+      const n = (x - W / 2) / (W / 2);
+      return baseY + n * n * curveAmp;
     };
+
+    const baseY = H * 0.32;
+    const curveAmp = H * 0.58;
 
     const draw = (t: number) => {
       const time = t * 0.001;
       ctx.clearRect(0, 0, W, H);
 
-      // Base position of curve center (from top of canvas)
-      const baseY = H * 0.35;
-      // How much the curve dips at the edges
-      const curveAmp = H * 0.55;
-
-      // --- ATMOSPHERIC GLOW (above the curve) ---
-      for (let g = 0; g < 5; g++) {
-        const glowSpread = 30 + g * 18;
-        const pulse = Math.sin(time * 0.5 + g * 0.7) * 0.015;
-        const alpha = (0.06 - g * 0.01 + pulse) * (0.7 + 0.3 * Math.sin(time * 0.3 + g));
-
-        ctx.beginPath();
-        for (let x = 0; x <= W; x += 3) {
-          const y = horizonY(x, baseY, curveAmp) - glowSpread + Math.sin(x * 0.004 + time * 0.2 + g) * 2;
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = `rgba(56, 189, 248, ${alpha})`;
-        ctx.lineWidth = 1.5 + g * 0.3;
-        ctx.filter = `blur(${2 + g}px)`;
-        ctx.stroke();
-      }
-      ctx.filter = 'none';
-
-      // --- CONCENTRIC ARC BORDERS (just above planet edge) ---
-      for (let i = 0; i < 3; i++) {
-        const yShift = 3 + i * 10;
-        ctx.beginPath();
-        for (let x = 0; x <= W; x += 3) {
-          const y = horizonY(x, baseY, curveAmp) - yShift + Math.sin(x * 0.003 + time * 0.3 + i) * 1.5;
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = `rgba(99, 102, 241, ${0.1 - i * 0.025 + Math.sin(time * 0.4 + i) * 0.02})`;
-        ctx.lineWidth = 0.6;
-        ctx.stroke();
-      }
-
-      // --- WAVE LINES along the curve ---
-      for (let w = 0; w < 5; w++) {
-        const waveAlpha = 0.05 + w * 0.012 + Math.sin(time * 0.35 + w * 1.1) * 0.01;
-        const waveAmp = 4 + w * 2.5 + Math.sin(time * 0.5 + w * 1.3) * 1.5;
-        const waveFreq = 0.003 + w * 0.0008;
-        const waveSpeed = time * (0.25 + w * 0.06);
-        const yOff = -2 - w * 6;
-
-        ctx.beginPath();
-        for (let x = 0; x <= W; x += 2) {
-          const y = horizonY(x, baseY, curveAmp) + yOff
-            + Math.sin(x * waveFreq + waveSpeed) * waveAmp
-            + Math.sin(x * waveFreq * 2.1 + waveSpeed * 0.6) * waveAmp * 0.3;
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = `rgba(56, 189, 248, ${waveAlpha})`;
-        ctx.lineWidth = 0.8 + w * 0.25;
-        ctx.stroke();
-      }
-
-      // --- PLANET BODY (dark fill below curve) ---
+      // ─── PLANET BODY (solid dark fill below curve) ───
       ctx.beginPath();
-      for (let x = 0; x <= W; x += 2) {
-        const y = horizonY(x, baseY, curveAmp) + Math.sin(x * 0.002 + time * 0.12) * 1.5;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+      ctx.moveTo(0, curveY(0));
+      for (let x = 1; x <= W; x += 2) {
+        ctx.lineTo(x, curveY(x));
       }
       ctx.lineTo(W, H);
       ctx.lineTo(0, H);
       ctx.closePath();
 
-      // Layered dark gradient for planet body depth
-      const bodyGrad = ctx.createLinearGradient(0, baseY, 0, H);
-      bodyGrad.addColorStop(0, 'rgba(6, 8, 15, 0.6)');
-      bodyGrad.addColorStop(0.15, 'rgba(4, 6, 12, 0.88)');
-      bodyGrad.addColorStop(0.4, 'rgba(3, 4, 10, 0.96)');
-      bodyGrad.addColorStop(1, 'rgba(1, 1, 3, 1)');
+      const bodyGrad = ctx.createLinearGradient(0, baseY - 10, 0, H);
+      bodyGrad.addColorStop(0, 'rgba(5, 8, 18, 0.7)');
+      bodyGrad.addColorStop(0.2, 'rgba(3, 5, 12, 0.92)');
+      bodyGrad.addColorStop(0.5, 'rgba(2, 3, 8, 0.98)');
+      bodyGrad.addColorStop(1, '#010103');
       ctx.fillStyle = bodyGrad;
       ctx.fill();
 
-      // Subtle grid on planet body
-      ctx.save();
-      ctx.beginPath();
-      for (let x = 0; x <= W; x += 2) {
-        const y = horizonY(x, baseY, curveAmp) + Math.sin(x * 0.002 + time * 0.12) * 1.5;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.lineTo(W, H);
-      ctx.lineTo(0, H);
-      ctx.closePath();
-      ctx.clip();
-
-      ctx.globalAlpha = 0.04;
-      for (let gx = 0; gx < W; gx += 40) {
-        ctx.beginPath();
-        ctx.moveTo(gx, baseY);
-        ctx.lineTo(gx, H);
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-      ctx.restore();
-
-      // --- SWEEPING LASER along curve edge ---
-      const laserPhase = (time * 0.15) % 1;
-      const laserCenterX = laserPhase * (W + 400) - 200;
-      const laserWidth = 180;
-
-      ctx.save();
-      ctx.beginPath();
-      for (let x = 0; x <= W; x += 2) {
-        const y = horizonY(x, baseY, curveAmp) - 6;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.lineTo(W, H);
-      ctx.lineTo(0, H);
-      ctx.closePath();
-      ctx.clip();
-
-      const laserGrad = ctx.createLinearGradient(laserCenterX - laserWidth / 2, 0, laserCenterX + laserWidth / 2, 0);
-      laserGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
-      laserGrad.addColorStop(0.4, 'rgba(56, 189, 248, 0.18)');
-      laserGrad.addColorStop(0.5, 'rgba(120, 220, 255, 0.25)');
-      laserGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.18)');
-      laserGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
-      ctx.fillStyle = laserGrad;
-      ctx.fillRect(laserCenterX - laserWidth / 2, baseY - 20, laserWidth, H - baseY + 40);
-      ctx.restore();
-
-      // --- FLOATING PARTICLES in atmosphere zone ---
-      particles.forEach(p => {
-        // Keep particles in the atmosphere zone (above the curve)
-        const curveAtP = horizonY(p.x, baseY, curveAmp);
-        const minY = Math.max(10, curveAtP - 140);
-        const maxY = curveAtP - 5;
-
-        p.x += p.vx + Math.sin(time * 0.4 + p.phase) * 0.12;
-        p.y += p.vy + Math.cos(time * 0.3 + p.phase) * 0.06;
-        if (p.x < -10) p.x = W + 10;
-        if (p.x > W + 10) p.x = -10;
-        if (p.y < minY || p.y > maxY) {
-          p.y = minY + Math.random() * (maxY - minY);
-          p.x = Math.random() * W;
-        }
-
-        const breathe = 0.4 + Math.sin(time * 0.8 + p.phase) * 0.4;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(165, 192, 255, ${p.alpha * breathe})`;
-        ctx.fill();
-
-        // Tiny glow
-        if (p.size > 1.2) {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(56, 189, 248, ${p.alpha * breathe * 0.08})`;
-          ctx.fill();
-        }
-      });
-
-      // --- CENTER GLOW (just above curve center) ---
-      const centerPulse = 0.06 + Math.sin(time * 0.6) * 0.03 + Math.sin(time * 1.4) * 0.015;
-      const cGrad = ctx.createRadialGradient(W / 2, baseY - 15, 5, W / 2, baseY - 15, W * 0.4);
-      cGrad.addColorStop(0, `rgba(56, 189, 248, ${centerPulse})`);
-      cGrad.addColorStop(0.5, `rgba(59, 130, 246, ${centerPulse * 0.3})`);
-      cGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
-      ctx.fillStyle = cGrad;
+      // ─── SOFT ATMOSPHERIC GLOW (gradient above curve) ───
+      // Single radial glow centered at the top of the curve
+      const glowGrad = ctx.createRadialGradient(W / 2, baseY - 20, 0, W / 2, baseY - 20, W * 0.5);
+      const glowPulse = 0.07 + Math.sin(time * 0.4) * 0.02;
+      glowGrad.addColorStop(0, `rgba(56, 189, 248, ${glowPulse * 1.5})`);
+      glowGrad.addColorStop(0.3, `rgba(56, 189, 248, ${glowPulse})`);
+      glowGrad.addColorStop(0.7, `rgba(30, 100, 200, ${glowPulse * 0.3})`);
+      glowGrad.addColorStop(1, 'rgba(15, 50, 120, 0)');
+      ctx.fillStyle = glowGrad;
       ctx.fillRect(0, 0, W, H);
 
-      // --- STATUS TEXT on planet body ---
-      const textY = baseY + 50;
+      // Thin luminous edge along the curve (the main "rim light")
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 2) {
+        const y = curveY(x);
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      const rimAlpha = 0.25 + Math.sin(time * 0.5) * 0.08;
+      ctx.strokeStyle = `rgba(100, 200, 255, ${rimAlpha})`;
+      ctx.lineWidth = 1.2;
+      ctx.shadowColor = 'rgba(56, 189, 248, 0.5)';
+      ctx.shadowBlur = 12;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // ─── TWO GENTLE ENERGY WAVES flowing along the curve ───
+      for (let w = 0; w < 2; w++) {
+        const waveOffset = -8 - w * 14;
+        const freq = 0.004 + w * 0.001;
+        const speed = time * (0.15 + w * 0.05);
+        const amp = 3 + w * 2 + Math.sin(time * 0.3 + w) * 1;
+        const alpha = (0.12 - w * 0.04) * (0.8 + 0.2 * Math.sin(time * 0.4 + w * 2));
+
+        ctx.beginPath();
+        for (let x = 0; x <= W; x += 3) {
+          const base = curveY(x) + waveOffset;
+          const wave = Math.sin(x * freq + speed) * amp;
+          const y = base + wave;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(100, 200, 255, ${alpha})`;
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      }
+
+      // ─── FLOATING PARTICLES (sparse, subtle) ───
+      particles.forEach(p => {
+        const cy = curveY(p.x);
+        const minBound = Math.max(5, cy - 100);
+        const maxBound = cy - 8;
+
+        p.x += p.drift + Math.sin(time * 0.2 + p.phase) * 0.1;
+        p.y += Math.cos(time * 0.15 + p.phase) * 0.04;
+
+        if (p.x < -5) p.x = W + 5;
+        if (p.x > W + 5) p.x = -5;
+        if (p.y < minBound || p.y > maxBound || p.y === 0) {
+          p.y = minBound + Math.random() * (maxBound - minBound);
+        }
+
+        const breathe = 0.5 + 0.5 * Math.sin(time * 0.6 + p.phase);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(160, 210, 255, ${p.alpha * breathe})`;
+        ctx.fill();
+      });
+
+      // ─── SUBTLE STATUS TEXT on planet body ───
       ctx.font = '7px monospace';
-      ctx.fillStyle = `rgba(52, 211, 153, ${0.25 + Math.sin(time * 0.5) * 0.08})`;
-      ctx.fillText('System Online', W * 0.06, textY);
-      ctx.fillStyle = `rgba(56, 189, 248, ${0.18 + Math.sin(time * 0.7) * 0.06})`;
-      ctx.fillText('Model v3.5 · Ready', W * 0.06, textY + 12);
+      ctx.fillStyle = `rgba(52, 211, 153, ${0.2 + Math.sin(time * 0.5) * 0.06})`;
+      ctx.fillText('System Online', W * 0.06, baseY + 55);
+      ctx.fillStyle = `rgba(56, 189, 248, ${0.15 + Math.sin(time * 0.7) * 0.05})`;
+      ctx.fillText('Model v3.5 · Ready', W * 0.06, baseY + 67);
 
       animFrameId = requestAnimationFrame(draw);
     };
