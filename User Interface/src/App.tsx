@@ -115,7 +115,83 @@ export default function App() {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStage, setAnalysisStage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  
+  const [searchMatchCount, setSearchMatchCount] = useState(0);
+  const [searchCurrentIdx, setSearchCurrentIdx] = useState(-1);
+  const searchHighlightsRef = useRef<HTMLElement[]>([]);
+
+  // Real-time search highlighting
+  useEffect(() => {
+    // Clear previous highlights
+    searchHighlightsRef.current.forEach(el => {
+      (el as HTMLElement).style.outline = '';
+      (el as HTMLElement).style.outlineOffset = '';
+    });
+    searchHighlightsRef.current = [];
+
+    if (!searchQuery.trim() || activeTab !== 'analytics') {
+      setSearchMatchCount(0);
+      setSearchCurrentIdx(-1);
+      return;
+    }
+
+    const q = searchQuery.toLowerCase();
+    const matches: HTMLElement[] = [];
+    const searchableTags = document.querySelectorAll('#analytics-tab h2, #analytics-tab h3, #analytics-tab h4, #analytics-tab p, #analytics-tab span, #analytics-tab button, #analytics-tab [data-searchable]');
+    
+    for (const el of searchableTags) {
+      const text = el.textContent?.toLowerCase() || '';
+      const id = el.id?.toLowerCase() || '';
+      if (text.includes(q) || id.includes(q)) {
+        matches.push(el as HTMLElement);
+      }
+    }
+
+    setSearchMatchCount(matches.length);
+    searchHighlightsRef.current = matches;
+
+    if (matches.length > 0) {
+      setSearchCurrentIdx(0);
+      // Highlight first match
+      matches[0].style.outline = '2px solid #3b82f6';
+      matches[0].style.outlineOffset = '2px';
+      matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      setSearchCurrentIdx(-1);
+    }
+  }, [searchQuery, activeTab]);
+
+  // Navigate search results
+  const navigateSearch = (direction: 'next' | 'prev') => {
+    const matches = searchHighlightsRef.current;
+    if (matches.length === 0) return;
+
+    // Remove current highlight
+    if (searchCurrentIdx >= 0 && searchCurrentIdx < matches.length) {
+      matches[searchCurrentIdx].style.outline = '';
+      matches[searchCurrentIdx].style.outlineOffset = '';
+    }
+
+    let nextIdx = searchCurrentIdx;
+    if (direction === 'next') {
+      nextIdx = (searchCurrentIdx + 1) % matches.length;
+    } else {
+      nextIdx = (searchCurrentIdx - 1 + matches.length) % matches.length;
+    }
+
+    setSearchCurrentIdx(nextIdx);
+    matches[nextIdx].style.outline = '2px solid #3b82f6';
+    matches[nextIdx].style.outlineOffset = '2px';
+    matches[nextIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  // Clear search on tab change
+  useEffect(() => {
+    if (activeTab !== 'analytics') {
+      setSearchQuery('');
+      setSearchMatchCount(0);
+      setSearchCurrentIdx(-1);
+    }
+  }, [activeTab]);
   // Dynamic diagnostic data (starts with default, updated upon form submission)
   const [diagnosticData, setDiagnosticData] = useState<DiagnosticData>(defaultDiagnosticData);
   const [hasRunAnalysis, setHasRunAnalysis] = useState(false);
@@ -186,7 +262,7 @@ export default function App() {
     fullName: '',
     age: 48,
     gender: 'Male',
-    bloodType: 'A-Positive',
+    bloodType: 'A+',
     medicalHistory: 'Longitudinal cognitive observation, mild episodic fatigue during high-intensity research.',
     symptoms: 'Occasional short-term recall latency under peak workloads.',
     communicationLogs: '',
@@ -231,6 +307,9 @@ export default function App() {
   // Chart viewport: [startIndex, endIndex] for zoom/scroll
   const [chartViewport, setChartViewport] = useState<[number, number]>([-1, -1]);
 
+  // CUSUM independent viewport
+  const [cusumViewport, setCusumViewport] = useState<[number, number]>([-1, -1]);
+
   // CUSUM toggle tab: 0=Upper, 1=Lower, 2=Both
   const [selectedCusumTab, setSelectedCusumTab] = useState(2);
 
@@ -269,6 +348,7 @@ export default function App() {
     if (diagnosticData !== prevDataRef.current) {
       prevDataRef.current = diagnosticData;
       setChartViewport([-1, -1]);
+      setCusumViewport([-1, -1]);
     }
   }, [diagnosticData]);
 
@@ -281,6 +361,18 @@ export default function App() {
       }
     }
   }, [chartViewport, diagnosticData.metrics?.dates]);
+
+  // Initialize CUSUM viewport when data loads
+  useEffect(() => {
+    if (cusumViewport[0] === -1) {
+      const upper = diagnosticData.pipeline?.pipelineCusumUpper || [];
+      const lower = diagnosticData.pipeline?.pipelineCusumLower || [];
+      const len = Math.max(upper.length, lower.length);
+      if (len > 0) {
+        setCusumViewport([0, len - 1]);
+      }
+    }
+  }, [cusumViewport, diagnosticData.pipeline?.pipelineCusumUpper, diagnosticData.pipeline?.pipelineCusumLower]);
 
   // Canvas constellation animation background
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -1701,27 +1793,34 @@ export default function App() {
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
                 <input 
                   type="text" 
-                  placeholder="Search by keyword (e.g. mood, detector)..." 
+                  placeholder="Search keyword..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && searchQuery.trim()) {
-                      const q = searchQuery.toLowerCase();
-                      const idMatch = document.getElementById(q);
-                      if (idMatch) { idMatch.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
-                      const all = document.querySelectorAll('h2, h3, h4, p, span, div, button');
-                      for (const el of all) {
-                        if (el.id?.toLowerCase().includes(q) || el.textContent?.toLowerCase().includes(q)) {
-                          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          (el as HTMLElement).style.outline = '2px solid #3b82f6';
-                          setTimeout(() => { (el as HTMLElement).style.outline = ''; }, 2000);
-                          break;
-                        }
-                      }
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (searchMatchCount > 0) navigateSearch(e.shiftKey ? 'prev' : 'next');
+                    }
+                    if (e.key === 'Escape') {
+                      setSearchQuery('');
                     }
                   }}
-                  className="w-full bg-[#151922] border border-[#232B3B] rounded-md pl-9 pr-4 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#151922] border border-[#232B3B] rounded-md pl-9 pr-20 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                 />
+                {searchQuery.trim() && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <span className="text-[10px] text-gray-500 font-mono">
+                      {searchMatchCount > 0 ? `${searchCurrentIdx + 1}/${searchMatchCount}` : '0 found'}
+                    </span>
+                    {searchMatchCount > 1 && (
+                      <>
+                        <button onClick={() => navigateSearch('prev')} className="text-gray-500 hover:text-gray-300 text-xs cursor-pointer">‹</button>
+                        <button onClick={() => navigateSearch('next')} className="text-gray-500 hover:text-gray-300 text-xs cursor-pointer">›</button>
+                      </>
+                    )}
+                    <button onClick={() => setSearchQuery('')} className="text-gray-500 hover:text-gray-300 text-xs cursor-pointer ml-0.5">×</button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1962,27 +2061,36 @@ export default function App() {
                       </div>
                       <div>
                         <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Gender</label>
-                        <input 
-                          type="text"
-                          placeholder="e.g. Male"
+                        <select
                           value={inputs.gender}
                           onChange={(e) => setInputs({...inputs, gender: e.target.value})}
-                          className="w-full bg-[#0D1017]/40 border border-[#232B3B]/60 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                          className="w-full bg-[#0D1017]/40 border border-[#232B3B]/60 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none cursor-pointer"
                           required
-                        />
+                        >
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Blood Type</label>
-                        <input 
-                          type="text"
-                          placeholder="e.g. A-Positive"
+                        <select
                           value={inputs.bloodType}
                           onChange={(e) => setInputs({...inputs, bloodType: e.target.value})}
-                          className="w-full bg-[#0D1017]/40 border border-[#232B3B]/60 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                        />
+                          className="w-full bg-[#0D1017]/40 border border-[#232B3B]/60 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none cursor-pointer"
+                        >
+                          <option value="A+">A+</option>
+                          <option value="A-">A-</option>
+                          <option value="B+">B+</option>
+                          <option value="B-">B-</option>
+                          <option value="AB+">AB+</option>
+                          <option value="AB-">AB-</option>
+                          <option value="O+">O+</option>
+                          <option value="O-">O-</option>
+                        </select>
                       </div>
                       <div>
                         <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Cognitive Latency / Clinical Symptoms</label>
@@ -2241,6 +2349,14 @@ export default function App() {
             ];
             const cusumThreshold = pipeline?.pipelineCusumThreshold ?? 1.0;
 
+            // CUSUM independent viewport
+            const cusumTotalLen = Math.max(upperCusumVals.length, lowerCusumVals.length);
+            const [cVpStart, cVpEnd] = (cusumViewport[0] === -1 && cusumTotalLen > 0)
+              ? [0, Math.max(0, cusumTotalLen - 1)]
+              : [Math.max(0, Math.min(cusumViewport[0], cusumTotalLen - 1)), Math.max(1, Math.min(cusumViewport[1] || cusumTotalLen - 1, cusumTotalLen - 1))];
+            const cVpCount = cVpEnd - cVpStart + 1;
+            const cVpLastIdx = Math.max(1, cVpCount - 1);
+
             const scoreVal = diagnosticData.anomalyBehaviourScore || 48;
             const estimatedRisk = scoreVal + "%";
             const worthCheckIn = pipeline?.pipelineInterventionRecommended !== undefined
@@ -2423,7 +2539,7 @@ export default function App() {
               );
             }
             return (
-              <div className="space-y-6" id="analytics-dashboard-container">
+              <div className="space-y-6" id="analytics-tab">
                 
                 {diagnosticData.apiError && (
                   <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3 text-amber-200 text-xs animate-in fade-in duration-300" id="api-warning-banner">
@@ -3082,26 +3198,97 @@ export default function App() {
 
                       {/* Translucent Card wrapper for the CUSUM graph */}
                       <div className="glass-panel rounded-xl p-5 space-y-4">
-                        {/* CUSUM Toggle Tabs */}
-                        <div className="flex gap-1.5">
-                          {[
-                            { key: 0, label: 'Upper CUSUM', desc: 'Drift above baseline' },
-                            { key: 1, label: 'Lower CUSUM', desc: 'Drift below baseline' },
-                            { key: 2, label: 'Both', desc: 'Show both directions' },
-                          ].map((tab) => (
-                            <button
-                              key={tab.key}
-                              onClick={() => setSelectedCusumTab(tab.key)}
-                              className={`flex-shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                                selectedCusumTab === tab.key
-                                  ? 'bg-white/[0.06] border-[#3B82F6] text-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.7)]'
-                                  : 'bg-white/[0.02] border-white/[0.06] text-gray-400 hover:bg-white/[0.04] hover:text-gray-300'
-                              }`}
-                            >
-                              {tab.label}
-                              <span className="ml-1 text-[8px] text-gray-500 font-normal">{tab.desc}</span>
-                            </button>
-                          ))}
+                        {/* CUSUM Toggle Tabs + Zoom Controls */}
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <div className="flex gap-1.5">
+                            {[
+                              { key: 0, label: 'Upper CUSUM', desc: 'Drift above baseline' },
+                              { key: 1, label: 'Lower CUSUM', desc: 'Drift below baseline' },
+                              { key: 2, label: 'Both', desc: 'Show both directions' },
+                            ].map((tab) => (
+                              <button
+                                key={tab.key}
+                                onClick={() => setSelectedCusumTab(tab.key)}
+                                className={`flex-shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                                  selectedCusumTab === tab.key
+                                    ? 'bg-white/[0.06] border-[#3B82F6] text-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.7)]'
+                                    : 'bg-white/[0.02] border-white/[0.06] text-gray-400 hover:bg-white/[0.04] hover:text-gray-300'
+                                }`}
+                              >
+                                {tab.label}
+                                <span className="ml-1 text-[8px] text-gray-500 font-normal">{tab.desc}</span>
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* CUSUM Independent Zoom Controls */}
+                          {cusumTotalLen > 0 && (
+                            <div className="flex items-center gap-1.5 ml-auto">
+                              <span className="text-[10px] text-gray-500 font-mono mr-1">
+                                {cVpCount} of {cusumTotalLen}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  const range = cVpEnd - cVpStart;
+                                  const newRange = Math.min(cusumTotalLen - 1, Math.round(range * 1.5));
+                                  const center = Math.round((cVpStart + cVpEnd) / 2);
+                                  const s = Math.max(0, center - Math.round(newRange / 2));
+                                  const e = Math.min(cusumTotalLen - 1, s + newRange);
+                                  setCusumViewport([Math.max(0, e - newRange), e]);
+                                }}
+                                className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
+                                title="Zoom out"
+                              >
+                                <span className="text-xs">−</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const range = cVpEnd - cVpStart;
+                                  const newRange = Math.max(10, Math.round(range / 1.5));
+                                  const center = Math.round((cVpStart + cVpEnd) / 2);
+                                  const s = Math.max(0, center - Math.round(newRange / 2));
+                                  const e = Math.min(cusumTotalLen - 1, s + newRange);
+                                  setCusumViewport([s, e]);
+                                }}
+                                className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
+                                title="Zoom in"
+                              >
+                                <span className="text-xs">+</span>
+                              </button>
+                              <div className="w-px h-4 bg-white/[0.06]" />
+                              <button
+                                onClick={() => {
+                                  const range = cVpEnd - cVpStart;
+                                  const shift = Math.max(1, Math.round(range * 0.2));
+                                  const s = Math.max(0, cVpStart - shift);
+                                  setCusumViewport([s, Math.min(cusumTotalLen - 1, s + range)]);
+                                }}
+                                className="text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
+                                title="Scroll left"
+                              >
+                                <span className="text-xs">‹</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const range = cVpEnd - cVpStart;
+                                  const shift = Math.max(1, Math.round(range * 0.2));
+                                  const e = Math.min(cusumTotalLen - 1, cVpEnd + shift);
+                                  setCusumViewport([Math.max(0, e - range), e]);
+                                }}
+                                className="text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
+                                title="Scroll right"
+                              >
+                                <span className="text-xs">›</span>
+                              </button>
+                              <button
+                                onClick={() => setCusumViewport([0, cusumTotalLen - 1])}
+                                className="text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
+                                title="Reset zoom"
+                              >
+                                Reset
+                              </button>
+                            </div>
+                          )}
                         </div>
 
                         {/* CUSUM Legend row */}
@@ -3122,14 +3309,25 @@ export default function App() {
 
                         <div className="relative h-60 w-full" onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
                           {(() => {
-                            // Compute dynamic Y range for CUSUM
-                            const allVals = [...upperCusumVals, ...lowerCusumVals, cusumThreshold].filter(v => v !== null && v !== undefined);
-                            const maxVal = allVals.length > 0 ? Math.max(...allVals) : 1;
+                            // Compute dynamic Y range for CUSUM (viewport-aware)
+                            const allVisibleVals = [
+                              ...upperCusumVals.slice(cVpStart, cVpEnd + 1),
+                              ...lowerCusumVals.slice(cVpStart, cVpEnd + 1),
+                              cusumThreshold
+                            ].filter(v => v !== null && v !== undefined);
+                            const maxVal = allVisibleVals.length > 0 ? Math.max(...allVisibleVals) : 1;
                             const yMax = Math.max(1, Math.ceil(maxVal * 1.2));
                             const ticks = yMax <= 3 ? 4 : yMax <= 6 ? 6 : 8;
                             const step = yMax / ticks;
                             const yLabels = Array.from({ length: ticks + 1 }, (_, i) => Math.round(i * step * 10) / 10);
                             const yScale = (v: number) => 15 + ((yMax - v) / yMax) * 185;
+
+                            // CUSUM-specific X labels
+                            const cMaxLabels = 7;
+                            const cXLabelIndices = cVpCount <= cMaxLabels
+                              ? Array.from({ length: cVpCount }, (_, i) => cVpStart + i)
+                              : Array.from({ length: cMaxLabels }, (_, i) => cVpStart + Math.round(i * (cVpCount - 1) / (cMaxLabels - 1)));
+
                             return (<svg viewBox="0 0 500 240" className="w-full h-full overflow-visible">
                             {/* Grid Lines & Labels Y */}
                             {yLabels.map((val) => (
@@ -3139,9 +3337,9 @@ export default function App() {
                               </g>
                             ))}
 
-                            {/* X Axis Date Labels (viewport-aware) */}
-                            {vpXLabels.map((ptIndex) => {
-                              const x = 35 + ((ptIndex - vpStart) / vpLastIdx) * 450;
+                            {/* X Axis Date Labels (CUSUM viewport-aware) */}
+                            {cXLabelIndices.map((ptIndex) => {
+                              const x = 35 + ((ptIndex - cVpStart) / cVpLastIdx) * 450;
                               return (
                                 <g key={ptIndex}>
                                   <line x1={x} y1="15" x2={x} y2="200" stroke="#1B2030" strokeWidth="0.5" strokeDasharray="2 2" />
@@ -3153,7 +3351,7 @@ export default function App() {
                                     textAnchor="middle" 
                                     fontFamily="monospace"
                                   >
-                                    {chartDates[ptIndex]}
+                                    {chartDates[ptIndex] || `#${ptIndex + 1}`}
                                   </text>
                                 </g>
                               );
@@ -3165,8 +3363,8 @@ export default function App() {
                             {/* Lower CUSUM Path (blue) — conditionally shown */}
                             {(selectedCusumTab === 1 || selectedCusumTab === 2) && (
                               <path d={(() => {
-                                const sliced = lowerCusumVals.slice(vpStart, vpEnd + 1);
-                                let p=""; sliced.forEach((v,i) => { const x=35+(i/vpLastIdx)*450; p+=(i===0?"M":"L")+` ${x} ${yScale(v)}`; }); return p;
+                                const sliced = lowerCusumVals.slice(cVpStart, cVpEnd + 1);
+                                let p=""; sliced.forEach((v,i) => { const x=35+(i/cVpLastIdx)*450; p+=(i===0?"M":"L")+` ${x} ${yScale(v)}`; }); return p;
                               })()}
                                 fill="none" stroke="#3b82f6" strokeWidth="2" className="drop-shadow-[0_0_4px_rgba(59,130,246,0.4)]" />
                             )}
@@ -3174,31 +3372,31 @@ export default function App() {
                             {/* Upper CUSUM Path (red) — conditionally shown */}
                             {(selectedCusumTab === 0 || selectedCusumTab === 2) && (
                               <path d={(() => {
-                                const sliced = upperCusumVals.slice(vpStart, vpEnd + 1);
-                                let p=""; sliced.forEach((v,i) => { const x=35+(i/vpLastIdx)*450; p+=(i===0?"M":"L")+` ${x} ${yScale(v)}`; }); return p;
+                                const sliced = upperCusumVals.slice(cVpStart, cVpEnd + 1);
+                                let p=""; sliced.forEach((v,i) => { const x=35+(i/cVpLastIdx)*450; p+=(i===0?"M":"L")+` ${x} ${yScale(v)}`; }); return p;
                               })()}
                                 fill="none" stroke="#ef4444" strokeWidth="2" className="drop-shadow-[0_0_4px_rgba(239,68,68,0.4)]" />
                             )}
 
-                            {/* Global Hover Crosshair (viewport-aware) */}
-                            {hoveredPointIndex !== null && hoveredPointIndex >= vpStart && hoveredPointIndex <= vpEnd && (
+                            {/* Global Hover Crosshair (CUSUM viewport-aware) */}
+                            {hoveredPointIndex !== null && hoveredPointIndex >= cVpStart && hoveredPointIndex <= cVpEnd && (
                               <g>
-                                <line x1={35+((hoveredPointIndex - vpStart)/vpLastIdx)*450} y1="15" x2={35+((hoveredPointIndex - vpStart)/vpLastIdx)*450} y2="200" stroke="#64748b" strokeWidth="1" strokeDasharray="2 2" />
+                                <line x1={35+((hoveredPointIndex - cVpStart)/cVpLastIdx)*450} y1="15" x2={35+((hoveredPointIndex - cVpStart)/cVpLastIdx)*450} y2="200" stroke="#64748b" strokeWidth="1" strokeDasharray="2 2" />
                               </g>
                             )}
                           </svg>);
                           })()}
 
-                          {/* Interactive Tooltip Overlay (viewport-aware) */}
-                          {hoveredPointIndex !== null && hoveredPointIndex >= vpStart && hoveredPointIndex <= vpEnd && (
+                          {/* Interactive Tooltip Overlay (CUSUM viewport-aware) */}
+                          {hoveredPointIndex !== null && hoveredPointIndex >= cVpStart && hoveredPointIndex <= cVpEnd && (
                             <div 
                               className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 p-2.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
                               style={{ 
-                                left: `${Math.min(72, Math.max(5, ((hoveredPointIndex - vpStart) / vpLastIdx) * 100))}%`,
+                                left: `${Math.min(72, Math.max(5, ((hoveredPointIndex - cVpStart) / cVpLastIdx) * 100))}%`,
                                 top: "20px"
                               }}
                             >
-                              <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex]}</div>
+                              <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex] || `#${hoveredPointIndex + 1}`}</div>
                               {(selectedCusumTab === 0 || selectedCusumTab === 2) && (
                                 <div>Upper CUSUM: <span className="text-rose-400 font-bold">{((upperCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
                               )}

@@ -33,7 +33,8 @@ def _fail(msg):
     _p(f"    X {msg}")
 
 def _elapsed(t):
-    return f"{time.time()-t:.1f}s"
+    diff = time.time()-t
+    return f"{diff:.2f}s" if diff < 1 else f"{diff:.1f}s"
 
 
 def _sf(val):
