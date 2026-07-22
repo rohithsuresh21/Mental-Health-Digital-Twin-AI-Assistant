@@ -1,13 +1,198 @@
-import os, json, sys, traceback, tempfile, time
+import os, json, sys, traceback, tempfile, time, secrets, functools, hashlib
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy as np
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
-CORS(app)
+app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
+CORS(app, supports_credentials=True)
+
+# ── Security Configuration ──────────────────────────────────────────────────
+ADMIN_PASSWORD_HASH = hashlib.sha256("aiml25".encode()).hexdigest()
+
+# ── Rate Limiting ───────────────────────────────────────────────────────────
+# Per-user rate limits: { endpoint: (max_requests, window_seconds)
+RATE_LIMITS = {
+    "diagnose":    (3,  300),   # 3 diagnoses per 5 min (heavy ML pipeline)
+    "generate_pdf": (5, 300),   # 5 PDF downloads per 5 min
+    "login":       (5,  60),    # 5 login attempts per min (brute-force protection)
+    "submit":      (3,  3600),  # 3 daily submissions per hour
+    "default":     (30, 60),    # 30 requests per min for everything else
+}
+
+_rate_limit_store = {}
+
+def _get_client_key():
+    """Get a rate-limit key: user_id if logged in, else IP address."""
+    uid = session.get("user_id")
+    if uid:
+        return f"user:{uid}"
+    return f"ip:{request.remote_addr}"
+
+def _check_rate_limit(endpoint, max_requests=None, window_seconds=None):
+    """Check if request is within rate limit. Returns True if allowed."""
+    if max_requests is None:
+        limit_info = RATE_LIMITS.get(endpoint, RATE_LIMITS["default"])
+        max_requests, window_seconds = limit_info
+
+    key = f"{_get_client_key()}:{endpoint}"
+    now = time.time()
+    if key not in _rate_limit_store:
+        _rate_limit_store[key] = []
+    # Remove expired entries
+    _rate_limit_store[key] = [t for t in _rate_limit_store[key] if now - t < window_seconds]
+    if len(_rate_limit_store[key]) >= max_requests:
+        return False
+    _rate_limit_store[key].append(now)
+    return True
+
+def rate_limit(endpoint=None):
+    """Decorator: enforce per-user rate limit on a route."""
+    ep = endpoint
+    def decorator(f):
+        @functools.wraps(f)
+        def decorated(*args, **kwargs):
+            ep_name = ep or f.__name__
+            if not _check_rate_limit(ep_name):
+                limit_info = RATE_LIMITS.get(ep_name, RATE_LIMITS["default"])
+                retry_after = limit_info[1]
+                return jsonify({
+                    "error": "Rate limit exceeded",
+                    "message": f"Too many requests. Try again in {retry_after} seconds.",
+                    "retry_after": retry_after,
+                }), 429
+            return f(*args, **kwargs)
+        return decorated
+    return decorator
+
+def require_session(f):
+    """Decorator: require a valid session with user_id."""
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Authentication required"}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+def require_admin(f):
+    """Decorator: require admin role in session."""
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get("role") != "admin":
+            return jsonify({"error": "Admin access required"}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+def validate_user_access(user_id):
+    """Ensure the session user matches the requested user_id, or is admin."""
+    session_user = session.get("user_id", "")
+    if session.get("role") == "admin":
+        return True
+    return session_user == user_id
+
+# ── Auth Endpoints ──────────────────────────────────────────────────────────
+
+@app.route("/auth/login", methods=["POST"])
+@rate_limit("login")
+def auth_login():
+    """Server-side login: validates credentials, creates session."""
+    body = request.get_json(force=True, silent=True) or {}
+    user_id = body.get("user_id", "").strip()
+    role = body.get("role", "patient").strip()
+    password = body.get("password", "")
+
+    if not user_id:
+        return jsonify({"error": "user_id is required"}), 400
+
+    if role == "admin":
+        pw_hash = hashlib.sha256(password.encode()).hexdigest()
+        if pw_hash != ADMIN_PASSWORD_HASH:
+            return jsonify({"error": "Invalid admin password"}), 401
+
+    session.permanent = True
+    session["user_id"] = user_id
+    session["role"] = role
+    session["login_time"] = datetime.utcnow().isoformat()
+
+    return jsonify({
+        "success": True,
+        "user_id": user_id,
+        "role": role,
+    })
+
+@app.route("/auth/logout", methods=["POST"])
+def auth_logout():
+    session.clear()
+    return jsonify({"success": True})
+
+@app.route("/auth/verify", methods=["GET"])
+def auth_verify():
+    """Check if current session is valid."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"authenticated": False}), 401
+    return jsonify({
+        "authenticated": True,
+        "user_id": user_id,
+        "role": session.get("role", "patient"),
+    })
+
+@app.route("/auth/avatar", methods=["POST"])
+def upload_avatar():
+    """Upload a profile photo for the logged-in user."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Authentication required"}), 401
+
+    if "avatar" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files["avatar"]
+    if not file.filename:
+        return jsonify({"error": "Empty filename"}), 400
+
+    ext = Path(file.filename).suffix.lower()
+    if ext not in {".jpg", ".jpeg", ".png", ".webp"}:
+        return jsonify({"error": "Only JPG, PNG, WebP allowed"}), 400
+
+    avatar_dir = Path("data/avatars")
+    avatar_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_name = f"{user_id}{ext}"
+    save_path = avatar_dir / safe_name
+    file.save(str(save_path))
+
+    return jsonify({
+        "success": True,
+        "avatar_url": f"/api/auth/avatar/{user_id}",
+    })
+
+@app.route("/auth/avatar/<user_id>", methods=["GET"])
+def get_avatar(user_id):
+    """Serve a user's profile photo."""
+    from flask import send_file as _send
+    avatar_dir = Path("data/avatars")
+    for ext in [".jpg", ".jpeg", ".png", ".webp"]:
+        path = avatar_dir / f"{user_id}{ext}"
+        if path.exists():
+            return _send(str(path))
+    return jsonify({"error": "Avatar not found"}), 404
+
+@app.after_request
+def add_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'"
+    return response
 
 _pipeline = None
 
@@ -883,6 +1068,7 @@ def index():
 
 
 @app.route("/diagnose", methods=["POST"])
+@rate_limit("diagnose")
 def diagnose():
     try:
         body = request.get_json(force=True, silent=True) or {}
@@ -940,7 +1126,39 @@ def diagnose():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/generate-pdf", methods=["POST"])
+@rate_limit("generate_pdf")
+def generate_pdf():
+    try:
+        body = request.get_json(force=True, silent=True) or {}
+        diagnostic_data = body.get("diagnosticData", {})
+        inputs = body.get("inputs", {})
+
+        if not diagnostic_data:
+            return jsonify({"error": "diagnosticData is required"}), 400
+
+        from pdf_generator import generate_pdf as _gen
+        pdf_bytes = _gen(diagnostic_data, inputs)
+
+        from flask import send_file
+        import io
+        patient_name = inputs.get("fullName", "Patient").replace(" ", "_")
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        filename = f"Medical_Summary_{patient_name}_{date_str}.pdf"
+
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename,
+        )
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/run", methods=["POST"])
+@rate_limit("diagnose")
 def run():
     try:
         user_id = request.form.get("user_id", "user_demo").strip()

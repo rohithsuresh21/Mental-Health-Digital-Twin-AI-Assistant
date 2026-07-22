@@ -31,7 +31,9 @@ export function usePatientData(userId: string) {
   const refresh = useCallback(async () => {
     try {
       setLoading(true);
-      const r = await fetch(`${BASE}/daily/status?user_id=${encodeURIComponent(userId)}`);
+      const r = await fetch(`${BASE}/daily/status?user_id=${encodeURIComponent(userId)}`, {
+        credentials: 'include',
+      });
       if (!r.ok) { setError(`HTTP ${r.status}`); return; }
       const d = await r.json();
       setStatus(d);
@@ -50,6 +52,7 @@ export function usePatientData(userId: string) {
       const r = await fetch(`${BASE}/daily/delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ user_id: userId }),
       });
       if (r.ok) await refresh();

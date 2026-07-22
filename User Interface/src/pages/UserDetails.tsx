@@ -2,35 +2,67 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NeuralBackground from '../NeuralBackground';
 
-const ADMIN_PASSWORD = 'aiml25';
-
 export default function UserDetails() {
   const [userId, setUserId] = useState('Alex@1996');
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const nav = useNavigate();
 
-  function pickRole(role: 'admin' | 'patient') {
+  async function pickRole(role: 'admin' | 'patient') {
     if (role === 'admin') {
       setShowPassword(true);
       setError('');
       return;
     }
-    localStorage.setItem('role', role);
-    localStorage.setItem('userId', userId);
-    nav('/patient');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ user_id: userId, role: 'patient' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Login failed');
+        setLoading(false);
+        return;
+      }
+      localStorage.setItem('role', role);
+      localStorage.setItem('userId', userId);
+      nav('/patient');
+    } catch {
+      setError('Connection failed');
+      setLoading(false);
+    }
   }
 
-  function handlePasswordSubmit(e: React.FormEvent) {
+  async function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ user_id: userId, role: 'admin', password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Incorrect password');
+        setPassword('');
+        setLoading(false);
+        return;
+      }
       localStorage.setItem('role', 'admin');
       localStorage.setItem('userId', userId);
       nav('/admin');
-    } else {
-      setError('Incorrect password');
-      setPassword('');
+    } catch {
+      setError('Connection failed');
+      setLoading(false);
     }
   }
 
@@ -74,15 +106,17 @@ export default function UserDetails() {
                 <button
                   type="button"
                   onClick={cancelPassword}
-                  className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-xl py-3 text-sm text-gray-400 hover:text-gray-200 hover:border-gray-600 transition-all cursor-pointer"
+                  disabled={loading}
+                  className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-xl py-3 text-sm text-gray-400 hover:text-gray-200 hover:border-gray-600 transition-all cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-xl py-3 text-sm text-gray-200 hover:text-white hover:border-gray-400 transition-all cursor-pointer"
+                  disabled={loading}
+                  className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-xl py-3 text-sm text-gray-200 hover:text-white hover:border-gray-400 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  Enter
+                  {loading ? 'Verifying...' : 'Enter'}
                 </button>
               </div>
             </form>
@@ -109,7 +143,8 @@ export default function UserDetails() {
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => pickRole('admin')}
-                className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-8 text-center hover:border-gray-600 transition-all group cursor-pointer"
+                disabled={loading}
+                className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-8 text-center hover:border-gray-600 transition-all group cursor-pointer disabled:opacity-50"
               >
                 <div className="text-3xl mb-3">&#x1F4CA;</div>
                 <div className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">Admin</div>
@@ -119,7 +154,8 @@ export default function UserDetails() {
               </button>
               <button
                 onClick={() => pickRole('patient')}
-                className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-8 text-center hover:border-gray-600 transition-all group cursor-pointer"
+                disabled={loading}
+                className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-8 text-center hover:border-gray-600 transition-all group cursor-pointer disabled:opacity-50"
               >
                 <div className="text-3xl mb-3">&#x1F9EC;</div>
                 <div className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">Patient</div>

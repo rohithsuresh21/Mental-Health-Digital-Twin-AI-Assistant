@@ -3,7 +3,7 @@ from pathlib import Path
 from datetime import date, datetime
 
 import numpy as np
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from werkzeug.utils import secure_filename
 
 from . import db
@@ -20,6 +20,31 @@ SCALER_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_AUDIO = {".wav"}
 MAX_TEXT_SIZE = 100_000  # characters
+
+# Per-user rate limit for daily submissions: 3 per hour
+_submit_rate_store = {}
+
+def _check_submit_rate(user_id):
+    import time
+    now = time.time()
+    key = f"submit:{user_id}"
+    _submit_rate_store.setdefault(key, [])
+    _submit_rate_store[key] = [t for t in _submit_rate_store[key] if now - t < 3600]
+    if len(_submit_rate_store[key]) >= 3:
+        return False
+    _submit_rate_store[key].append(now)
+    return True
+
+
+def _check_user_access(requested_user_id):
+    """Validate session has access to the requested user_id."""
+    session_user = session.get("user_id", "")
+    session_role = session.get("role", "")
+    if session_role == "admin":
+        return True
+    if not session_user:
+        return False
+    return session_user == requested_user_id
 
 
 def _scaler_path(user_id: str) -> Path:
@@ -54,6 +79,12 @@ def submit():
         user_id = request.form.get("user_id", "").strip()
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
+
+        if not _check_user_access(user_id):
+            return jsonify({"error": "Access denied"}), 403
+
+        if not _check_submit_rate(user_id):
+            return jsonify({"error": "Rate limit exceeded. Max 3 submissions per hour."}), 429
 
         today_str = date.today().isoformat()
 
@@ -135,6 +166,9 @@ def status():
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
 
+        if not _check_user_access(user_id):
+            return jsonify({"error": "Access denied"}), 403
+
         entries = db.get_recent_entries(user_id, limit=60)
         count = db.get_entry_count(user_id)
         min_for_calib = UserBaseline.MIN_ENTRIES_TO_FIT
@@ -206,6 +240,10 @@ def delete_user():
         user_id = body.get("user_id", "").strip()
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
+
+        if not _check_user_access(user_id):
+            return jsonify({"error": "Access denied"}), 403
+
         db.delete_user(user_id)
         scaler_path = _scaler_path(user_id)
         if scaler_path.exists():

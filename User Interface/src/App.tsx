@@ -46,6 +46,39 @@ export default function App() {
   const userId = localStorage.getItem('userId') || 'Alex@1996';
   const isPatient = role === 'patient';
 
+  // Browser protection: disable right-click and dev tools shortcuts
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Session verification on load
+  useEffect(() => {
+    fetch('/api/auth/verify', { credentials: 'include' })
+      .then(r => { if (!r.ok) throw new Error('unauth'); return r.json(); })
+      .then(d => {
+        if (d.authenticated && d.user_id !== userId) {
+          localStorage.setItem('userId', d.user_id);
+        }
+      })
+      .catch(() => {
+        // Session expired — redirect to login
+        localStorage.removeItem('role');
+        localStorage.removeItem('userId');
+        window.location.href = '/';
+      });
+  }, []);
+
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   type Tab = 'dashboard' | 'clinical' | 'analytics' | 'explainable' | 'profile' | 'intake';
@@ -62,6 +95,33 @@ export default function App() {
 
   // Patient data from daily portal
   const patientData = usePatientData(isPatient ? userId : '');
+
+  // Profile photo
+  const [avatarUrl, setAvatarUrl] = useState<string>(() => {
+    return localStorage.getItem(`avatar_${userId}`) || '';
+  });
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('avatar', file);
+    try {
+      const res = await fetch('/api/auth/avatar', {
+        method: 'POST',
+        credentials: 'include',
+        body: fd,
+      });
+      const data = await res.json();
+      if (data.success && data.avatar_url) {
+        const url = `${data.avatar_url}?t=${Date.now()}`;
+        setAvatarUrl(url);
+        localStorage.setItem(`avatar_${userId}`, url);
+      }
+    } catch (err) {
+      console.error('Avatar upload failed:', err);
+    }
+  };
 
   // Clinical Alerts state — reset on fresh page load via sessionStorage
   const [clinicalAlerts, setClinicalAlerts] = useState<ClinicalAlert[]>(() => {
@@ -147,129 +207,33 @@ export default function App() {
   // CUSUM toggle tab: 0=Upper, 1=Lower, 2=Both
   const [selectedCusumTab, setSelectedCusumTab] = useState(2);
 
-  // Compile & download medical summary
-  const compileMedicalSummary = () => {
-    const d = diagnosticData;
-    const p = inputs;
-    const dateStr = new Date().toISOString().slice(0, 10);
-    const scoreVal = d.anomalyBehaviourScore ?? 0;
-    let riskLabel = 'Excellent';
-    if (scoreVal > 75) riskLabel = 'Critical Concern';
-    else if (scoreVal > 55) riskLabel = 'Moderate Concern';
-    else if (scoreVal > 40) riskLabel = 'Slight Concern';
-
-    const getCusumTabLabel = () => {
-      switch (selectedCusumTab) {
-        case 0: return 'Upper (positive drift)';
-        case 1: return 'Lower (negative drift)';
-        default: return 'Both';
+  // Compile & download medical summary as PDF
+  const compileMedicalSummary = async () => {
+    try {
+      const res = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ diagnosticData, inputs }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(err.error || `Server responded ${res.status}`);
       }
-    };
-
-    const summaryLines = [
-      '╔══════════════════════════════════════════════════════════════╗',
-      '║                   MEDICAL SUMMARY REPORT                    ║',
-      '╚══════════════════════════════════════════════════════════════╝',
-      '',
-      `Date: ${dateStr}`,
-      `Patient: ${p.fullName || 'N/A'}`,
-      `Age: ${p.age ?? 'N/A'}  |  Gender: ${p.gender || 'N/A'}  |  Blood Type: ${p.bloodType || 'N/A'}`,
-      '',
-      '─'.repeat(56),
-      'OVERALL ASSESSMENT',
-      '─'.repeat(56),
-      '',
-      `Overall Risk: ${riskLabel}  (${scoreVal}%)`,
-      `Estimated Risk Score: ${scoreVal}%`,
-      `Intervention Recommended: ${scoreVal > 40 ? 'Yes' : 'No'}`,
-      `Entries Analyzed: ${d.pipelineNEntries || d.extractedDimensions || 'N/A'}`,
-      `Anomaly Status: ${d.anomalyStatus || 'N/A'}`,
-      `Trend Direction: ${d.anomalyDirection === 'up' ? '↑ Rising' : '↓ Declining'}  (${d.anomalyChange || 'N/A'})`,
-      '',
-      '─'.repeat(56),
-      'KEY METRICS',
-      '─'.repeat(56),
-      '',
-      `Linguistic Shift:         ${(d.linguisticShift ?? 0).toFixed(4)}`,
-      `Behavioral Prosody:       ${(d.behavioralProsody ?? 0).toFixed(4)}`,
-      `Routine Disruption:       ${(d.routineDisruption ?? 0).toFixed(1)}%`,
-      `Daily Variance:           ${(d.avgDailyVariance ?? 0).toFixed(1)}% (${d.avgDailyVarianceDirection === 'up' ? '↑' : '↓'})`,
-      `Model Confidence:         ${(d.modelConfidence ?? 0).toFixed(1)}%`,
-      `Transparency Score:       ${(d.transparencyScore ?? 0).toFixed(2)}`,
-      '',
-      `Viewport Range:           ${chartViewport[0] === -1 ? 'All entries' : `[${chartViewport[0]} – ${chartViewport[1]}]`}`,
-      `CUSUM Tab:                ${getCusumTabLabel()}`,
-      '',
-      '─'.repeat(56),
-      'TOP FEATURE CONTRIBUTORS',
-      '─'.repeat(56),
-      '',
-      ...(d.top3FeatureIndices ?? []).map((f, i) =>
-        `  ${i + 1}. ${f.indexTarget}  —  Correlation: ${(f.correlationScore ?? 0).toFixed(2)}  |  Confidence: ${(f.confidence ?? 0).toFixed(2)}${f.status ? `  [${f.status}]` : ''}`
-      ),
-      '',
-      '─'.repeat(56),
-      'LIFESTYLE vs DIAGNOSTIC CORRELATIONS',
-      '─'.repeat(56),
-      '',
-      ...(d.lifestyleVsDiagnosticCorrelation ?? []).map(c =>
-        `  ${c.target.padEnd(22)}  ${(c.correlation ?? 0).toFixed(2)}`
-      ),
-      '',
-      '─'.repeat(56),
-      'CLINICAL INSIGHTS',
-      '─'.repeat(56),
-      '',
-      ...(d.insights ?? []).map(line => `  • ${line}`),
-      '',
-      ...(d.pipelineTimestamps?.length ? [
-        '─'.repeat(56),
-        'TEMPORAL DATA SUMMARY',
-        '─'.repeat(56),
-        '',
-        `  Date Range: ${d.pipelineTimestamps[0]}  —  ${d.pipelineTimestamps[d.pipelineTimestamps.length - 1]}`,
-        `  Total Entries: ${d.pipelineTimestamps.length}`,
-        ...(d.pipelineSentimentSeries?.length ? [
-          `  Avg Sentiment: ${(d.pipelineSentimentSeries.reduce((a, b) => a + b, 0) / d.pipelineSentimentSeries.length).toFixed(3)}`,
-          `  Recent Sentiment: ${d.pipelineSentimentSeries[d.pipelineSentimentSeries.length - 1]?.toFixed(3) ?? 'N/A'}`,
-        ] : []),
-        ...(d.pipelineAnomalyScores?.length ? [
-          `  Avg Anomaly Score: ${(d.pipelineAnomalyScores.reduce((a, b) => a + b, 0) / d.pipelineAnomalyScores.length * 100).toFixed(1)}%`,
-          `  Recent Anomaly: ${(d.pipelineAnomalyScores[d.pipelineAnomalyScores.length - 1] * 100).toFixed(1)}%`,
-        ] : []),
-        '',
-      ] : []),
-      ...(p.medicalHistory ? [
-        '─'.repeat(56),
-        'MEDICAL HISTORY',
-        '─'.repeat(56),
-        '',
-        `  ${p.medicalHistory}`,
-        '',
-      ] : []),
-      ...(p.symptoms ? [
-        '─'.repeat(56),
-        'REPORTED SYMPTOMS',
-        '─'.repeat(56),
-        '',
-        `  ${p.symptoms}`,
-        '',
-      ] : []),
-      '─'.repeat(56),
-      `Report generated by Mental Health Digital Twin AI  |  ${new Date().toLocaleString()}`,
-      '─'.repeat(56),
-    ];
-
-    const content = summaryLines.join('\n');
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Medical_Summary_${p.fullName?.replace(/\s+/g, '_') || 'Patient'}_${dateStr}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStr = new Date().toISOString().slice(0, 10);
+      a.download = `Medical_Summary_${inputs.fullName?.replace(/\s+/g, '_') || 'Patient'}_${dateStr}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('PDF generation failed:', err);
+      alert(`Failed to generate PDF: ${err.message}`);
+    }
   };
 
   // Reset viewport when analysis runs with new data
@@ -753,6 +717,7 @@ export default function App() {
       const res = await fetch('/api/diagnose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(inputs),
         signal: controller.signal,
       });
@@ -1238,8 +1203,16 @@ export default function App() {
         onClick={() => { setActiveTab('profile'); setIsMenuOpen(false); }}
         className="p-4 border-t border-[#1A202C] flex items-center gap-3 hover:bg-gray-800/30 cursor-pointer transition-all duration-150 group"
       >
-        <div className="h-9 w-9 rounded-full bg-blue-900/40 border border-blue-500/50 flex items-center justify-center text-blue-300 group-hover:border-blue-400 group-hover:scale-105 transition-all">
-          <User className="h-4.5 w-4.5 text-blue-400" />
+        <div className="relative h-9 w-9 rounded-full bg-blue-900/40 border border-blue-500/50 flex items-center justify-center text-blue-300 group-hover:border-blue-400 group-hover:scale-105 transition-all overflow-hidden shrink-0">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
+          ) : (
+            <User className="h-4.5 w-4.5 text-blue-400" />
+          )}
+          <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+            <Upload className="h-3 w-3 text-white" />
+            <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} onClick={e => e.stopPropagation()} />
+          </label>
         </div>
         <div className="flex-grow min-w-0">
           <div className="text-xs font-bold text-gray-200 truncate group-hover:text-white transition-colors">
@@ -1500,7 +1473,7 @@ export default function App() {
                 className="text-xs bg-indigo-600/20 border border-indigo-500/50 text-indigo-300 hover:bg-indigo-600/40 hover:border-indigo-400 px-3 py-1.5 rounded-lg transition cursor-pointer font-bold flex items-center gap-1.5"
               >
                 <FileText className="h-3.5 w-3.5" />
-                Compile Medical Summary
+                Download PDF Report
               </button>
             )}
             <button 

@@ -100,7 +100,7 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
     if (journalFile) fd.append('text', journalFile, journalFile.name);
     if (audioFile) fd.append('audio', audioFile);
     try {
-      const r = await fetch(`${BASE}/daily/submit`, { method: 'POST', body: fd });
+      const r = await fetch(`${BASE}/daily/submit`, { method: 'POST', body: fd, credentials: 'include' });
       const d = await r.json();
       if (d.error) { setMsg(d.error); } else {
         setMsg(`Saved for ${d.entry_date}`);
