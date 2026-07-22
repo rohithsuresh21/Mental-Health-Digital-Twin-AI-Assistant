@@ -509,6 +509,16 @@ export default function App() {
         ctx.fill();
       });
 
+      // ─── TOP FADE-OUT: blend glow smoothly into background ───
+      // This eliminates the hard cutoff line at the canvas top edge
+      const fadeGrad = ctx.createLinearGradient(0, 0, 0, H * 0.45);
+      fadeGrad.addColorStop(0, 'rgba(3, 4, 10, 1)');
+      fadeGrad.addColorStop(0.5, 'rgba(3, 4, 10, 0.85)');
+      fadeGrad.addColorStop(0.8, 'rgba(3, 4, 10, 0.3)');
+      fadeGrad.addColorStop(1, 'rgba(3, 4, 10, 0)');
+      ctx.fillStyle = fadeGrad;
+      ctx.fillRect(0, 0, W, H * 0.45);
+
       animFrameId = requestAnimationFrame(draw);
     };
 
@@ -1865,7 +1875,7 @@ export default function App() {
         <div className={`flex-1 overflow-y-auto relative ${activeTab === 'dashboard' ? 'p-0' : 'px-10 py-8'}`}>
 
           {/* PERMANENT ATMOSPHERIC BACKGROUND — always rendered, visible on all tabs */}
-          <div className={`absolute bottom-0 left-0 right-0 pointer-events-none z-0 overflow-hidden transition-opacity duration-700 ${activeTab === 'dashboard' ? 'opacity-100 h-[500px]' : 'opacity-30 h-[350px]'}`}>
+          <div className={`absolute bottom-0 left-0 right-0 pointer-events-none z-0 overflow-hidden transition-opacity duration-700 ${activeTab === 'dashboard' ? 'opacity-100 h-[600px]' : 'opacity-25 h-[400px]'}`}>
             <canvas 
               ref={atmosphereCanvasRef} 
               className="w-full h-full"
