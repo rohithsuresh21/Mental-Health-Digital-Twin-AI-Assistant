@@ -370,12 +370,12 @@ export default function App() {
     }
   }, [diagnosticData]);
 
-  // Initialize chart viewport when data loads — zoomed in to last ~40% by default
+  // Initialize chart viewport when data loads — zoomed in to last ~20% by default
   useEffect(() => {
     if (chartViewport[0] === -1) {
       const dates = diagnosticData.metrics?.dates || [];
       if (dates.length > 0) {
-        const visibleCount = Math.max(8, Math.round(dates.length * 0.4));
+        const visibleCount = Math.max(6, Math.round(dates.length * 0.2));
         const end = dates.length - 1;
         const start = Math.max(0, end - visibleCount + 1);
         setChartViewport([start, end]);
@@ -383,14 +383,14 @@ export default function App() {
     }
   }, [chartViewport, diagnosticData.metrics?.dates]);
 
-  // Initialize CUSUM viewport when data loads — zoomed in to last ~40%
+  // Initialize CUSUM viewport when data loads — zoomed in to last ~20%
   useEffect(() => {
     if (cusumViewport[0] === -1) {
       const upper = diagnosticData.pipeline?.pipelineCusumUpper || [];
       const lower = diagnosticData.pipeline?.pipelineCusumLower || [];
       const len = Math.max(upper.length, lower.length);
       if (len > 0) {
-        const visibleCount = Math.max(8, Math.round(len * 0.4));
+        const visibleCount = Math.max(6, Math.round(len * 0.2));
         const end = len - 1;
         const start = Math.max(0, end - visibleCount + 1);
         setCusumViewport([start, end]);
@@ -2286,7 +2286,7 @@ export default function App() {
 
             // Initialize viewport once when data loads
             const [vpStart, vpEnd] = (chartViewport[0] === -1 && nChart > 0)
-              ? [0, Math.max(0, nChart - 1)]
+              ? [Math.max(0, nChart - Math.max(6, Math.round(nChart * 0.2))), Math.max(0, nChart - 1)]
               : [Math.max(0, Math.min(chartViewport[0], nChart - 1)), Math.max(1, Math.min(chartViewport[1] || nChart - 1, nChart - 1))];
             const vpCount = vpEnd - vpStart + 1;
             const vpLastIdx = Math.max(1, vpCount - 1);
