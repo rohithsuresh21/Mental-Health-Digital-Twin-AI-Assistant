@@ -384,7 +384,7 @@ export default function App() {
   // Canvas constellation animation background
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Canvas planetary atmosphere animation — always rendered, soft and integrated
+  // Canvas atmospheric glow — pure volumetric gradient, no visible lines
   const atmosphereCanvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     const canvas = atmosphereCanvasRef.current;
@@ -394,133 +394,57 @@ export default function App() {
 
     let animFrameId: number;
     const W = 1600;
-    const H = 500;
+    const H = 700;
     canvas.width = W;
     canvas.height = H;
-
-    const particles = Array.from({ length: 16 }, () => ({
-      x: Math.random() * W,
-      y: 0,
-      size: 0.3 + Math.random() * 0.9,
-      alpha: 0.05 + Math.random() * 0.15,
-      phase: Math.random() * Math.PI * 2,
-      drift: (Math.random() - 0.5) * 0.15,
-    }));
-
-    // Very wide, gentle curve — much softer than before
-    const baseY = H * 0.55;
-    const curveAmp = H * 0.25;
-    const curveY = (x: number) => {
-      const n = (x - W / 2) / (W / 2);
-      return baseY + n * n * curveAmp;
-    };
 
     const draw = (t: number) => {
       const time = t * 0.001;
       ctx.clearRect(0, 0, W, H);
 
-      // ─── WIDE DIFFUSE GLOW ABOVE THE CURVE ───
-      // Large, soft radial gradient — the main atmospheric presence
-      const pulse = 0.05 + Math.sin(time * 0.35) * 0.015;
-      const glow = ctx.createRadialGradient(W / 2, baseY, 0, W / 2, baseY - H * 0.15, W * 0.55);
-      glow.addColorStop(0, `rgba(40, 140, 220, ${pulse * 2})`);
-      glow.addColorStop(0.25, `rgba(30, 110, 200, ${pulse * 1.2})`);
-      glow.addColorStop(0.5, `rgba(20, 70, 160, ${pulse * 0.5})`);
-      glow.addColorStop(1, 'rgba(10, 30, 80, 0)');
-      ctx.fillStyle = glow;
+      // Slow-breathing pulse for the entire glow
+      const pulse = 1 + Math.sin(time * 0.3) * 0.15;
+
+      // ─── LAYER 1: Wide base glow — very faint, fills most of the canvas ───
+      const g1 = ctx.createRadialGradient(W * 0.5, H * 0.85, 0, W * 0.5, H * 0.85, W * 0.65 * pulse);
+      g1.addColorStop(0, 'rgba(30, 90, 180, 0.06)');
+      g1.addColorStop(0.3, 'rgba(20, 60, 140, 0.035)');
+      g1.addColorStop(0.6, 'rgba(12, 35, 90, 0.015)');
+      g1.addColorStop(1, 'rgba(5, 12, 40, 0)');
+      ctx.fillStyle = g1;
       ctx.fillRect(0, 0, W, H);
 
-      // Second wider, subtler glow layer for depth
-      const glow2 = ctx.createRadialGradient(W / 2, baseY + 20, 0, W / 2, baseY - H * 0.1, W * 0.7);
-      glow2.addColorStop(0, `rgba(25, 100, 180, ${pulse * 0.6})`);
-      glow2.addColorStop(0.5, `rgba(15, 60, 130, ${pulse * 0.2})`);
-      glow2.addColorStop(1, 'rgba(8, 25, 60, 0)');
-      ctx.fillStyle = glow2;
+      // ─── LAYER 2: Mid glow — slightly brighter, narrower ───
+      const g2 = ctx.createRadialGradient(W * 0.5, H * 0.9, 0, W * 0.5, H * 0.9, W * 0.4 * pulse);
+      g2.addColorStop(0, 'rgba(45, 130, 220, 0.08)');
+      g2.addColorStop(0.35, 'rgba(30, 100, 190, 0.04)');
+      g2.addColorStop(0.7, 'rgba(15, 55, 130, 0.01)');
+      g2.addColorStop(1, 'rgba(5, 15, 50, 0)');
+      ctx.fillStyle = g2;
       ctx.fillRect(0, 0, W, H);
 
-      // ─── PLANET BODY (very soft dark fill, gradual fade) ───
-      ctx.beginPath();
-      ctx.moveTo(0, curveY(0));
-      for (let x = 2; x <= W; x += 3) {
-        ctx.lineTo(x, curveY(x));
-      }
-      ctx.lineTo(W, H);
-      ctx.lineTo(0, H);
-      ctx.closePath();
+      // ─── LAYER 3: Tight core — subtle bright center at horizon ───
+      const g3 = ctx.createRadialGradient(W * 0.5, H * 0.92, 0, W * 0.5, H * 0.92, W * 0.18 * pulse);
+      g3.addColorStop(0, 'rgba(70, 160, 255, 0.05)');
+      g3.addColorStop(0.4, 'rgba(50, 130, 230, 0.025)');
+      g3.addColorStop(1, 'rgba(20, 60, 140, 0)');
+      ctx.fillStyle = g3;
+      ctx.fillRect(0, 0, W, H);
 
-      const bodyGrad = ctx.createLinearGradient(0, baseY - 20, 0, H);
-      bodyGrad.addColorStop(0, 'rgba(4, 7, 16, 0.5)');
-      bodyGrad.addColorStop(0.15, 'rgba(3, 5, 12, 0.75)');
-      bodyGrad.addColorStop(0.4, 'rgba(2, 3, 8, 0.92)');
-      bodyGrad.addColorStop(1, '#010103');
-      ctx.fillStyle = bodyGrad;
-      ctx.fill();
+      // ─── LAYER 4: Very subtle side wisps for depth ───
+      const g4L = ctx.createRadialGradient(W * 0.2, H * 0.75, 0, W * 0.2, H * 0.75, W * 0.3);
+      g4L.addColorStop(0, 'rgba(25, 80, 160, 0.02)');
+      g4L.addColorStop(0.5, 'rgba(15, 50, 120, 0.008)');
+      g4L.addColorStop(1, 'rgba(5, 15, 50, 0)');
+      ctx.fillStyle = g4L;
+      ctx.fillRect(0, 0, W, H);
 
-      // ─── SINGLE SOFT RIM LIGHT ───
-      // A very thin, gentle luminous edge — just enough to define the curvature
-      ctx.beginPath();
-      for (let x = 0; x <= W; x += 3) {
-        const y = curveY(x);
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      const rimPulse = 0.12 + Math.sin(time * 0.4) * 0.04;
-      ctx.strokeStyle = `rgba(80, 180, 255, ${rimPulse})`;
-      ctx.lineWidth = 0.8;
-      ctx.shadowColor = 'rgba(56, 160, 240, 0.35)';
-      ctx.shadowBlur = 16;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      // ─── ONE GENTLE ENERGY WAVE ───
-      const waveOff = -12;
-      const wFreq = 0.003;
-      const wSpeed = time * 0.12;
-      const wAmp = 2.5 + Math.sin(time * 0.25) * 1;
-      const wAlpha = 0.07 * (0.85 + 0.15 * Math.sin(time * 0.35));
-
-      ctx.beginPath();
-      for (let x = 0; x <= W; x += 4) {
-        const y = curveY(x) + waveOff + Math.sin(x * wFreq + wSpeed) * wAmp;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = `rgba(80, 180, 255, ${wAlpha})`;
-      ctx.lineWidth = 0.6;
-      ctx.stroke();
-
-      // ─── FLOATING PARTICLES ───
-      particles.forEach(p => {
-        const cy = curveY(p.x);
-        const minY = Math.max(5, cy - 70);
-        const maxY = cy - 5;
-
-        p.x += p.drift + Math.sin(time * 0.15 + p.phase) * 0.06;
-        p.y += Math.cos(time * 0.1 + p.phase) * 0.02;
-        if (p.x < -5) p.x = W + 5;
-        if (p.x > W + 5) p.x = -5;
-        if (p.y < minY || p.y > maxY || p.y === 0) {
-          p.y = minY + Math.random() * (maxY - minY);
-        }
-
-        const b = 0.5 + 0.5 * Math.sin(time * 0.5 + p.phase);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(140, 200, 255, ${p.alpha * b})`;
-        ctx.fill();
-      });
-
-      // ─── TOP FADE-OUT: blend glow smoothly into background ───
-      // Extended to 65% of canvas height for a long, seamless dissolve
-      const fadeGrad = ctx.createLinearGradient(0, 0, 0, H * 0.65);
-      fadeGrad.addColorStop(0, 'rgba(3, 4, 10, 1)');
-      fadeGrad.addColorStop(0.3, 'rgba(3, 4, 10, 0.92)');
-      fadeGrad.addColorStop(0.55, 'rgba(3, 4, 10, 0.6)');
-      fadeGrad.addColorStop(0.75, 'rgba(3, 4, 10, 0.2)');
-      fadeGrad.addColorStop(0.9, 'rgba(3, 4, 10, 0.05)');
-      fadeGrad.addColorStop(1, 'rgba(3, 4, 10, 0)');
-      ctx.fillStyle = fadeGrad;
-      ctx.fillRect(0, 0, W, H * 0.65);
+      const g4R = ctx.createRadialGradient(W * 0.8, H * 0.75, 0, W * 0.8, H * 0.75, W * 0.3);
+      g4R.addColorStop(0, 'rgba(25, 80, 160, 0.02)');
+      g4R.addColorStop(0.5, 'rgba(15, 50, 120, 0.008)');
+      g4R.addColorStop(1, 'rgba(5, 15, 50, 0)');
+      ctx.fillStyle = g4R;
+      ctx.fillRect(0, 0, W, H);
 
       animFrameId = requestAnimationFrame(draw);
     };
@@ -1911,7 +1835,7 @@ export default function App() {
         <div className={`flex-1 overflow-y-auto relative ${activeTab === 'dashboard' ? 'p-0' : 'px-10 py-8'}`}>
 
           {/* PERMANENT ATMOSPHERIC BACKGROUND — always rendered, visible on all tabs */}
-          <div className={`absolute bottom-0 left-0 right-0 pointer-events-none z-0 overflow-hidden transition-opacity duration-700 ${activeTab === 'dashboard' ? 'opacity-100 h-[600px]' : 'opacity-10 h-[300px]'}`}>
+          <div className={`absolute inset-0 pointer-events-none z-0 overflow-hidden transition-opacity duration-700 ${activeTab === 'dashboard' ? 'opacity-100' : 'opacity-10'}`}>
             <canvas 
               ref={atmosphereCanvasRef} 
               className="w-full h-full"
@@ -4067,9 +3991,9 @@ export default function App() {
               </>
             ) : (
               <>
-                <button className="hover:text-gray-300">Documentation</button>
-                <button className="hover:text-gray-300">Support</button>
-                <button className="hover:text-gray-300">Privacy Policy</button>
+                <button onClick={() => setActiveTab('legal')} className="hover:text-gray-300 cursor-pointer">Documentation</button>
+                <button onClick={() => setActiveTab('legal')} className="hover:text-gray-300 cursor-pointer">Privacy Policy</button>
+                <button onClick={() => setActiveTab('legal')} className="hover:text-gray-300 cursor-pointer">Terms of Use</button>
               </>
             )}
           </div>
