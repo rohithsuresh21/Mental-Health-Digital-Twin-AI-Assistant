@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://gray-prescribed-timing-enzyme.trycloudflare.com/$1"
+      "destination": "https://mark-flour-beaver-political.trycloudflare.com/$1"
     },
     {
       "source": "/(.*)",

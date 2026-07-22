@@ -61,3 +61,6 @@ cloudflared/
 # Env
 .env
 .env.*
+
+.vercel
+.env*
