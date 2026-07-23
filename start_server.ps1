@@ -16,9 +16,9 @@ Start-Sleep -Seconds 2
 Remove-Item $TUNNEL_ERR -Force -ErrorAction SilentlyContinue
 Write-Host "  Done." -ForegroundColor Gray
 
-# ── Step 1: Start Flask backend ──
+# ── Step 1: Start Flask backend (visible terminal) ──
 Write-Host "[1/5] Starting Flask backend..." -ForegroundColor Yellow
-Start-Process -FilePath "cmd" -ArgumentList "/c", "cd /d $ROOT && venv\Scripts\python.exe app.py" -WindowStyle Hidden
+Start-Process -FilePath "cmd" -ArgumentList "/k", "cd /d $ROOT && title Flask Backend && venv\Scripts\python.exe app.py"
 
 $flaskOk = $false
 for ($i = 0; $i -lt 10; $i++) {
