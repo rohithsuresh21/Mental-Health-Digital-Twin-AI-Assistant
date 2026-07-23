@@ -353,7 +353,7 @@ class UnifiedJournalPipeline:
                 print(f"Stage 3 error: {error_msg}")
             raise
     
-    def _create_patched_data(self, num_patches: int = 10) -> Dict[str, Any]:
+    def _create_patched_data(self, num_patches: int = 30) -> Dict[str, Any]:
         patched = {}
         patched_risks = {}
         import torch

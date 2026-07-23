@@ -1371,6 +1371,18 @@ def internal_forecaster():
         if n < 3:
             return jsonify({"error": f"Need at least 3 entries, got {n}"}), 400
 
+        all_vecs = get_pipeline().get_batch_consistent_vectors(user_id)
+        if not get_pipeline().anomaly_detector:
+            n_train = max(10, int(len(all_vecs) * 0.7))
+            from stage_4.anomaly_pipeline import MultiDetectorPipeline
+            X_train = np.array(all_vecs[:n_train])
+            get_pipeline().anomaly_detector = MultiDetectorPipeline()
+            get_pipeline().anomaly_detector.fit(X_train)
+        anomaly_results = []
+        for vec in all_vecs:
+            anomaly_results.append(get_pipeline().detect_anomalies(vec))
+        get_pipeline().anomaly_scores[user_id] = anomaly_results
+
         num_patches = max(20, min(30, n + 10))
         tft = get_pipeline().train_tft_model(
             num_patches=num_patches,
