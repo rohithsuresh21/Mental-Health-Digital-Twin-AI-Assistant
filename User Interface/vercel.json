@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://cio-introduced-challenged-residents.trycloudflare.com/$1"
+                         "destination": "https://respond-curtis-flush-switched.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
