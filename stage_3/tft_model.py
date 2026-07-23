@@ -16,17 +16,22 @@ from pytorch_forecasting.data import GroupNormalizer
 from pytorch_forecasting.metrics import MAE
 
 
-def build_dataframe(patched_data: dict) -> pd.DataFrame:
+def build_dataframe(patched_data: dict, patched_risks: dict = None) -> pd.DataFrame:
     rows = []
     for user_id, windows in patched_data.items():
+        risk_windows = patched_risks.get(user_id, None) if patched_risks else None
         for window_idx in range(windows.shape[0]):
             for patch_idx in range(windows.shape[1]):
                 feature_vec = windows[window_idx, patch_idx].numpy()
+                if risk_windows is not None and window_idx < risk_windows.shape[0]:
+                    target_val = float(risk_windows[window_idx, patch_idx])
+                else:
+                    target_val = float(feature_vec.mean())
                 row = {
                     "user_id":   str(user_id),
                     "window_id": f"{user_id}_{window_idx}",
                     "time_idx":  patch_idx + (window_idx * windows.shape[1]),
-                    "target":    float(feature_vec.mean()),
+                    "target":    target_val,
                 }
                 for f_idx, f_val in enumerate(feature_vec):
                     row[f"feature_{f_idx}"] = float(f_val)
@@ -236,9 +241,10 @@ def run_stage3(
     batch_size: int = 64,
     checkpoint_path: str = "tft_checkpoint.ckpt",
     n_entries: int = 100,
+    patched_risks: dict = None,
 ) -> dict:
 
-    df         = build_dataframe(patched_data)
+    df         = build_dataframe(patched_data, patched_risks)
     window_ids = df["window_id"].unique().tolist()
 
     user_prefixes  = list(set("_".join(w.split("_")[:-1]) for w in window_ids))

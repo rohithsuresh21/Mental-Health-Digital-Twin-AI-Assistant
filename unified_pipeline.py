@@ -272,8 +272,8 @@ class UnifiedJournalPipeline:
             if self.tft_forecast is None and self.normalized_vectors:
                 try:
                     from stage_3.tft_model import generate_14day_forecast, build_dataset, build_dataframe
-                    patched_data = self._create_patched_data(num_patches)
-                    df = build_dataframe(patched_data)
+                    patched_data, patched_risks = self._create_patched_data(num_patches)
+                    df = build_dataframe(patched_data, patched_risks)
                     full_dataset = build_dataset(df, 466, num_patches=num_patches)
                     forecast = generate_14day_forecast(
                         self.tft_model["model"],
@@ -294,7 +294,7 @@ class UnifiedJournalPipeline:
 
             from stage_3.tft_model import run_stage3
 
-            patched_data = self._create_patched_data(num_patches)
+            patched_data, patched_risks = self._create_patched_data(num_patches)
             
             print(f"  Created patched data for TFT: {len(patched_data)} users")
             print(f"  User ID mapping: {self._user_id_mapping}")
@@ -306,7 +306,8 @@ class UnifiedJournalPipeline:
                 hidden_size=hidden_size,
                 max_epochs=max_epochs,
                 batch_size=batch_size,
-                n_entries=n_entries
+                n_entries=n_entries,
+                patched_risks=patched_risks
             )
 
             import torch
@@ -324,8 +325,8 @@ class UnifiedJournalPipeline:
 
             try:
                 from stage_3.tft_model import generate_14day_forecast, build_dataset, build_dataframe
-                patched_data = self._create_patched_data(num_patches)
-                df = build_dataframe(patched_data)
+                patched_data, patched_risks = self._create_patched_data(num_patches)
+                df = build_dataframe(patched_data, patched_risks)
                 full_dataset = build_dataset(df, 466, num_patches=num_patches)
                 forecast = generate_14day_forecast(
                     self.tft_model["model"],
@@ -354,6 +355,7 @@ class UnifiedJournalPipeline:
     
     def _create_patched_data(self, num_patches: int = 10) -> Dict[str, Any]:
         patched = {}
+        patched_risks = {}
         import torch
         
         for user_id, vectors in self.normalized_vectors.items():
@@ -367,16 +369,27 @@ class UnifiedJournalPipeline:
                 vectors = np.vstack([vectors, padding])
 
             windows = []
+            risk_windows = []
             for i in range(max(1, n_vectors - num_patches + 1)):
                 window = vectors[i:i + num_patches]
                 if len(window) < num_patches:
                     padding = np.zeros((num_patches - len(window), vectors.shape[1]))
                     window = np.vstack([window, padding])
                 windows.append(window)
+
+                user_risks = self.anomaly_scores.get(user_id, [])
+                risk_vals = [r.get("overall_risk_score", 0.5) if isinstance(r, dict) else 0.5 for r in user_risks]
+                if len(risk_vals) < num_patches:
+                    risk_vals = risk_vals + [0.5] * (num_patches - len(risk_vals))
+                risk_window = risk_vals[i:i + num_patches]
+                if len(risk_window) < num_patches:
+                    risk_window = risk_window + [0.5] * (num_patches - len(risk_window))
+                risk_windows.append(risk_window)
             
             patched[normalized_user_id] = torch.tensor(np.array(windows), dtype=torch.float32)
+            patched_risks[normalized_user_id] = torch.tensor(np.array(risk_windows), dtype=torch.float32)
         
-        return patched
+        return patched, patched_risks
     
     def train_anomaly_detector(self, use_latent_features: bool = False) -> None:
         try:
