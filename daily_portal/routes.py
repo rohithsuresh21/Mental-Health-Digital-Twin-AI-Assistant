@@ -21,7 +21,7 @@ SCALER_DIR.mkdir(parents=True, exist_ok=True)
 ALLOWED_AUDIO = {".wav"}
 MAX_TEXT_SIZE = 100_000  # characters
 
-# Per-user rate limit for daily submissions: 3 per hour
+# Per-user rate limit for daily submissions: 20 per hour
 _submit_rate_store = {}
 
 def _check_submit_rate(user_id):
@@ -30,7 +30,7 @@ def _check_submit_rate(user_id):
     key = f"submit:{user_id}"
     _submit_rate_store.setdefault(key, [])
     _submit_rate_store[key] = [t for t in _submit_rate_store[key] if now - t < 3600]
-    if len(_submit_rate_store[key]) >= 3:
+    if len(_submit_rate_store[key]) >= 20:
         return False
     _submit_rate_store[key].append(now)
     return True

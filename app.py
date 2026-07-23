@@ -9,9 +9,10 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
 app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SAMESITE"] = "None"
+app.config["SESSION_COOKIE_SECURE"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, origins=["https://mental-health-digital-twin-ai-assis.vercel.app"])
 
 # ── Security Configuration ──────────────────────────────────────────────────
 ADMIN_PASSWORD_HASH = hashlib.sha256("aiml25".encode()).hexdigest()
@@ -19,11 +20,11 @@ ADMIN_PASSWORD_HASH = hashlib.sha256("aiml25".encode()).hexdigest()
 # ── Rate Limiting ───────────────────────────────────────────────────────────
 # Per-user rate limits: { endpoint: (max_requests, window_seconds)
 RATE_LIMITS = {
-    "diagnose":    (3,  300),   # 3 diagnoses per 5 min (heavy ML pipeline)
-    "generate_pdf": (5, 300),   # 5 PDF downloads per 5 min
-    "login":       (5,  60),    # 5 login attempts per min (brute-force protection)
-    "submit":      (3,  3600),  # 3 daily submissions per hour
-    "default":     (30, 60),    # 30 requests per min for everything else
+    "diagnose":    (10,  300),   # 10 diagnoses per 5 min
+    "generate_pdf": (10, 300),   # 10 PDF downloads per 5 min
+    "login":       (10,  60),    # 10 login attempts per min
+    "submit":      (20,  3600),  # 20 daily submissions per hour
+    "default":     (60, 60),     # 60 requests per min for everything else
 }
 
 _rate_limit_store = {}
@@ -1081,6 +1082,24 @@ def diagnose():
             body.get("docFileContent", ""),
         ]
         text = "\n\n".join(p for p in text_parts if p)
+
+        # Also pull any daily portal entries for this user
+        try:
+            from daily_portal import db as daily_db
+            daily_entries = daily_db.get_recent_entries(user_id, limit=500)
+            daily_texts = [
+                e.get("text_raw", "")
+                for e in daily_entries
+                if e.get("text_raw", "").strip()
+            ]
+            if daily_texts:
+                daily_block = "\n".join(daily_texts)
+                if text.strip():
+                    text = text + "\n\n--- Daily Journal Entries ---\n" + daily_block
+                else:
+                    text = daily_block
+        except Exception as _de:
+            print(f"[diagnose] Could not load daily entries: {_de}")
 
         from pipeline_runner import run_pipeline
         import tempfile, os

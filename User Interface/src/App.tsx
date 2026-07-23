@@ -2004,14 +2004,20 @@ export default function App() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Age</label>
-                        <input 
-                          type="number"
-                          placeholder="e.g. 48"
-                          value={inputs.age || ''}
-                          onChange={(e) => setInputs({...inputs, age: parseInt(e.target.value) || 0})}
-                          className="w-full bg-[#0D1017]/40 border border-[#232B3B]/60 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                          required
-                        />
+                        <div className="relative">
+                          <select
+                            value={inputs.age || ''}
+                            onChange={(e) => setInputs({...inputs, age: parseInt(e.target.value) || 0})}
+                            className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-4 py-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
+                            style={{ colorScheme: 'dark' }}
+                            required
+                          >
+                            <option value="" disabled>Select age</option>
+                            {Array.from({ length: 83 }, (_, i) => i + 10).map(age => (
+                              <option key={age} value={age}>{age}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Gender</label>
