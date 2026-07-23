@@ -196,17 +196,17 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
     n = len(records)
 
     if n >= 60:
-        num_patches = 20
+        num_patches = 30
         hidden_size = 64
         max_epochs  = 30
         batch_size  = 16
     elif n >= 30:
-        num_patches = 20
+        num_patches = 30
         hidden_size = 48
         max_epochs  = 20
         batch_size  = 12
     else:
-        num_patches = max(15, min(20, n + 5))
+        num_patches = max(20, min(30, n + 10))
         hidden_size = 32
         max_epochs  = 15
         batch_size  = 8

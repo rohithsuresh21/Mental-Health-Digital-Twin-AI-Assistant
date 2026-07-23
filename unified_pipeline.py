@@ -261,7 +261,7 @@ class UnifiedJournalPipeline:
 
     def train_tft_model(
         self,
-        num_patches: int = 20,
+        num_patches: int = 30,
         hidden_size: int = 64,
         max_epochs: int = 30,
         batch_size: int = 64,

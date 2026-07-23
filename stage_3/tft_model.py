@@ -39,7 +39,7 @@ def build_dataframe(patched_data: dict, patched_risks: dict = None) -> pd.DataFr
     return pd.DataFrame(rows)
 
 
-def build_dataset(df: pd.DataFrame, feature_dim: int, num_patches: int = 20) -> TimeSeriesDataSet:
+def build_dataset(df: pd.DataFrame, feature_dim: int, num_patches: int = 30) -> TimeSeriesDataSet:
     from pytorch_forecasting.data.encoders import NaNLabelEncoder
 
     feature_cols = [f"feature_{i}" for i in range(feature_dim)]
@@ -235,7 +235,7 @@ def load_tft_checkpoint(checkpoint_path: str = "tft_checkpoint.ckpt"):
 def run_stage3(
     patched_data: dict,
     feature_dim: int,
-    num_patches: int = 20,
+    num_patches: int = 30,
     hidden_size: int = 64,
     max_epochs: int = 5,
     batch_size: int = 64,
