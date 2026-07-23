@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://dozen-engines-designed-refrigerator.trycloudflare.com/$1"
+      "destination": "https://parts-speeches-carmen-daisy.trycloudflare.com/$1"
     },
     {
       "source": "/(.*)",
