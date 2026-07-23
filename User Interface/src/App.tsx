@@ -1987,7 +1987,6 @@ export default function App() {
                 <div className="space-y-6">
                   {/* PATIENT IDENTITY */}
                   <div className="space-y-4">
-                    <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest font-sans">Patient Identity</h3>
                     
                     <div>
                       <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Full Name</label>
@@ -2010,9 +2009,8 @@ export default function App() {
                             onChange={(e) => setInputs({...inputs, age: parseInt(e.target.value) || 0})}
                             className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-4 py-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
                             style={{ colorScheme: 'dark' }}
-                            required
                           >
-                            <option value="">Select age</option>
+                            <option value="">Select...</option>
                             {Array.from({ length: 83 }, (_, i) => i + 10).map(age => (
                               <option key={age} value={age}>{age}</option>
                             ))}
@@ -2027,9 +2025,8 @@ export default function App() {
                             onChange={(e) => setInputs({...inputs, gender: e.target.value})}
                             className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-4 py-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
                             style={{ colorScheme: 'dark' }}
-                            required
                           >
-                            <option value="">Select gender</option>
+                            <option value="">Select...</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
                             <option value="Other">Other</option>
@@ -2041,7 +2038,6 @@ export default function App() {
 
                   {/* CLINICAL BASELINE */}
                   <div className="space-y-4 pt-4 border-t border-[#1B2030]/40">
-                    <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest font-sans">Clinical Baseline</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -2053,7 +2049,7 @@ export default function App() {
                             className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-4 py-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
                             style={{ colorScheme: 'dark' }}
                           >
-                            <option value="">Select blood type</option>
+                            <option value="">Select...</option>
                             <option value="A+">A+</option>
                             <option value="A-">A-</option>
                             <option value="B+">B+</option>
