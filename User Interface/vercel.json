@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://patterns-linear-introductory-tar.trycloudflare.com/$1"
+                         "destination": "https://injured-drivers-simply-warren.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
