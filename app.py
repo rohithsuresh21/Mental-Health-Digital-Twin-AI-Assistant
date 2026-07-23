@@ -291,6 +291,9 @@ from daily_portal.db import init_db
 init_db()
 app.register_blueprint(daily)
 
+from Stage_1.Extract_features import preload_models
+preload_models()
+
 CUSUM_STATUS_TEXT = {
     1: {
         "state": "stable",

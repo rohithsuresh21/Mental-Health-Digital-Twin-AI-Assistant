@@ -56,6 +56,26 @@ class UnifiedJournalPipeline:
         self.cusum_detectors = {}
 
         self._load_daic_model()
+        self._load_tft_checkpoint()
+
+    def _load_tft_checkpoint(self):
+        """Load TFT checkpoint at startup so it's ready immediately."""
+        if self.tft_model is not None:
+            return
+        checkpoint_path = "tft_checkpoint.ckpt"
+        if not os.path.exists(checkpoint_path):
+            print("[Stage 3] No TFT checkpoint found at startup — will train on first request.")
+            return
+        try:
+            from stage_3.tft_model import load_tft_checkpoint
+            result = load_tft_checkpoint(checkpoint_path)
+            if result and result.get("model") is not None:
+                self.tft_model = result
+                print("[Stage 3] TFT checkpoint loaded successfully at startup.")
+            else:
+                print("[Stage 3] TFT checkpoint load returned empty — will train on first request.")
+        except Exception as e:
+            print(f"[Stage 3] TFT startup load failed ({type(e).__name__}: {e}) — will train on first request.")
 
     def _load_daic_model(self):
         """Load pretrained DAIC-WOZ XGBoost model, PCA preprocessor, and calibrators."""
@@ -246,6 +266,9 @@ class UnifiedJournalPipeline:
         batch_size: int = 64,
         n_entries: int = 100
     ) -> Dict[str, Any]:
+        if self.tft_model is not None:
+            print("[Stage 3] TFT model already loaded — skipping retraining.")
+            return self.tft_model
         try:
             if not self.normalized_vectors or len(self.normalized_vectors) < 1:
                 raise ValueError(

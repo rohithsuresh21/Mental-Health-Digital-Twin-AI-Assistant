@@ -164,6 +164,33 @@ def project_umap(latents: torch.Tensor, n_components: int = 2, random_state: int
     return reducer.fit_transform(data)
 
 
+def load_tft_checkpoint(checkpoint_path: str = "tft_checkpoint.ckpt"):
+    import torch
+    if not os.path.exists(checkpoint_path):
+        return None
+    try:
+        tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path)
+        tft = tft.cpu()
+        tft.eval()
+        checkpoint_dir = os.path.dirname(os.path.abspath(checkpoint_path))
+        model_path = os.path.join(checkpoint_dir, "tft_model.pt")
+        if not os.path.exists(model_path):
+            model_path = os.path.join(checkpoint_dir, "pipeline_outputs", "tft_model.pt")
+        if os.path.exists(model_path):
+            data = torch.load(model_path, map_location="cpu", weights_only=False)
+            return {
+                "model": tft,
+                "latents": data.get("latents"),
+                "attention": data.get("attention"),
+                "umap_coords": data.get("umap_coords"),
+                "mean_patch_attention": [],
+            }
+        return {"model": tft, "latents": None, "attention": None, "umap_coords": None, "mean_patch_attention": []}
+    except Exception as e:
+        print(f"[TFT] Could not load checkpoint at startup ({type(e).__name__}: {e})")
+        return None
+
+
 def run_stage3(
     patched_data: dict,
     feature_dim: int,
@@ -226,7 +253,7 @@ def run_stage3(
                 learning_rate=1e-4,
             )
         except Exception as e:
-            print(f"[TFT] Checkpoint incompatible ({e}) — training from scratch.")
+            print(f"[TFT] Checkpoint incompatible ({type(e).__name__}: {e}) — training from scratch.")
             tft = build_tft(train_dataset, hidden_size=hidden_size, n_entries=n_entries)
             tft = train_tft(
                 tft, train_dataset, val_dataset,

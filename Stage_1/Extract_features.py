@@ -14,6 +14,18 @@ _model = None
 _vader_analyzer = None
 
 
+def preload_models():
+    """Eagerly load all ML models into memory at startup."""
+    import sys
+    print("[Stage 1] Preloading ML models...", end=" ", flush=True)
+    sys.stdout.flush()
+    _get_vader()
+    _get_emotion_classifier()
+    _get_sentence_model()
+    print("Done.")
+    sys.stdout.flush()
+
+
 def _get_emotion_classifier():
     global _emotion_classifier
     if _emotion_classifier is None:

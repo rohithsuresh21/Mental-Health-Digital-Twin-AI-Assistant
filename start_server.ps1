@@ -63,7 +63,7 @@ Write-Host "[3/5] Updating vercel.json..." -ForegroundColor Yellow
 $vercelPath = "$UI\vercel.json"
 $vercelContent = Get-Content $vercelPath -Raw
 $vercelContent = $vercelContent -replace '"destination":\s*"https://[a-z0-9-]+\.trycloudflare\.com/\$1"', "`"destination`": `"$tunnelUrl/`$1`""
-Set-Content $vercelPath -Value $vercelContent -Encoding UTF8
+[System.IO.File]::WriteAllText($vercelPath, $vercelContent)
 Write-Host "  Updated to: $tunnelUrl" -ForegroundColor Gray
 
 # ── Step 4: Deploy to Vercel ──
