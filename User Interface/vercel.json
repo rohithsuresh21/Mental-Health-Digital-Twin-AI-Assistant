@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://abroad-generating-restricted-unnecessary.trycloudflare.com/$1"
+                         "destination": "https://cigarette-italic-brisbane-michelle.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
