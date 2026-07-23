@@ -41,6 +41,7 @@ def build_dataframe(patched_data: dict, patched_risks: dict = None) -> pd.DataFr
 
 def build_dataset(df: pd.DataFrame, feature_dim: int, num_patches: int = 30) -> TimeSeriesDataSet:
     from pytorch_forecasting.data.encoders import NaNLabelEncoder
+    from pytorch_forecasting.data import EncoderNormalizer
 
     feature_cols = [f"feature_{i}" for i in range(feature_dim)]
     max_prediction_length = 14
@@ -56,7 +57,12 @@ def build_dataset(df: pd.DataFrame, feature_dim: int, num_patches: int = 30) -> 
         min_prediction_length=max_prediction_length,
         max_prediction_length=max_prediction_length,
         time_varying_unknown_reals=feature_cols + ["target"],
-        target_normalizer=GroupNormalizer(groups=["window_id"]),
+        target_normalizer=EncoderNormalizer(
+            groups=["window_id"],
+            center=True,
+            method="standard",
+            transformation=None,
+        ),
         allow_missing_timesteps=True,
         categorical_encoders={"window_id": NaNLabelEncoder(add_nan=True)},
     )
