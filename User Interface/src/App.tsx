@@ -3190,7 +3190,7 @@ export default function App() {
                           <Brain className="h-4.5 w-4.5 text-purple-400" />
                           14-Day Risk Forecast
                         </h3>
-                        <p className="text-[10px] text-gray-500 mt-1 ml-7">TFT model autoregressive projection</p>
+                        <p className="text-[10px] text-gray-500 mt-1 ml-7">TFT multi-step risk prediction (14 days ahead)</p>
                       </div>
                       <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
                         {collapsedSections.tftForecast ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
@@ -3304,7 +3304,7 @@ export default function App() {
                           </div>
 
                           <p className="text-[10px] text-gray-500 leading-relaxed mt-4">
-                            Each point is one predicted day (Day 1 to Day 14). The TFT model feeds each prediction back as input to generate the next day, creating a trajectory. Dashed purple line shows the projected risk path.
+                            Each point is one predicted day (Day 1 to Day 14). The TFT model predicts all 14 days in a single forward pass using anomaly risk scores as the target variable. Dashed purple line shows the projected clinical risk trajectory.
                           </p>
                         </div>
 
@@ -3348,6 +3348,9 @@ export default function App() {
                                   </div>
                                   <p className="text-[10px] text-gray-400 leading-relaxed">
                                     <span className="font-bold text-gray-300">Interpretation:</span> Risk is <span className={`font-semibold ${trendColor}`}>{trend}</span> over the next 14 days — from {first}% on Day 1 to {last}% on Day 14, with peak at {max}%.
+                                  </p>
+                                  <p className="text-[9px] text-gray-500 leading-relaxed mt-1">
+                                    Based on anomaly risk scores from Mahalanobis, Copula, Isolation Forest, and KNN detectors. TFT learned temporal patterns from your clinical feature vectors.
                                   </p>
                                 </div>
                               );
