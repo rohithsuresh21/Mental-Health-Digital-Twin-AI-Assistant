@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination":  "https://reduce-continuous-tribe-antique.trycloudflare.com/$1"
+                         "destination": "https://nutten-highest-processing-questions.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
@@ -13,3 +13,4 @@
                      }
                  ]
 }
+
