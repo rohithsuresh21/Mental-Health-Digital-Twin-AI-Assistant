@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://ridge-offset-hoped-partial.trycloudflare.com/$1"
+      "destination": "https://dozen-engines-designed-refrigerator.trycloudflare.com/$1"
     },
     {
       "source": "/(.*)",
