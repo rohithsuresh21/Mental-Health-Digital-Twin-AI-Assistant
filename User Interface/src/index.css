@@ -219,6 +219,14 @@
   color: #94a3b8 !important;
 }
 
+.light-theme select option {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+.light-theme select option.select-placeholder {
+  color: #94a3b8 !important;
+}
+
 .light-theme input:focus,
 .light-theme textarea:focus,
 .light-theme select:focus {
@@ -352,6 +360,9 @@ select option {
   background-color: #0D1017;
   color: #d1d5db;
   padding: 8px 12px;
+}
+select option.select-placeholder {
+  color: #4B5563;
 }
 select option:hover,
 select option:checked {
