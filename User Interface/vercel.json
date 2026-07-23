@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://sufficient-min-cyber-macintosh.trycloudflare.com/$1"
+                         "destination": "https://sodium-roger-perspective-walked.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
