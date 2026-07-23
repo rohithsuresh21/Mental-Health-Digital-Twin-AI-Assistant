@@ -211,14 +211,6 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
         max_epochs  = 15
         batch_size  = 8
 
-    tft = pipeline.train_tft_model(
-        num_patches=num_patches,
-        hidden_size=hidden_size,
-        max_epochs=max_epochs,
-        batch_size=batch_size,
-        n_entries=n,           
-    )
-
     model_dir = Path("calibration/models")
     detectors_file = model_dir / "stage4_detectors.pkl"
     threshold_file = model_dir / "stage4_threshold_engine.pkl"
@@ -256,6 +248,14 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
      
     cusum_results = pipeline.fit_and_run_cusum(user_id)
     cusum_threshold = round(float(pipeline.cusum_detectors[user_id].h), 4)
+
+    tft = pipeline.train_tft_model(
+        num_patches=num_patches,
+        hidden_size=hidden_size,
+        max_epochs=max_epochs,
+        batch_size=batch_size,
+        n_entries=n,           
+    )
 
     xgb = pipeline.train_xgboost_classifier()
 
