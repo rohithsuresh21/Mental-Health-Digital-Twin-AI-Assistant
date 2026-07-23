@@ -2012,7 +2012,7 @@ export default function App() {
                             style={{ colorScheme: 'dark' }}
                             required
                           >
-                            <option value="" disabled>Select age</option>
+                            <option value="">Select age</option>
                             {Array.from({ length: 83 }, (_, i) => i + 10).map(age => (
                               <option key={age} value={age}>{age}</option>
                             ))}
@@ -2029,7 +2029,7 @@ export default function App() {
                             style={{ colorScheme: 'dark' }}
                             required
                           >
-                            <option value="" disabled>Select gender</option>
+                            <option value="">Select gender</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
                             <option value="Other">Other</option>
@@ -2053,7 +2053,7 @@ export default function App() {
                             className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-4 py-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
                             style={{ colorScheme: 'dark' }}
                           >
-                            <option value="" disabled>Select blood type</option>
+                            <option value="">Select blood type</option>
                             <option value="A+">A+</option>
                             <option value="A-">A-</option>
                             <option value="B+">B+</option>
