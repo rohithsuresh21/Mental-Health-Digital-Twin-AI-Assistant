@@ -278,15 +278,15 @@ export default function App() {
   // Form input states with personal details
   const [inputs, setInputs] = useState<IngestionInput>({
     fullName: '',
-    age: 48,
-    gender: 'Male',
-    bloodType: 'A+',
-    medicalHistory: 'Longitudinal cognitive observation, mild episodic fatigue during high-intensity research.',
-    symptoms: 'Occasional short-term recall latency under peak workloads.',
+    age: 0,
+    gender: '',
+    bloodType: '',
+    medicalHistory: '',
+    symptoms: '',
     communicationLogs: '',
-    sleepDuration: 6.5,
-    sleepQuality: 3,
-    physicalActivity: 3,
+    sleepDuration: 0,
+    sleepQuality: 0,
+    physicalActivity: 0,
     lookaheadHorizon: '5 days',
     voiceRecordingsText: '',
     clinicalReportsText: ''
@@ -373,7 +373,7 @@ export default function App() {
   // Initialize chart viewport when data loads — zoomed in to last ~20% by default
   useEffect(() => {
     if (chartViewport[0] === -1) {
-      const dates = diagnosticData.metrics?.dates || [];
+      const dates = diagnosticData.pipelineTimestamps || [];
       if (dates.length > 0) {
         const visibleCount = Math.max(6, Math.round(dates.length * 0.2));
         const end = dates.length - 1;
@@ -381,13 +381,13 @@ export default function App() {
         setChartViewport([start, end]);
       }
     }
-  }, [chartViewport, diagnosticData.metrics?.dates]);
+  }, [chartViewport, diagnosticData.pipelineTimestamps]);
 
   // Initialize CUSUM viewport when data loads — zoomed in to last ~20%
   useEffect(() => {
     if (cusumViewport[0] === -1) {
-      const upper = diagnosticData.pipeline?.pipelineCusumUpper || [];
-      const lower = diagnosticData.pipeline?.pipelineCusumLower || [];
+      const upper = diagnosticData.pipelineCusumUpper || [];
+      const lower = diagnosticData.pipelineCusumLower || [];
       const len = Math.max(upper.length, lower.length);
       if (len > 0) {
         const visibleCount = Math.max(6, Math.round(len * 0.2));
@@ -396,7 +396,7 @@ export default function App() {
         setCusumViewport([start, end]);
       }
     }
-  }, [cusumViewport, diagnosticData.pipeline?.pipelineCusumUpper, diagnosticData.pipeline?.pipelineCusumLower]);
+  }, [cusumViewport, diagnosticData.pipelineCusumUpper, diagnosticData.pipelineCusumLower]);
 
   // Canvas constellation animation background
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -2029,6 +2029,7 @@ export default function App() {
                             style={{ colorScheme: 'dark' }}
                             required
                           >
+                            <option value="" disabled>Select gender</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
                             <option value="Other">Other</option>
@@ -2052,6 +2053,7 @@ export default function App() {
                             className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-4 py-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
                             style={{ colorScheme: 'dark' }}
                           >
+                            <option value="" disabled>Select blood type</option>
                             <option value="A+">A+</option>
                             <option value="A-">A-</option>
                             <option value="B+">B+</option>
