@@ -1371,7 +1371,7 @@ def internal_forecaster():
         if n < 3:
             return jsonify({"error": f"Need at least 3 entries, got {n}"}), 400
 
-        num_patches = min(10, max(3, n - 1))
+        num_patches = max(15, min(20, n + 5))
         tft = get_pipeline().train_tft_model(
             num_patches=num_patches,
             hidden_size=32,

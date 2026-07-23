@@ -199,11 +199,11 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     t_s3 = time.time()
 
     if n >= 60:
-        num_patches = 14; hidden_size = 64; max_epochs = 10; batch_size = 16
+        num_patches = 20; hidden_size = 64; max_epochs = 10; batch_size = 16
     elif n >= 30:
-        num_patches = 10; hidden_size = 48; max_epochs = 7; batch_size = 12
+        num_patches = 20; hidden_size = 48; max_epochs = 7; batch_size = 12
     else:
-        num_patches = min(10, max(3, n - 1)); hidden_size = 32; max_epochs = 5; batch_size = 8
+        num_patches = max(15, min(20, n + 5)); hidden_size = 32; max_epochs = 5; batch_size = 8
 
     _info(f"Config: {num_patches} patches, hidden={hidden_size}, epochs={max_epochs}, batch={batch_size}")
 

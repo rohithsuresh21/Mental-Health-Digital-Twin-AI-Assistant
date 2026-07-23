@@ -34,11 +34,11 @@ def build_dataframe(patched_data: dict) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def build_dataset(df: pd.DataFrame, feature_dim: int, num_patches: int = 10) -> TimeSeriesDataSet:
+def build_dataset(df: pd.DataFrame, feature_dim: int, num_patches: int = 20) -> TimeSeriesDataSet:
     from pytorch_forecasting.data.encoders import NaNLabelEncoder
 
     feature_cols = [f"feature_{i}" for i in range(feature_dim)]
-    max_prediction_length = 1
+    max_prediction_length = 14
     max_encoder_length    = num_patches - max_prediction_length
 
     return TimeSeriesDataSet(
@@ -167,48 +167,34 @@ def project_umap(latents: torch.Tensor, n_components: int = 2, random_state: int
 def generate_14day_forecast(
     tft: TemporalFusionTransformer,
     dataset: TimeSeriesDataSet,
-    last_patch_data: dict,
     forecast_days: int = 14,
 ) -> list:
     tft = tft.cpu()
     tft.eval()
-    
+
     try:
         import torch
-        
+
         loader = dataset.to_dataloader(train=False, batch_size=1, num_workers=0)
-        
+
         last_batch = None
         for x, y in loader:
             last_batch = {k: v.clone().cpu() if isinstance(v, torch.Tensor) else v for k, v in x.items()}
-        
+
         if last_batch is None:
             return [0.5] * forecast_days
-        
-        predictions = []
-        current_batch = last_batch
-        
+
         with torch.no_grad():
-            for day in range(forecast_days):
-                output = tft(current_batch)
-                pred = float(output["prediction"].cpu().numpy().flatten()[0])
-                predictions.append(pred)
-                
-                if "encoder_cont" in current_batch:
-                    enc = current_batch["encoder_cont"]
-                    pred_step = enc[:, -1:, :].clone()
-                    pred_step[:, :, 0] = pred
-                    current_batch = {
-                        k: v if not isinstance(v, torch.Tensor) or k not in ("encoder_cont", "encoder_cat")
-                        else (torch.cat([v[:, 1:, :], pred_step], dim=1) if k == "encoder_cont" else v[:, 1:, :])
-                        for k, v in current_batch.items()
-                    }
-                    if "encoder_time_idx" in current_batch:
-                        tidx = current_batch["encoder_time_idx"]
-                        current_batch["encoder_time_idx"] = tidx[:, 1:] + 1
-        
-        return predictions[:forecast_days]
-        
+            output = tft(last_batch)
+            preds = output["prediction"].cpu().numpy().flatten()
+
+        forecast = [round(float(p), 4) for p in preds[:forecast_days]]
+
+        while len(forecast) < forecast_days:
+            forecast.append(forecast[-1] if forecast else 0.5)
+
+        return forecast
+
     except Exception as e:
         print(f"[TFT] Forecast generation failed: {e}")
         return [0.5] * forecast_days
@@ -244,7 +230,7 @@ def load_tft_checkpoint(checkpoint_path: str = "tft_checkpoint.ckpt"):
 def run_stage3(
     patched_data: dict,
     feature_dim: int,
-    num_patches: int = 10,
+    num_patches: int = 20,
     hidden_size: int = 64,
     max_epochs: int = 5,
     batch_size: int = 64,
@@ -280,7 +266,7 @@ def run_stage3(
             tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path)
             tft = tft.cpu()
 
-            expected_encoder_len = num_patches - 1
+            expected_encoder_len = num_patches - 14
             actual_encoder_len = tft.hparams.encoder_max_length if hasattr(tft.hparams, 'encoder_max_length') else None
             if actual_encoder_len and actual_encoder_len != expected_encoder_len:
                 raise ValueError(

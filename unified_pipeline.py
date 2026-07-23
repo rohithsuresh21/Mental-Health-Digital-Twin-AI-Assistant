@@ -261,7 +261,7 @@ class UnifiedJournalPipeline:
 
     def train_tft_model(
         self,
-        num_patches: int = 10,
+        num_patches: int = 20,
         hidden_size: int = 64,
         max_epochs: int = 30,
         batch_size: int = 64,
@@ -278,7 +278,6 @@ class UnifiedJournalPipeline:
                     forecast = generate_14day_forecast(
                         self.tft_model["model"],
                         full_dataset,
-                        patched_data,
                         forecast_days=14
                     )
                     self.tft_forecast = forecast
@@ -331,7 +330,6 @@ class UnifiedJournalPipeline:
                 forecast = generate_14day_forecast(
                     self.tft_model["model"],
                     full_dataset,
-                    patched_data,
                     forecast_days=14
                 )
                 self.tft_forecast = forecast
