@@ -164,6 +164,46 @@ def project_umap(latents: torch.Tensor, n_components: int = 2, random_state: int
     return reducer.fit_transform(data)
 
 
+def generate_14day_forecast(
+    tft: TemporalFusionTransformer,
+    dataset: TimeSeriesDataSet,
+    last_patch_data: dict,
+    forecast_days: int = 14,
+) -> list:
+    """Generate 14-day risk forecast from TFT model using last known data."""
+    tft = tft.cpu()
+    tft.eval()
+    
+    try:
+        loader = dataset.to_dataloader(train=False, batch_size=1, num_workers=0)
+        
+        last_batch = None
+        for x, y in loader:
+            last_batch = {k: v.cpu() if isinstance(v, torch.Tensor) else v for k, v in x.items()}
+        
+        if last_batch is None:
+            return [0.5] * forecast_days
+        
+        with torch.no_grad():
+            predictions = []
+            current_batch = last_batch.copy()
+            
+            for day in range(forecast_days):
+                output = tft(current_batch)
+                pred = output["prediction"].cpu().numpy().flatten()
+                predictions.append(float(pred[0]))
+        
+        if len(predictions) < forecast_days:
+            last_pred = predictions[-1] if predictions else 0.5
+            predictions.extend([last_pred] * (forecast_days - len(predictions)))
+        
+        return predictions[:forecast_days]
+        
+    except Exception as e:
+        print(f"[TFT] Forecast generation failed: {e}")
+        return [0.5] * forecast_days
+
+
 def load_tft_checkpoint(checkpoint_path: str = "tft_checkpoint.ckpt"):
     import torch
     if not os.path.exists(checkpoint_path):

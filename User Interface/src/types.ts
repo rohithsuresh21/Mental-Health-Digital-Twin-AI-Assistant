@@ -56,6 +56,7 @@ export interface DiagnosticData {
   pipelineCalibrated?: boolean;
   pipelineEmotionsSeries?: string[];
   pipelineNEntries?: number;
+  pipelineForecast14Day?: number[];
 }
 
 export interface IngestionInput {

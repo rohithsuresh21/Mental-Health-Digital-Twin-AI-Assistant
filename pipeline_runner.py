@@ -411,6 +411,7 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         "persistent_anomaly_flags": [bool(a.get("is_persistent_anomaly", False)) for a in anomaly_results],
         "prediction":          prediction,
         "tft_latent_shape":    list(tft["latents"].shape) if tft is not None else None,
+        "tft_forecast_14day":  pipeline.tft_forecast if hasattr(pipeline, 'tft_forecast') and pipeline.tft_forecast else None,
         "xgb_auroc":           round(xgb["auroc"], 4) if xgb["auroc"] is not None and xgb["auroc"] == xgb["auroc"] else 0.0,
         "calibration_status":  calibration_status,
         "baseline_deviation_series": deviation_series,

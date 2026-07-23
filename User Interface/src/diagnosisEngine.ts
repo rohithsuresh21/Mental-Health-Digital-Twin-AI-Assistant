@@ -290,6 +290,7 @@ export function mapFlaskRunResponse(pipelineResult: any, input: Partial<Ingestio
     pipelineCalibrated: pipelineResult.calibration_status?.calibrated,
     pipelineEmotionsSeries: pipelineResult.emotions_series,
     pipelineNEntries: pipelineResult.n_entries,
+    pipelineForecast14Day: pipelineResult.tft_forecast_14day,
   };
 }
 

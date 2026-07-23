@@ -54,6 +54,7 @@ class UnifiedJournalPipeline:
         self.user_labels = {}
         self._user_id_mapping = {}
         self.cusum_detectors = {}
+        self.tft_forecast = None
 
         self._load_daic_model()
         self._load_tft_checkpoint()
@@ -304,6 +305,23 @@ class UnifiedJournalPipeline:
             print(f"  Model saved to {model_path}")
             print(f"  Latent shape: {list(self.tft_model['latents'].shape)}")
             print(f"  Attention shape: {list(self.tft_model['attention'].shape)}")
+
+            try:
+                from stage_3.tft_model import generate_14day_forecast, build_dataset, build_dataframe
+                patched_data = self._create_patched_data(num_patches)
+                df = build_dataframe(patched_data)
+                full_dataset = build_dataset(df, 466, num_patches=num_patches)
+                forecast = generate_14day_forecast(
+                    self.tft_model["model"],
+                    full_dataset,
+                    patched_data,
+                    forecast_days=14
+                )
+                self.tft_forecast = forecast
+                print(f"  14-day forecast generated: {[round(f, 3) for f in forecast]}")
+            except Exception as forecast_err:
+                print(f"  Warning: forecast generation failed: {forecast_err}")
+                self.tft_forecast = None
             
             return self.tft_model
             

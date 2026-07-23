@@ -2343,6 +2343,8 @@ export default function App() {
               0.41, 0.48, 0.32, 0.44, 0.75, 0.71, 0.78, 0.72, 0.75, 0.73, 0.77, 0.68, 0.75, 0.69
             ];
 
+            const forecastData: number[] = pipeline?.pipelineForecast14Day || [];
+
             const lowerCusumVals = pipeline?.pipelineCusumLower || [
               0.1, 0.2, 0.0, 0.15, 0.3, 0.1, 0.05, 0.18, 0.12, 0.25, 0.35, 0.1, 0.22, 0.14, 0.08, 0.22, 0.35, 0.12, 0.05, 0.18, 0.31, 0.52, 0.61, 0.78, 1.05, 1.12, 1.35, 1.62, 1.84, 2.15, 2.32, 2.18, 1.34, 0.82, 0.22, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             ];
@@ -2972,6 +2974,12 @@ export default function App() {
                           <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
                             <span className="inline-block w-4 h-2 bg-red-500/25 border border-red-500 rounded-sm" />
                             <span>Anomaly Risk</span>
+                            {forecastData.length > 0 && (
+                              <>
+                                <span className="inline-block w-4 h-0.5 bg-purple-400 rounded-sm" style={{ borderTop: '1px dashed #c084fc' }} />
+                                <span>14-Day Forecast</span>
+                              </>
+                            )}
                           </div>
                         </div>
                         <p className="text-[10px] text-gray-500 mb-3">Y-axis: 0.0 typical · 0.5 moderately unusual · 1.0 highly unusual</p>
@@ -3035,6 +3043,43 @@ export default function App() {
                               strokeWidth="2"
                               className="drop-shadow-[0_0_3px_rgba(239,68,68,0.3)]"
                             />
+
+                            {/* 14-Day Forecast Projection (dotted purple) */}
+                            {forecastData.length > 0 && (() => {
+                              const lastActualIdx = vpEnd;
+                              const lastActualX = 35 + ((lastActualIdx - vpStart) / vpLastIdx) * 450;
+                              const lastActualVal = anomalyRiskData[lastActualIdx] ?? 0.5;
+                              const lastActualY = 15 + (1.0 - lastActualVal) * 185;
+                              
+                              const forecastSpacing = 450 / (vpLastIdx + forecastData.length);
+                              let pathStr = `M ${lastActualX} ${lastActualY}`;
+                              forecastData.forEach((val, idx) => {
+                                const x = lastActualX + (idx + 1) * forecastSpacing;
+                                const y = 15 + (1.0 - Math.min(1, Math.max(0, val))) * 185;
+                                pathStr += ` L ${x} ${y}`;
+                              });
+                              
+                              const lastForecastX = lastActualX + forecastData.length * forecastSpacing;
+                              const lastForecastY = 15 + (1.0 - Math.min(1, Math.max(0, forecastData[forecastData.length - 1]))) * 185;
+                              
+                              return (
+                                <g>
+                                  <line x1={lastActualX} y1="15" x2={lastActualX} y2="200" stroke="#7c3aed" strokeWidth="1" strokeDasharray="2 2" opacity="0.4" />
+                                  <path
+                                    d={pathStr}
+                                    fill="none"
+                                    stroke="#a78bfa"
+                                    strokeWidth="2"
+                                    strokeDasharray="4 3"
+                                    opacity="0.7"
+                                    className="drop-shadow-[0_0_3px_rgba(167,139,250,0.3)]"
+                                  />
+                                  <circle cx={lastActualX} cy={lastActualY} r="3" fill="#a78bfa" stroke="#0b0d13" strokeWidth="1" />
+                                  <circle cx={lastForecastX} cy={lastForecastY} r="3" fill="#a78bfa" stroke="#0b0d13" strokeWidth="1" opacity="0.6" />
+                                  <text x={lastActualX + (lastForecastX - lastActualX) / 2} y="232" fill="#a78bfa" fontSize="7" textAnchor="middle" fontFamily="monospace" opacity="0.6">14-day forecast</text>
+                                </g>
+                              );
+                            })()}
 
                             {/* Peak/Valley anchor diamonds (viewport-sliced) */}
                             {(() => {
