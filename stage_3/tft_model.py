@@ -58,7 +58,6 @@ def build_dataset(df: pd.DataFrame, feature_dim: int, num_patches: int = 30) -> 
         max_prediction_length=max_prediction_length,
         time_varying_unknown_reals=feature_cols + ["target"],
         target_normalizer=EncoderNormalizer(
-            groups=["window_id"],
             center=True,
             method="standard",
             transformation=None,
