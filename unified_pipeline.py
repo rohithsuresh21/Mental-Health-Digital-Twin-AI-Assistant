@@ -377,10 +377,14 @@ class UnifiedJournalPipeline:
                     window = np.vstack([window, padding])
                 windows.append(window)
 
-                user_risks = self.anomaly_scores.get(user_id, [])
-                risk_vals = [r.get("overall_risk_score", 0.5) if isinstance(r, dict) else 0.5 for r in user_risks]
-                if len(risk_vals) < num_patches:
-                    risk_vals = risk_vals + [0.5] * (num_patches - len(risk_vals))
+            user_risks = self.anomaly_scores.get(user_id, [])
+            risk_vals = [r.get("overall_risk_score", 0.5) if isinstance(r, dict) else 0.5 for r in user_risks]
+            if len(risk_vals) < n_vectors:
+                risk_vals = risk_vals + [0.5] * (n_vectors - len(risk_vals))
+            elif len(risk_vals) > n_vectors:
+                risk_vals = risk_vals[:n_vectors]
+
+            for i in range(max(1, n_vectors - num_patches + 1)):
                 risk_window = risk_vals[i:i + num_patches]
                 if len(risk_window) < num_patches:
                     risk_window = risk_window + [0.5] * (num_patches - len(risk_window))

@@ -12,7 +12,7 @@ except ImportError:
     from pytorch_lightning.callbacks import ModelCheckpoint
 
 from pytorch_forecasting import TemporalFusionTransformer, TimeSeriesDataSet
-from pytorch_forecasting.data import GroupNormalizer
+from pytorch_forecasting.data import EncoderNormalizer
 from pytorch_forecasting.metrics import MAE
 
 
