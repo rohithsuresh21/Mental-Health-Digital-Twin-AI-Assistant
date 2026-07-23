@@ -407,6 +407,63 @@ def generate_pdf(diagnostic_data: dict, inputs: dict) -> bytes:
     ]))
     story.append(ht)
 
+    # ── TFT FORECAST ────────────────────────────────────────────────────────
+    forecast = d.get("pipelineForecast14Day", [])
+    if forecast:
+        story.append(Paragraph("14-DAY RISK FORECAST (TFT MODEL)", S["SectionHead"]))
+        story.append(_section_divider())
+        story.append(Paragraph(
+            "The Temporal Fusion Transformer model generates an autoregressive "
+            "14-day risk projection based on recent journal entry patterns.",
+            S["BodyText2"],
+        ))
+        story.append(Spacer(1, 6))
+
+        fc_header = [
+            Paragraph("Day", S["TableHeader"]),
+            Paragraph("Predicted Risk", S["TableHeader"]),
+            Paragraph("Level", S["TableHeader"]),
+        ]
+        fc_rows = [fc_header]
+        for i, val in enumerate(forecast, 1):
+            risk_pct = round(min(1, max(0, val)) * 100)
+            if risk_pct >= 70:
+                level = Paragraph(f'<font color="#c0392b"><b>High</b></font>', S["TableCell"])
+            elif risk_pct >= 40:
+                level = Paragraph(f'<font color="#f39c12"><b>Moderate</b></font>', S["TableCell"])
+            else:
+                level = Paragraph(f'<font color="#27ae60">Low</font>', S["TableCell"])
+            fc_rows.append([
+                Paragraph(f"Day {i}", S["TableCell"]),
+                Paragraph(f"{risk_pct}%", S["TableCellBold"]),
+                level,
+            ])
+
+        fc_avg = round(sum(forecast) / len(forecast) * 100) if forecast else 0
+        fc_last = round(min(1, max(0, forecast[-1])) * 100) if forecast else 0
+        fc_first = round(min(1, max(0, forecast[0])) * 100) if forecast else 0
+        trend = "rising" if fc_last > fc_first + 5 else "declining" if fc_last < fc_first - 5 else "stable"
+
+        fct = Table(fc_rows, colWidths=[1.5*inch, 2.0*inch, 3.4*inch])
+        fct.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), C_DARK_BG),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, C_BORDER),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, C_LIGHT_BG]),
+        ]))
+        story.append(fct)
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(
+            f"<b>Summary:</b> Starting risk {fc_first}% → Ending {fc_last}% (trend: {trend}). "
+            f"Average forecast risk: {fc_avg}%.",
+            S["BodyText2"],
+        ))
+        story.append(Spacer(1, 6))
+
     # ── PAGE 2: FEATURE RISK ANALYSIS TABLE ─────────────────────────────────
     story.append(PageBreak())
     story.append(Paragraph("FEATURE RISK ANALYSIS", S["DocTitle"]))

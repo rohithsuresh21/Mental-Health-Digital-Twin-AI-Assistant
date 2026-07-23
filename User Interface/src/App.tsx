@@ -309,7 +309,8 @@ export default function App() {
     baseline: false,
     cusum: false,
     whatsDriving: false,
-    techDetails: true
+    techDetails: true,
+    tftForecast: true
   });
 
   // Collapsed sections in Explainable AI
@@ -330,6 +331,9 @@ export default function App() {
 
   // CUSUM independent viewport
   const [cusumViewport, setCusumViewport] = useState<[number, number]>([-1, -1]);
+
+  // TFT Forecast viewport
+  const [forecastViewport, setForecastViewport] = useState<[number, number]>([-1, -1]);
 
   // CUSUM toggle tab: 0=Upper, 1=Lower, 2=Both
   const [selectedCusumTab, setSelectedCusumTab] = useState(2);
@@ -2974,12 +2978,6 @@ export default function App() {
                           <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
                             <span className="inline-block w-4 h-2 bg-red-500/25 border border-red-500 rounded-sm" />
                             <span>Anomaly Risk</span>
-                            {forecastData.length > 0 && (
-                              <>
-                                <span className="inline-block w-4 h-0.5 bg-purple-400 rounded-sm" style={{ borderTop: '1px dashed #c084fc' }} />
-                                <span>14-Day Forecast</span>
-                              </>
-                            )}
                           </div>
                         </div>
                         <p className="text-[10px] text-gray-500 mb-3">Y-axis: 0.0 typical · 0.5 moderately unusual · 1.0 highly unusual</p>
@@ -3043,43 +3041,6 @@ export default function App() {
                               strokeWidth="2"
                               className="drop-shadow-[0_0_3px_rgba(239,68,68,0.3)]"
                             />
-
-                            {/* 14-Day Forecast Projection (dotted purple) */}
-                            {forecastData.length > 0 && (() => {
-                              const lastActualIdx = vpEnd;
-                              const lastActualX = 35 + ((lastActualIdx - vpStart) / vpLastIdx) * 450;
-                              const lastActualVal = anomalyRiskData[lastActualIdx] ?? 0.5;
-                              const lastActualY = 15 + (1.0 - lastActualVal) * 185;
-                              
-                              const forecastSpacing = 450 / (vpLastIdx + forecastData.length);
-                              let pathStr = `M ${lastActualX} ${lastActualY}`;
-                              forecastData.forEach((val, idx) => {
-                                const x = lastActualX + (idx + 1) * forecastSpacing;
-                                const y = 15 + (1.0 - Math.min(1, Math.max(0, val))) * 185;
-                                pathStr += ` L ${x} ${y}`;
-                              });
-                              
-                              const lastForecastX = lastActualX + forecastData.length * forecastSpacing;
-                              const lastForecastY = 15 + (1.0 - Math.min(1, Math.max(0, forecastData[forecastData.length - 1]))) * 185;
-                              
-                              return (
-                                <g>
-                                  <line x1={lastActualX} y1="15" x2={lastActualX} y2="200" stroke="#7c3aed" strokeWidth="1" strokeDasharray="2 2" opacity="0.4" />
-                                  <path
-                                    d={pathStr}
-                                    fill="none"
-                                    stroke="#a78bfa"
-                                    strokeWidth="2"
-                                    strokeDasharray="4 3"
-                                    opacity="0.7"
-                                    className="drop-shadow-[0_0_3px_rgba(167,139,250,0.3)]"
-                                  />
-                                  <circle cx={lastActualX} cy={lastActualY} r="3" fill="#a78bfa" stroke="#0b0d13" strokeWidth="1" />
-                                  <circle cx={lastForecastX} cy={lastForecastY} r="3" fill="#a78bfa" stroke="#0b0d13" strokeWidth="1" opacity="0.6" />
-                                  <text x={lastActualX + (lastForecastX - lastActualX) / 2} y="232" fill="#a78bfa" fontSize="7" textAnchor="middle" fontFamily="monospace" opacity="0.6">14-day forecast</text>
-                                </g>
-                              );
-                            })()}
 
                             {/* Peak/Valley anchor diamonds (viewport-sliced) */}
                             {(() => {
@@ -3216,6 +3177,190 @@ export default function App() {
                     </div>
                     </div>
                   )}
+
+                {/* 1b. TFT FORECAST SECTION */}
+                {forecastData.length > 0 && (
+                  <div className="border-t border-gray-800/60 pt-6">
+                    <div
+                      className="flex items-center justify-between cursor-pointer group"
+                      onClick={() => setCollapsedSections(prev => ({ ...prev, tftForecast: !prev.tftForecast }))}
+                    >
+                      <div>
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
+                          <Brain className="h-4.5 w-4.5 text-purple-400" />
+                          14-Day Risk Forecast
+                        </h3>
+                        <p className="text-[10px] text-gray-500 mt-1 ml-7">TFT model autoregressive projection</p>
+                      </div>
+                      <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
+                        {collapsedSections.tftForecast ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                      </button>
+                    </div>
+
+                    {!collapsedSections.tftForecast && (
+                      <div className="mt-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center justify-end gap-1.5 mb-3">
+                          <span className="text-[10px] text-gray-500 font-mono mr-auto">
+                            {forecastData.length} day forecast
+                          </span>
+                          <button
+                            onClick={() => setForecastViewport([0, forecastData.length - 1])}
+                            className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
+                            title="Reset zoom"
+                          >
+                            Reset
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+                        <div className="glass-panel rounded-xl p-5">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-gray-300">Predicted risk trajectory</span>
+                            <div className="flex items-center gap-2.5 text-[10px] text-gray-400">
+                              <div className="flex items-center gap-1">
+                                <span className="inline-block w-4 h-0.5 bg-purple-400 rounded-sm" style={{ borderTop: '1px dashed #c084fc' }} />
+                                <span>Forecast</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="inline-block w-1 h-1 bg-purple-400 rounded-full" />
+                                <span>Day {forecastData.length}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-gray-500 mb-3">Y-axis: 0% low risk · 50% moderate · 100% high risk</p>
+
+                          <div className="relative h-60 w-full">
+                            <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible">
+                              <rect x="35" y={15 + (1.0 - 1.0) * 185} width="450" height={(1.0 - 0.7) * 185} fill="#EF4444" opacity="0.05" rx="2" />
+                              <rect x="35" y={15 + (1.0 - 0.7) * 185} width="450" height={(0.7 - 0.4) * 185} fill="#F59E0B" opacity="0.05" rx="2" />
+                              <rect x="35" y={15 + (1.0 - 0.4) * 185} width="450" height={(0.4 - 0.0) * 185} fill="#10B981" opacity="0.05" rx="2" />
+                              <text x="487" y={15 + (1.0 - 0.85) * 185 + 3} fill="#EF4444" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">High</text>
+                              <text x="487" y={15 + (1.0 - 0.55) * 185 + 3} fill="#F59E0B" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Moderate</text>
+                              <text x="487" y={15 + (1.0 - 0.2) * 185 + 3} fill="#10B981" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Low</text>
+                              {[0, 0.2, 0.4, 0.6, 0.8, 1.0].map((val, idx) => {
+                                const y = 15 + (1.0 - val) * 185;
+                                return (
+                                  <g key={idx}>
+                                    <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray={val === 0 ? "none" : "3 3"} />
+                                    <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{Math.round(val * 100)}</text>
+                                  </g>
+                                );
+                              })}
+
+                              {forecastData.map((val, idx) => {
+                                const x = 35 + (idx / Math.max(1, forecastData.length - 1)) * 450;
+                                return (
+                                  <g key={idx}>
+                                    <line x1={x} y1="15" x2={x} y2="200" stroke="#1B2030" strokeWidth="0.5" strokeDasharray="2 2" />
+                                    <text x={x} y="218" fill="#64748b" fontSize="7" textAnchor="middle" fontFamily="monospace">
+                                      D{idx + 1}
+                                    </text>
+                                  </g>
+                                );
+                              })}
+
+                              <path
+                                d={(() => {
+                                  let pathStr = "";
+                                  forecastData.forEach((val, idx) => {
+                                    const x = 35 + (idx / Math.max(1, forecastData.length - 1)) * 450;
+                                    const y = 15 + (1.0 - Math.min(1, Math.max(0, val))) * 185;
+                                    pathStr += (idx === 0 ? "M" : "L") + ` ${x} ${y}`;
+                                  });
+                                  return pathStr;
+                                })()}
+                                fill="none"
+                                stroke="#a78bfa"
+                                strokeWidth="2"
+                                strokeDasharray="4 3"
+                                className="drop-shadow-[0_0_4px_rgba(167,139,250,0.4)]"
+                              />
+
+                              {forecastData.map((val, idx) => {
+                                const x = 35 + (idx / Math.max(1, forecastData.length - 1)) * 450;
+                                const y = 15 + (1.0 - Math.min(1, Math.max(0, val))) * 185;
+                                const riskPct = Math.round(Math.min(1, Math.max(0, val)) * 100);
+                                let dotColor = "#10B981";
+                                if (riskPct >= 70) dotColor = "#EF4444";
+                                else if (riskPct >= 40) dotColor = "#F59E0B";
+                                return (
+                                  <circle
+                                    key={idx}
+                                    cx={x}
+                                    cy={y}
+                                    r="3.5"
+                                    fill={dotColor}
+                                    stroke="#0b0d13"
+                                    strokeWidth="1"
+                                    opacity="0.85"
+                                    className="hover:r-5 transition-all cursor-pointer"
+                                  />
+                                );
+                              })}
+
+                              <line x1="35" y1="200" x2="485" y2="200" stroke="#1B2030" strokeWidth="1" />
+                            </svg>
+                          </div>
+
+                          <p className="text-[10px] text-gray-500 leading-relaxed mt-4">
+                            Each point is one predicted day (Day 1 to Day 14). The TFT model feeds each prediction back as input to generate the next day, creating a trajectory. Dashed purple line shows the projected risk path.
+                          </p>
+                        </div>
+
+                        <div className="glass-panel rounded-xl p-5">
+                          <span className="text-xs font-bold text-gray-300 mb-3 block">Day-by-day breakdown</span>
+                          <div className="grid grid-cols-7 gap-1.5">
+                            {forecastData.map((val, idx) => {
+                              const riskPct = Math.round(Math.min(1, Math.max(0, val)) * 100);
+                              let bgColor = 'bg-emerald-500/10 border-emerald-500/20';
+                              let textColor = 'text-emerald-400';
+                              let label = 'Low';
+                              if (riskPct >= 70) { bgColor = 'bg-rose-500/10 border-rose-500/20'; textColor = 'text-rose-400'; label = 'High'; }
+                              else if (riskPct >= 40) { bgColor = 'bg-amber-500/10 border-amber-500/20'; textColor = 'text-amber-400'; label = 'Mod'; }
+                              return (
+                                <div key={idx} className={`p-1.5 rounded-lg border text-center ${bgColor}`}>
+                                  <div className="text-[8px] text-gray-500 mb-0.5">D{idx + 1}</div>
+                                  <div className={`text-xs font-bold ${textColor}`}>{riskPct}%</div>
+                                  <div className="text-[7px] text-gray-600">{label}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            {(() => {
+                              const first = Math.round(Math.min(1, Math.max(0, forecastData[0])) * 100);
+                              const last = Math.round(Math.min(1, Math.max(0, forecastData[forecastData.length - 1])) * 100);
+                              const max = Math.round(Math.min(1, Math.max(0, Math.max(...forecastData))) * 100);
+                              const min = Math.round(Math.min(1, Math.max(0, Math.min(...forecastData))) * 100);
+                              const avg = Math.round(forecastData.reduce((a, b) => a + b, 0) / forecastData.length * 100);
+                              const trend = last > first + 5 ? 'rising' : last < first - 5 ? 'declining' : 'stable';
+                              const trendColor = trend === 'rising' ? 'text-rose-400' : trend === 'declining' ? 'text-emerald-400' : 'text-gray-400';
+
+                              return (
+                                <div className="space-y-2">
+                                  <div className="grid grid-cols-4 gap-2 text-center">
+                                    <div><div className="text-[9px] text-gray-500">Start</div><div className="text-sm font-bold text-gray-300">{first}%</div></div>
+                                    <div><div className="text-[9px] text-gray-500">End</div><div className={`text-sm font-bold ${trendColor}`}>{last}%</div></div>
+                                    <div><div className="text-[9px] text-gray-500">Peak</div><div className="text-sm font-bold text-rose-400">{max}%</div></div>
+                                    <div><div className="text-[9px] text-gray-500">Avg</div><div className="text-sm font-bold text-gray-300">{avg}%</div></div>
+                                  </div>
+                                  <p className="text-[10px] text-gray-400 leading-relaxed">
+                                    <span className="font-bold text-gray-300">Interpretation:</span> Risk is <span className={`font-semibold ${trendColor}`}>{trend}</span> over the next 14 days — from {first}% on Day 1 to {last}% on Day 14, with peak at {max}%.
+                                  </p>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 </div>
 
                 {/* 2. YOUR PERSONAL BASELINE SECTION */}
