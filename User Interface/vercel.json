@@ -1,11 +1,11 @@
-﻿{
+{
     "framework":  "vite",
     "buildCommand":  "vite build",
     "outputDirectory":  "dist",
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://luxury-speeches-assume-hosted.trycloudflare.com/$1"
+                         "destination": "https://cio-introduced-challenged-residents.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
