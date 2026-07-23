@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://sodium-roger-perspective-walked.trycloudflare.com/$1"
+                         "destination": "https://communications-induction-sarah-tax.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
