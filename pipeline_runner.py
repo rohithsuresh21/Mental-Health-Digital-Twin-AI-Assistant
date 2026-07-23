@@ -194,57 +194,7 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     _info(f"Top emotions: {top_emotions}")
     _info(f"Sentiment range: {min(sentiment_series):.3f} to {max(sentiment_series):.3f} (avg {np.mean(sentiment_series):.3f})")
 
-    # ── Stage 3: TFT ──
-    _sec("Stage 3 — Temporal Fusion Transformer (Forecasting)")
-    t_s3 = time.time()
-
-    if n >= 60:
-        num_patches = 30; hidden_size = 64; max_epochs = 30; batch_size = 16
-    elif n >= 30:
-        num_patches = 30; hidden_size = 48; max_epochs = 20; batch_size = 12
-    else:
-        num_patches = max(20, min(30, n + 10)); hidden_size = 32; max_epochs = 15; batch_size = 8
-
-    _info(f"Config: {num_patches} patches, hidden={hidden_size}, epochs={max_epochs}, batch={batch_size}")
-
-    checkpoint_path = "tft_checkpoint.ckpt"
-    checkpoint_exists = os.path.exists(checkpoint_path)
-
-    if not checkpoint_exists and n < 20:
-        _warn(f"No trained TFT checkpoint found yet")
-        _info(f"Skipping TFT this run — training in background for next request.")
-        tft = None
-
-        def _train_tft_background():
-            try:
-                pipeline.train_tft_model(
-                    num_patches=num_patches,
-                    hidden_size=hidden_size,
-                    max_epochs=max_epochs,
-                    batch_size=batch_size,
-                )
-                print(f"  [TFT] Background training complete — checkpoint saved.")
-            except Exception as e:
-                print(f"  [TFT] Background training failed: {e}")
-
-        threading.Thread(target=_train_tft_background, daemon=True).start()
-    else:
-        try:
-            tft = pipeline.train_tft_model(
-                num_patches=num_patches,
-                hidden_size=hidden_size,
-                max_epochs=max_epochs,
-                batch_size=batch_size,
-            )
-            _ok(f"TFT model trained successfully")
-            _info(f"Latent shape: {list(tft['latents'].shape)}")
-            _info(f"Time: {_elapsed(t_s3)}")
-        except Exception as e:
-            _warn(f"TFT training failed: {e}")
-            _info(f"Continuing without TFT latent features")
-            tft = None
-
-    # ── Stage 4: Anomaly Detection + CUSUM ──
+    # ── Stage 4: Anomaly Detection + CUSUM (runs first so TFT has risk scores) ──
     _sec("Stage 4 — Anomaly Detection & CUSUM Monitoring")
     t_s4 = time.time()
 
@@ -299,6 +249,56 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     _ok(f"CUSUM threshold: {cusum_threshold}, alerts triggered: {n_cusum_alerts}/{n_total}")
     _info(f"Detectors: Mahalanobis, Copula, Isolation Forest, KNN")
     _info(f"Time: {_elapsed(t_s4)}")
+
+    # ── Stage 3: TFT (runs after anomaly detection so it has real risk scores) ──
+    _sec("Stage 3 — Temporal Fusion Transformer (Forecasting)")
+    t_s3 = time.time()
+
+    if n >= 60:
+        num_patches = 30; hidden_size = 64; max_epochs = 30; batch_size = 16
+    elif n >= 30:
+        num_patches = 30; hidden_size = 48; max_epochs = 20; batch_size = 12
+    else:
+        num_patches = max(20, min(30, n + 10)); hidden_size = 32; max_epochs = 15; batch_size = 8
+
+    _info(f"Config: {num_patches} patches, hidden={hidden_size}, epochs={max_epochs}, batch={batch_size}")
+
+    checkpoint_path = "tft_checkpoint.ckpt"
+    checkpoint_exists = os.path.exists(checkpoint_path)
+
+    if not checkpoint_exists and n < 20:
+        _warn(f"No trained TFT checkpoint found yet")
+        _info(f"Skipping TFT this run — training in background for next request.")
+        tft = None
+
+        def _train_tft_background():
+            try:
+                pipeline.train_tft_model(
+                    num_patches=num_patches,
+                    hidden_size=hidden_size,
+                    max_epochs=max_epochs,
+                    batch_size=batch_size,
+                )
+                print(f"  [TFT] Background training complete — checkpoint saved.")
+            except Exception as e:
+                print(f"  [TFT] Background training failed: {e}")
+
+        threading.Thread(target=_train_tft_background, daemon=True).start()
+    else:
+        try:
+            tft = pipeline.train_tft_model(
+                num_patches=num_patches,
+                hidden_size=hidden_size,
+                max_epochs=max_epochs,
+                batch_size=batch_size,
+            )
+            _ok(f"TFT model trained successfully")
+            _info(f"Latent shape: {list(tft['latents'].shape)}")
+            _info(f"Time: {_elapsed(t_s3)}")
+        except Exception as e:
+            _warn(f"TFT training failed: {e}")
+            _info(f"Continuing without TFT latent features")
+            tft = None
 
     # ── Stage 5: Risk Classification ──
     _sec("Stage 5 — Risk Classification (XGBoost)")
