@@ -122,6 +122,18 @@ def auth_login():
     session["role"] = role
     session["login_time"] = datetime.utcnow().isoformat()
 
+    _write_activity_row({
+        "Timestamp (UTC)": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        "User ID": user_id,
+        "Action": "login",
+        "Full Name": "",
+        "Age": "",
+        "Gender": "",
+        "Blood Type": "",
+        "Date of Birth": "",
+        "IP Address": request.remote_addr or "",
+    })
+
     return jsonify({
         "success": True,
         "user_id": user_id,
@@ -185,6 +197,76 @@ def get_avatar(user_id):
         if path.exists():
             return _send(str(path))
     return jsonify({"error": "Avatar not found"}), 404
+
+# ── User Activity Logging (Excel) ────────────────────────────────────────────
+_ACTIVITY_XLSX = Path("data/user_activity.xlsx")
+
+def _write_activity_row(row_data: dict):
+    """Append one row to the activity Excel file (thread-safe-ish via append)."""
+    from openpyxl import Workbook, load_workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    _ACTIVITY_XLSX.parent.mkdir(parents=True, exist_ok=True)
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_align = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+
+    if _ACTIVITY_XLSX.exists():
+        wb = load_workbook(str(_ACTIVITY_XLSX))
+        ws = wb.active
+    else:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "User Activity"
+        headers = list(row_data.keys())
+        for col_idx, h in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_idx, value=h)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_align
+            cell.border = thin_border
+        ws.auto_filter.ref = f"A1:{chr(64+len(headers))}1"
+
+    ws.append(list(row_data.values()))
+    last_row = ws.max_row
+    for col in range(1, ws.max_column + 1):
+        ws.cell(row=last_row, column=col).border = thin_border
+
+    for col_cells in ws.columns:
+        max_len = 0
+        col_letter = col_cells[0].column_letter
+        for cell in col_cells:
+            if cell.value:
+                max_len = max(max_len, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = min(max_len + 4, 40)
+
+    wb.save(str(_ACTIVITY_XLSX))
+
+@app.route("/user-activity", methods=["POST"])
+def log_user_activity():
+    """Log user activity to an Excel spreadsheet."""
+    body = request.get_json(force=True, silent=True) or {}
+    action = body.get("action", "unknown")
+    user_id = session.get("user_id", "anonymous")
+    now = datetime.utcnow()
+
+    row_data = {
+        "Timestamp (UTC)": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "User ID": user_id,
+        "Action": action,
+        "Full Name": body.get("fullName", ""),
+        "Age": body.get("age", ""),
+        "Gender": body.get("gender", ""),
+        "Blood Type": body.get("bloodType", ""),
+        "Date of Birth": body.get("dob", ""),
+        "IP Address": request.remote_addr or "",
+    }
+    _write_activity_row(row_data)
+    return jsonify({"success": True})
 
 @app.after_request
 def add_security_headers(response):
@@ -1139,6 +1221,17 @@ def diagnose():
             result.get("cusum_alert_lower", []),
             result.get("timestamps", []),
         )
+        _write_activity_row({
+            "Timestamp (UTC)": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+            "User ID": user_id,
+            "Action": "diagnose",
+            "Full Name": user_id,
+            "Age": "",
+            "Gender": "",
+            "Blood Type": "",
+            "Date of Birth": "",
+            "IP Address": request.remote_addr or "",
+        })
         return jsonify(result)
     except Exception as e:
         traceback.print_exc()

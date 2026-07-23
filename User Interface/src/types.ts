@@ -74,4 +74,7 @@ export interface IngestionInput {
   symptoms?: string;
   docFileContent?: string;
   docFileName?: string;
+  dobDay?: string;
+  dobMonth?: string;
+  dobYear?: string;
 }

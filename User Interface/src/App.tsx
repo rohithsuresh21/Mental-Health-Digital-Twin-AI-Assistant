@@ -289,7 +289,10 @@ export default function App() {
     physicalActivity: 0,
     lookaheadHorizon: '5 days',
     voiceRecordingsText: '',
-    clinicalReportsText: ''
+    clinicalReportsText: '',
+    dobDay: '',
+    dobMonth: '',
+    dobYear: ''
   });
 
   // File upload refs and state
@@ -2000,37 +2003,53 @@ export default function App() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Age</label>
-                        <div className="relative">
-                          <select
-                            value={inputs.age || ''}
-                            onChange={(e) => setInputs({...inputs, age: parseInt(e.target.value) || 0})}
-                            className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-4 py-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
-                          >
-                            <option value="" className="select-placeholder">Select...</option>
-                            {Array.from({ length: 83 }, (_, i) => i + 10).map(age => (
-                              <option key={age} value={age}>{age}</option>
-                            ))}
-                          </select>
-                        </div>
+                    <div>
+                      <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Date of Birth</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        <select
+                          value={inputs.dobMonth || ''}
+                          onChange={(e) => setInputs({...inputs, dobMonth: e.target.value})}
+                          className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-3 py-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
+                        >
+                          <option value="" className="select-placeholder">Month</option>
+                          {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, i) => (
+                            <option key={i+1} value={String(i+1).padStart(2,'0')}>{m}</option>
+                          ))}
+                        </select>
+                        <select
+                          value={inputs.dobDay || ''}
+                          onChange={(e) => setInputs({...inputs, dobDay: e.target.value})}
+                          className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-3 py-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
+                        >
+                          <option value="" className="select-placeholder">Day</option>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                            <option key={d} value={String(d).padStart(2,'0')}>{d}</option>
+                          ))}
+                        </select>
+                        <select
+                          value={inputs.dobYear || ''}
+                          onChange={(e) => setInputs({...inputs, dobYear: e.target.value})}
+                          className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-3 py-3 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
+                        >
+                          <option value="" className="select-placeholder">Year</option>
+                          {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                            <option key={y} value={y}>{y}</option>
+                          ))}
+                        </select>
                       </div>
-                      <div>
-                        <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Gender</label>
-                        <div className="relative">
-                          <select
-                            value={inputs.gender}
-                            onChange={(e) => setInputs({...inputs, gender: e.target.value})}
-                            className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-4 py-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
-                          >
-                            <option value="" className="select-placeholder">Select...</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                          </select>
-                        </div>
-                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] tracking-widest text-gray-400 font-bold uppercase mb-2">Gender</label>
+                      <select
+                        value={inputs.gender}
+                        onChange={(e) => setInputs({...inputs, gender: e.target.value})}
+                        className="w-full bg-[#0D1017]/60 border border-[#1e2a3d] rounded-xl px-4 py-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 cursor-pointer"
+                      >
+                        <option value="" className="select-placeholder">Select...</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
                     </div>
                   </div>
 
@@ -2088,6 +2107,21 @@ export default function App() {
                     <div className="flex flex-col items-end gap-1.5">
                       <button
                         onClick={() => {
+                          const dobStr = inputs.dobYear ? inputs.dobYear + '-' + (inputs.dobMonth || '01') + '-' + (inputs.dobDay || '01') : '';
+                          const age = dobStr ? Math.max(0, Math.floor((Date.now() - new Date(dobStr).getTime()) / (365.25 * 24 * 60 * 60 * 1000))) : 0;
+                          fetch('/api/user-activity', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                              action: 'save_profile',
+                              fullName: inputs.fullName || '',
+                              age,
+                              gender: inputs.gender || '',
+                              bloodType: inputs.bloodType || '',
+                              dob: dobStr
+                            })
+                          }).catch(() => {});
                           setActiveTab(isPatient ? 'intake' : 'clinical');
                         }}
                         className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] active:scale-95 cursor-pointer flex items-center justify-center gap-2"
