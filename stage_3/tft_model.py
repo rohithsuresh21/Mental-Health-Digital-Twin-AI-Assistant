@@ -170,12 +170,6 @@ def generate_14day_forecast(
     last_patch_data: dict,
     forecast_days: int = 14,
 ) -> list:
-    """Generate 14-day risk forecast using autoregressive prediction.
-    
-    Takes the last known batch, predicts 1 step ahead, then shifts the
-    input window forward by dropping the oldest step and appending the
-    prediction. Repeats for forecast_days to produce a trajectory.
-    """
     tft = tft.cpu()
     tft.eval()
     
@@ -200,19 +194,15 @@ def generate_14day_forecast(
                 pred = float(output["prediction"].cpu().numpy().flatten()[0])
                 predictions.append(pred)
                 
-                # Shift encoder window: drop oldest step, append prediction
                 if "encoder_cont" in current_batch:
                     enc = current_batch["encoder_cont"]
-                    # enc shape: [batch, encoder_len, n_features]
-                    # Drop first time step, repeat prediction as new step
                     pred_step = enc[:, -1:, :].clone()
-                    pred_step[:, :, 0] = pred  # set target-like feature
+                    pred_step[:, :, 0] = pred
                     current_batch = {
                         k: v if not isinstance(v, torch.Tensor) or k not in ("encoder_cont", "encoder_cat")
                         else (torch.cat([v[:, 1:, :], pred_step], dim=1) if k == "encoder_cont" else v[:, 1:, :])
                         for k, v in current_batch.items()
                     }
-                    # Update time indices
                     if "encoder_time_idx" in current_batch:
                         tidx = current_batch["encoder_time_idx"]
                         current_batch["encoder_time_idx"] = tidx[:, 1:] + 1
