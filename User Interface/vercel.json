@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://aaron-capability-transparency-within.trycloudflare.com/$1"
+                         "destination": "https://abroad-generating-restricted-unnecessary.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
