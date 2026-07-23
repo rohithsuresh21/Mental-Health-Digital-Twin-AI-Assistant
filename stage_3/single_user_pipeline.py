@@ -198,17 +198,17 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
     if n >= 60:
         num_patches = 20
         hidden_size = 64
-        max_epochs  = 10
+        max_epochs  = 30
         batch_size  = 16
     elif n >= 30:
         num_patches = 20
         hidden_size = 48
-        max_epochs  = 7
+        max_epochs  = 20
         batch_size  = 12
     else:
         num_patches = max(15, min(20, n + 5))
         hidden_size = 32
-        max_epochs  = 5
+        max_epochs  = 15
         batch_size  = 8
 
     tft = pipeline.train_tft_model(
