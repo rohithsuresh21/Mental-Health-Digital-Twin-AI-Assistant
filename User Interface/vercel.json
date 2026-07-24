@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://loaded-examine-immediate-truck.trycloudflare.com/$1"
+                         "destination": "https://amended-cycles-safari-click.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
