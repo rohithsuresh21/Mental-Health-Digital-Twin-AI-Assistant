@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://spirit-leo-technological-pts.trycloudflare.com/$1"
+                         "destination": "https://loaded-examine-immediate-truck.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
