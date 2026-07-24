@@ -26,7 +26,8 @@ def build_dataframe(patched_data: dict, patched_risks: dict = None) -> pd.DataFr
                 if risk_windows is not None and window_idx < risk_windows.shape[0]:
                     target_val = float(risk_windows[window_idx, patch_idx])
                 else:
-                    target_val = float(feature_vec.mean())
+                    text_features = feature_vec[:300]
+                    target_val = float(np.mean(np.abs(text_features)))
                 row = {
                     "user_id":   str(user_id),
                     "window_id": f"{user_id}_{window_idx}",

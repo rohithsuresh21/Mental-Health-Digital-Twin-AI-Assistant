@@ -67,5 +67,5 @@ class ProductionMahalanobisDetector:
 
         n_train = len(self.train_distances_)
         ranks = np.searchsorted(self.train_distances_, raw_distances, side="right")
-        normalized_scores = ranks / n_train
-        return np.clip(normalized_scores, 0.0, 1.0)
+        normalized_scores = (ranks + 0.5) / (n_train + 1)
+        return np.clip(normalized_scores, 0.001, 0.999)

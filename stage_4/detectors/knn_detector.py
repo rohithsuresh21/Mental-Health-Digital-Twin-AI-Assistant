@@ -63,5 +63,5 @@ class NativeKnnDistanceDetector:
 
         n_train = len(self.train_scores_)
         ranks = np.searchsorted(self.train_scores_, raw_scores, side="right")
-        normalized = ranks / n_train
-        return np.clip(normalized, 0.0, 1.0)
+        normalized = (ranks + 0.5) / (n_train + 1)
+        return np.clip(normalized, 0.001, 0.999)

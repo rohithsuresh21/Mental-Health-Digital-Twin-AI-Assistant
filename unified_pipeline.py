@@ -380,14 +380,16 @@ class UnifiedJournalPipeline:
             user_risks = self.anomaly_scores.get(user_id, [])
             risk_vals = [r.get("overall_risk_score", 0.5) if isinstance(r, dict) else 0.5 for r in user_risks]
             if len(risk_vals) < n_vectors:
-                risk_vals = risk_vals + [0.5] * (n_vectors - len(risk_vals))
+                fill_val = risk_vals[-1] if risk_vals else 0.5
+                risk_vals = risk_vals + [fill_val] * (n_vectors - len(risk_vals))
             elif len(risk_vals) > n_vectors:
                 risk_vals = risk_vals[:n_vectors]
 
             for i in range(max(1, n_vectors - num_patches + 1)):
                 risk_window = risk_vals[i:i + num_patches]
                 if len(risk_window) < num_patches:
-                    risk_window = risk_window + [0.5] * (num_patches - len(risk_window))
+                    fill_val = risk_window[-1] if risk_window else 0.5
+                    risk_window = risk_window + [fill_val] * (num_patches - len(risk_window))
                 risk_windows.append(risk_window)
             
             patched[normalized_user_id] = torch.tensor(np.array(windows), dtype=torch.float32)

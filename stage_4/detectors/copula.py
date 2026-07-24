@@ -48,9 +48,13 @@ class GaussianCopulaAnomalyDetector:
 
         raw_train_scores = self._calculate_negative_log_likelihood(X_arr)
         self.min_score = float(np.min(raw_train_scores))
+        self.max_score = float(np.max(raw_train_scores))
 
-        raw_max = float(np.percentile(raw_train_scores, 99))
-        self.max_score = raw_max if raw_max > self.min_score else self.min_score + 1.0
+        if self.max_score <= self.min_score:
+            self.max_score = self.min_score + 1.0
+
+        self.score_center = (self.min_score + self.max_score) / 2.0
+        self.score_scale = max((self.max_score - self.min_score) / 6.0, 1e-6)
 
         self.is_fitted = True
         return self
@@ -83,5 +87,5 @@ class GaussianCopulaAnomalyDetector:
         X_arr = np.asarray(X, dtype=np.float64)
         raw_nll = self._calculate_negative_log_likelihood(X_arr)
 
-        normalized = (raw_nll - self.min_score) / (self.max_score - self.min_score)
-        return np.clip(normalized, 0.0, 1.0)
+        normalized = 1.0 / (1.0 + np.exp(-(raw_nll - self.score_center) / self.score_scale))
+        return np.clip(normalized, 0.001, 0.999)
