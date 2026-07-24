@@ -98,7 +98,6 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
   }, [calibrated]);
 
   async function handleSubmit() {
-    if (!journalFile && !audioFile) { setMsg('Upload a journal file or audio recording.'); return; }
     setSubmitting(true);
     setMsg('');
     const fd = new FormData();
@@ -263,27 +262,6 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
             <span className="text-[10px] tracking-widest text-gray-500 font-bold uppercase">Today's Check-In</span>
           </div>
 
-          <div className="mb-5">
-            <label className="block text-[11px] text-gray-500 mb-2">Journal Entry (upload a file)</label>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full bg-[#0B0E14] border border-dashed border-[#1A202C] rounded-xl px-4 py-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-gray-600 transition-colors"
-            >
-              <Upload className="h-5 w-5 text-gray-500" />
-              <span className="text-xs text-gray-500">
-                {journalFile ? journalFile.name : 'Drop your journal file here or click to browse'}
-              </span>
-            </div>
-            <input ref={fileInputRef} type="file" accept=".txt,.md,.doc,.docx,.pdf"
-              onChange={e => setJournalFile(e.target.files?.[0] || null)} className="hidden" />
-          </div>
-
-          <div className="mb-5">
-            <label className="block text-[11px] text-gray-500 mb-2">Audio Recording (.wav/.csv)</label>
-            <input type="file" accept=".wav,.csv" onChange={e => setAudioFile(e.target.files?.[0] || null)}
-              className="text-[12px] text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-[#1A202C] file:text-gray-300 hover:file:bg-[#232B3B] cursor-pointer" />
-          </div>
-
           {/* Import from Chat History */}
           <div className="border-t border-[#1A202C] pt-5 mb-5">
             <div className="flex items-center gap-2 mb-4">
@@ -384,6 +362,12 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
             )}
 
             {chatMsg && <p className="mt-2 text-[11px] text-gray-500">{chatMsg}</p>}
+          </div>
+
+          <div className="mb-5">
+            <label className="block text-[11px] text-gray-500 mb-2">Audio Recording (.wav/.csv)</label>
+            <input type="file" accept=".wav,.csv" onChange={e => setAudioFile(e.target.files?.[0] || null)}
+              className="text-[12px] text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-[#1A202C] file:text-gray-300 hover:file:bg-[#232B3B] cursor-pointer" />
           </div>
 
           <FunSlider label="How many hours did you sleep?"
