@@ -450,9 +450,10 @@ class UnifiedJournalPipeline:
                 }
             else:
                 results = self.anomaly_detector.predict(X)
+                raw_is_anom = results["is_anomaly"][0]
                 return {
                     "overall_risk_score": float(results["overall_risk_score"][0]),
-                    "is_anomaly":         results["is_anomaly"][0],
+                    "is_anomaly":         any(raw_is_anom) if isinstance(raw_is_anom, (list, np.ndarray)) else bool(raw_is_anom),
                     "detector_scores":    results["metrics_summary"][0],
                     "timestamp":          datetime.now().isoformat()
                 }

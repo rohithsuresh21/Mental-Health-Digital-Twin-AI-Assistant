@@ -4,8 +4,6 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
 
-from data_validator import SafePipeline
-from unified_pipeline import UnifiedJournalPipeline
 from stage_4.config import PipelineConfig
 
 
@@ -15,9 +13,6 @@ class Stage4DeploymentPipeline:
         model_path: str = "calibration/models/stage4_detectors.pkl",
         threshold_path: str = "calibration/models/stage4_threshold_engine.pkl",
     ):
-        self.pipeline = UnifiedJournalPipeline()
-        self.safe_pipeline = SafePipeline(self.pipeline)
-
         with open(model_path, "rb") as f:
             self.detectors = pickle.load(f)
 

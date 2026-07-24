@@ -220,11 +220,10 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
 
     if detectors_file.exists() and threshold_file.exists():
         print(f"Stage 4: Loading pretrained calibration models from {model_dir}...")
-        import pickle
-        with open(detectors_file, "rb") as f:
-            pipeline.detectors = pickle.load(f)
-        with open(threshold_file, "rb") as f:
-            pipeline.threshold_engine = pickle.load(f)
+        from stage4_deployment import Stage4DeploymentPipeline
+        pipeline.anomaly_detector = Stage4DeploymentPipeline(
+            str(detectors_file), str(threshold_file)
+        )
     else:
         print("Stage 4: Pretrained models missing – training fresh with chronological split...")
         n_train = max(10, int(n_total * 0.7))

@@ -198,34 +198,18 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     _sec("Stage 4 — Anomaly Detection & CUSUM Monitoring")
     t_s4 = time.time()
 
-    model_dir = Path("calibration/models")
-    detectors_file = model_dir / "stage4_detectors.pkl"
-    threshold_file = model_dir / "stage4_threshold_engine.pkl"
-
     all_vecs = pipeline.get_batch_consistent_vectors(user_id)
     n_total = len(all_vecs)
 
-    if detectors_file.exists() and threshold_file.exists():
-        import pickle
-        with open(detectors_file, "rb") as f:
-            pipeline.detectors = pickle.load(f)
-        with open(threshold_file, "rb") as f:
-            pipeline.threshold_engine = pickle.load(f)
-        _info("Loaded pretrained anomaly detectors")
-    else:
-        n_train = max(10, int(n_total * 0.7))
-        train_vecs = all_vecs[:n_train]
-        X_train = np.array(train_vecs)
-        _info(f"Training fresh detectors on {n_train} vectors...")
+    n_train = max(10, int(n_total * 0.7))
+    train_vecs = all_vecs[:n_train]
+    X_train = np.array(train_vecs)
+    _info(f"Training detectors on {n_train} vectors (70% chronological split)...")
 
-        from stage_4.anomaly_pipeline import MultiDetectorPipeline
-        pipeline.anomaly_detector = MultiDetectorPipeline()
-        pipeline.anomaly_detector.fit(X_train)
-
-        import pickle as _pkl
-        detector_path = os.path.join(pipeline.output_dir, "anomaly_detector.pkl")
-        pipeline.anomaly_detector.save(detector_path)
-        _info("Detectors trained and saved")
+    from stage_4.anomaly_pipeline import MultiDetectorPipeline
+    pipeline.anomaly_detector = MultiDetectorPipeline()
+    pipeline.anomaly_detector.fit(X_train)
+    _info("Detectors fitted to current data")
 
     _p(f"  Running 4-detector consensus on {n_total} entries...")
     anomaly_results = []
@@ -239,7 +223,7 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
 
     avg_risk = np.mean([a["overall_risk_score"] for a in anomaly_results])
     max_risk = max(a["overall_risk_score"] for a in anomaly_results)
-    n_anomalies = sum(1 for a in anomaly_results if any(a.get("is_anomaly", [])))
+    n_anomalies = sum(1 for a in anomaly_results if a.get("is_anomaly", False))
     n_cusum_alerts = sum(1 for c in cusum_results if c["cusum_alert_upper"] or c["cusum_alert_lower"])
 
     _ok(f"Anomaly detection complete: avg risk {avg_risk:.3f}, max {max_risk:.3f}")
