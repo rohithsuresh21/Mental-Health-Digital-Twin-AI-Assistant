@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://amended-cycles-safari-click.trycloudflare.com/$1"
+                         "destination": "https://coffee-bills-eclipse-examine.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
