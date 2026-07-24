@@ -329,7 +329,7 @@ def run_stage3(
     print(f"[TFT] Mean attention weight per patch position (1=most recent):")
     for i, w in enumerate(mean_attention_np):
         w_scalar = float(w.item() if hasattr(w, 'item') else w)
-        bar = "█" * int(w_scalar * 40)
+        bar = "#" * int(w_scalar * 40)
         print(f"  Patch {i+1:2d}: {w_scalar:.4f}  {bar}")
 
     umap_coords = project_umap(latents)
