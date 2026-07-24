@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://indices-barrel-letter-sandra.trycloudflare.com/$1"
+                         "destination": "https://spirit-leo-technological-pts.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
