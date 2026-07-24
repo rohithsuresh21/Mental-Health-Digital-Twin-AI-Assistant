@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://mountains-teachers-perhaps-marks.trycloudflare.com/$1"
+                         "destination": "https://weekends-calculators-peer-languages.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
