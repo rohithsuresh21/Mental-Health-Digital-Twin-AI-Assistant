@@ -239,9 +239,7 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
 
     avg_risk = np.mean([a["overall_risk_score"] for a in anomaly_results])
     max_risk = max(a["overall_risk_score"] for a in anomaly_results)
-    n_anomalies = sum(1 for a in anomaly_results if a.get("is_anomaly"))
-    if isinstance(n_anomalies, (list, np.ndarray)):
-        n_anomalies = sum(1 for a in anomaly_results if any(a.get("is_anomaly", [])))
+    n_anomalies = sum(1 for a in anomaly_results if any(a.get("is_anomaly", [])))
     n_cusum_alerts = sum(1 for c in cusum_results if c["cusum_alert_upper"] or c["cusum_alert_lower"])
 
     _ok(f"Anomaly detection complete: avg risk {avg_risk:.3f}, max {max_risk:.3f}")
