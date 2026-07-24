@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Activity, Trash2, MessageSquare, AtSign, Hash } from 'lucide-react';
+import { Upload, Activity, Trash2, MessageSquare, Send, Globe, Check, Loader2, FileText } from 'lucide-react';
 import { usePatientData, PatientStatus } from '../hooks/usePatientData';
 
 const BASE = '/api';
@@ -278,15 +278,17 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
             </div>
 
             <div className="flex gap-2 mb-3">
-              {(['whatsapp', 'telegram', 'reddit'] as const).map(p => (
-                <button key={p} onClick={() => { setChatPlatform(p); setChatFile(null); setChatPreview([]); if (chatFileRef.current) chatFileRef.current.value = ''; }}
+              {([
+                { id: 'whatsapp' as const, label: 'WhatsApp', icon: MessageSquare, color: 'text-emerald-400', activeBg: 'bg-emerald-900/20 border-emerald-600/40' },
+                { id: 'telegram' as const, label: 'Telegram', icon: Send, color: 'text-sky-400', activeBg: 'bg-sky-900/20 border-sky-600/40' },
+                { id: 'reddit' as const, label: 'Reddit', icon: Globe, color: 'text-orange-400', activeBg: 'bg-orange-900/20 border-orange-600/40' },
+              ]).map(({ id, label, icon: Icon, color, activeBg }) => (
+                <button key={id} onClick={() => { setChatPlatform(id); setChatFile(null); setChatPreview([]); if (chatFileRef.current) chatFileRef.current.value = ''; }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
-                    chatPlatform === p ? 'bg-[#1A202C] text-gray-200 border border-blue-600/40' : 'text-gray-500 hover:text-gray-400 border border-transparent'
+                    chatPlatform === id ? `${activeBg} text-gray-200 border` : 'text-gray-500 hover:text-gray-400 border border-transparent hover:border-[#1A202C]'
                   }`}>
-                  {p === 'whatsapp' && <MessageSquare className="h-3 w-3" />}
-                  {p === 'telegram' && <AtSign className="h-3 w-3" />}
-                  {p === 'reddit' && <Hash className="h-3 w-3" />}
-                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                  <Icon className={`h-3.5 w-3.5 ${chatPlatform === id ? color : ''}`} />
+                  {label}
                 </button>
               ))}
             </div>
@@ -304,23 +306,41 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
               </div>
             )}
 
-            <div className="flex items-center gap-3 mb-3">
-              <input ref={chatFileRef} type="file"
+            <div className="bg-[#0B0E14] border-2 border-dashed border-[#1A202C] hover:border-[#2A3040] rounded-xl p-4 text-center transition-colors mb-3 cursor-pointer relative"
+              onClick={() => chatFileRef.current?.click()}>
+              <input ref={chatFileRef} type="file" className="hidden"
                 accept={chatPlatform === 'whatsapp' ? '.txt' : chatPlatform === 'telegram' ? '.json' : chatSubType === 'posts' || chatSubType === 'comments' ? '.csv,.json' : '.txt'}
-                onChange={e => setChatFile(e.target.files?.[0] || null)}
-                className="text-[12px] text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#1A202C] file:text-gray-300 hover:file:bg-[#232B3B] cursor-pointer" />
-              {chatFile && <span className="text-[11px] text-gray-400 truncate max-w-[200px]">{chatFile.name}</span>}
+                onChange={e => setChatFile(e.target.files?.[0] || null)} />
+              {chatFile ? (
+                <div className="flex items-center justify-center gap-2">
+                  <FileText className="h-4 w-4 text-blue-400" />
+                  <span className="text-[11px] text-gray-300 truncate max-w-[200px]">{chatFile.name}</span>
+                  <span className="text-[10px] text-gray-600">({(chatFile.size / 1024).toFixed(1)} KB)</span>
+                </div>
+              ) : (
+                <>
+                  <Upload className="h-5 w-5 text-gray-600 mx-auto mb-1" />
+                  <span className="text-[11px] text-gray-500">Drop file or click to browse</span>
+                  <span className="block text-[10px] text-gray-600 mt-0.5">
+                    {chatPlatform === 'whatsapp' ? '.txt export from WhatsApp' : chatPlatform === 'telegram' ? '.json export from Telegram' : 'posts/comments JSON or CSV'}
+                  </span>
+                </>
+              )}
             </div>
 
             <button onClick={handleChatParse} disabled={chatParsing || !chatFile || !chatName.trim()}
-              className="bg-[#1A202C] hover:bg-[#232B3B] text-gray-300 text-[11px] font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-30 cursor-pointer mb-3">
+              className="flex items-center gap-2 bg-[#1A202C] hover:bg-[#232B3B] text-gray-300 text-[11px] font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-30 cursor-pointer mb-3">
+              {chatParsing ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
               {chatParsing ? 'Parsing...' : 'Parse & Preview'}
             </button>
 
             {chatPreview.length > 0 && (
               <div className="bg-[#0B0E14] border border-[#1A202C] rounded-xl overflow-hidden">
                 <div className="px-3 py-2 border-b border-[#1A202C] flex items-center justify-between">
-                  <span className="text-[11px] text-gray-400">Preview ({chatPreview.filter(e => e.selected).length} selected)</span>
+                  <span className="text-[11px] text-gray-400">
+                    <Check className="inline h-3 w-3 text-emerald-400 mr-1" />
+                    {chatPreview.filter(e => e.selected).length} of {chatPreview.length} entries selected
+                  </span>
                   <button onClick={() => setChatPreview(prev => prev.map(e => ({ ...e, selected: !prev.some(p => !p.selected) })))}
                     className="text-[10px] text-blue-400 hover:text-blue-300 cursor-pointer">
                     {chatPreview.every(e => e.selected) ? 'Deselect All' : 'Select All'}
@@ -345,7 +365,11 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
                               className="accent-blue-500" />
                           </td>
                           <td className="py-1.5 pr-3 text-gray-400 whitespace-nowrap">{e.date}</td>
-                          <td className="py-1.5 pr-3"><span className="px-1.5 py-0.5 rounded text-[9px] bg-[#1A202C] text-gray-400">{e.platform}</span></td>
+                          <td className="py-1.5 pr-3"><span className={`px-1.5 py-0.5 rounded text-[9px] ${
+                            e.platform === 'whatsapp' ? 'bg-emerald-900/30 text-emerald-400' :
+                            e.platform === 'telegram' ? 'bg-sky-900/30 text-sky-400' :
+                            'bg-orange-900/30 text-orange-400'
+                          }`}>{e.platform}</span></td>
                           <td className="py-1.5 text-gray-400 truncate max-w-[250px]">{e.message}</td>
                         </tr>
                       ))}
@@ -354,7 +378,8 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
                 </div>
                 <div className="px-3 py-2 border-t border-[#1A202C] flex justify-end">
                   <button onClick={handleChatImport} disabled={chatParsing}
-                    className="bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold px-4 py-1.5 rounded-lg transition-all disabled:opacity-40 cursor-pointer">
+                    className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold px-4 py-1.5 rounded-lg transition-all disabled:opacity-40 cursor-pointer">
+                    <Upload className="h-3 w-3" />
                     Import Selected
                   </button>
                 </div>
@@ -366,8 +391,22 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
 
           <div className="mb-5">
             <label className="block text-[11px] text-gray-500 mb-2">Audio Recording (.wav/.csv)</label>
-            <input type="file" accept=".wav,.csv" onChange={e => setAudioFile(e.target.files?.[0] || null)}
-              className="text-[12px] text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-[#1A202C] file:text-gray-300 hover:file:bg-[#232B3B] cursor-pointer" />
+            <div className="bg-[#0B0E14] border-2 border-dashed border-[#1A202C] hover:border-[#2A3040] rounded-xl p-3 text-center transition-colors cursor-pointer relative"
+              onClick={() => document.querySelector<HTMLInputElement>('.audio-file-input')?.click()}>
+              <input type="file" accept=".wav,.csv" className="audio-file-input hidden"
+                onChange={e => setAudioFile(e.target.files?.[0] || null)} />
+              {audioFile ? (
+                <div className="flex items-center justify-center gap-2">
+                  <FileText className="h-4 w-4 text-blue-400" />
+                  <span className="text-[11px] text-gray-300 truncate max-w-[200px]">{audioFile.name}</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2 text-gray-600">
+                  <Upload className="h-4 w-4" />
+                  <span className="text-[11px]">Drop audio file or click to browse</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <FunSlider label="How many hours did you sleep?"
@@ -387,10 +426,11 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
             onChange={v => setSliders({ ...sliders, music_mood_score: v })} />
 
           <button onClick={handleSubmit} disabled={submitting}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all disabled:opacity-40 cursor-pointer">
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all disabled:opacity-40 cursor-pointer">
+            {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
             {submitting ? 'Submitting...' : "Submit Today's Entry"}
           </button>
-          {msg && <p className="mt-3 text-[11px] text-gray-400">{msg}</p>}
+          {msg && <p className={`mt-3 text-[11px] ${msg.includes('Error') || msg.includes('error') ? 'text-red-400' : 'text-emerald-400'}`}>{msg}</p>}
         </div>
       )}
 
