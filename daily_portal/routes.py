@@ -1,6 +1,6 @@
-import os, json, pickle, traceback
+import os, json, pickle, traceback, io
 from pathlib import Path
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 import numpy as np
 from flask import Blueprint, request, jsonify, session
@@ -9,6 +9,7 @@ from werkzeug.utils import secure_filename
 from . import db
 from Stage_1.Extract_features import extract_features
 from stage_2.baseline import UserBaseline
+from data_parser import parse_whatsapp, parse_reddit, parse_telegram
 
 daily = Blueprint("daily", __name__)
 
@@ -249,6 +250,115 @@ def delete_user():
         if scaler_path.exists():
             scaler_path.unlink()
         return jsonify({"deleted": True, "user_id": user_id})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@daily.route("/daily/import-chat", methods=["POST"])
+def import_chat():
+    try:
+        user_id = request.form.get("user_id", "").strip()
+        name = request.form.get("name", "").strip()
+        platform = request.form.get("platform", "").strip().lower()
+        sub_type = request.form.get("sub_type", "text").strip().lower()
+
+        if not user_id or not name:
+            return jsonify({"error": "user_id and name are required"}), 400
+        if not _check_user_access(user_id):
+            return jsonify({"error": "Access denied"}), 403
+        if platform not in ("whatsapp", "telegram", "reddit"):
+            return jsonify({"error": "Invalid platform"}), 400
+
+        upload = request.files.get("file")
+        if not upload or not upload.filename:
+            return jsonify({"error": "No file uploaded"}), 400
+
+        raw_bytes = upload.read()
+        file_obj = io.BytesIO(raw_bytes)
+
+        if platform == "whatsapp":
+            messages = parse_whatsapp(file_obj, display_name=name)
+        elif platform == "telegram":
+            messages = parse_telegram(file_obj)
+        elif platform == "reddit":
+            if sub_type == "text":
+                text = raw_bytes.decode("utf-8", errors="ignore").strip()
+                messages = [{"timestamp": datetime.now(timezone.utc), "text": text, "sender": name}] if text else []
+            else:
+                post_obj = io.BytesIO(raw_bytes) if sub_type == "posts" else None
+                comment_obj = io.BytesIO(raw_bytes) if sub_type == "comments" else None
+                messages = parse_reddit(post_obj, comment_obj)
+
+        if platform == "telegram":
+            messages = [m for m in messages if m["sender"].lower() == name.lower()]
+
+        user_dates = {e["entry_date"] for e in db.get_recent_entries(user_id, limit=500)}
+        entries = []
+        matched_count = 0
+        for m in messages:
+            d = m["timestamp"].strftime("%Y-%m-%d")
+            matched = d in user_dates
+            if matched:
+                matched_count += 1
+            entries.append({
+                "date": d,
+                "platform": platform,
+                "message": m["text"],
+                "sender": m["sender"],
+                "matched": matched,
+                "selected": matched,
+            })
+
+        return jsonify({
+            "entries": entries,
+            "total": len(entries),
+            "matched_count": matched_count,
+        })
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@daily.route("/daily/confirm-import", methods=["POST"])
+def confirm_import():
+    try:
+        body = request.get_json(force=True)
+        user_id = body.get("user_id", "").strip()
+        entries = body.get("entries", [])
+
+        if not user_id:
+            return jsonify({"error": "user_id is required"}), 400
+        if not _check_user_access(user_id):
+            return jsonify({"error": "Access denied"}), 403
+        if not entries:
+            return jsonify({"error": "No entries provided"}), 400
+
+        imported = 0
+        for e in entries:
+            d = e.get("date", "")
+            text = e.get("message", "").strip()
+            platform = e.get("platform", "text")
+            if not d or not text:
+                continue
+
+            existing = db.get_entry(user_id, d)
+            if existing:
+                old_text = existing["text_raw"] or ""
+                new_text = f"{old_text}\n\n--- {platform.capitalize()} ---\n{text}" if old_text else text
+                db.update_entry_text(user_id, d, new_text, entry_source=platform)
+            else:
+                db.save_entry(
+                    user_id=user_id,
+                    entry_date=d,
+                    text_raw=text,
+                    entry_source=platform,
+                )
+            imported += 1
+
+        return jsonify({"imported": imported})
+
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500

@@ -46,6 +46,7 @@ def init_db():
                     readable_metrics TEXT,
                     features_extracted INTEGER DEFAULT 0,
                     baselined       INTEGER DEFAULT 0,
+                    entry_source    TEXT DEFAULT 'text',
                     UNIQUE(user_id, entry_date)
                 )
             """)
@@ -70,6 +71,7 @@ def init_db():
                     readable_metrics  TEXT,
                     features_extracted INTEGER DEFAULT 0,
                     baselined         INTEGER DEFAULT 0,
+                    entry_source      TEXT DEFAULT 'text',
                     UNIQUE(user_id, entry_date)
                 )
             """)
@@ -77,6 +79,11 @@ def init_db():
                 CREATE INDEX IF NOT EXISTS idx_entries_user
                 ON daily_entries(user_id, entry_date DESC)
             """)
+        # Migration: add entry_source column if missing
+        try:
+            c.execute("ALTER TABLE daily_entries ADD COLUMN entry_source TEXT DEFAULT 'text'")
+        except Exception:
+            pass
 
 
 def _fetchone(cur):
@@ -112,14 +119,15 @@ def save_entry(
     sleep_quality: Optional[float] = None,
     activity_level: Optional[float] = None,
     music_mood_score: Optional[float] = None,
+    entry_source: Optional[str] = "text",
 ) -> int:
     ph = _placeholder()
     conn = _conn()
     try:
         sql = f"""INSERT INTO daily_entries
                (user_id, entry_date, created_at, text_raw, audio_path,
-                sleep_hours, sleep_quality, activity_level, music_mood_score)
-               VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph})
+                sleep_hours, sleep_quality, activity_level, music_mood_score, entry_source)
+               VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph})
                ON CONFLICT(user_id, entry_date) DO UPDATE SET
                 text_raw=excluded.text_raw,
                 audio_path=excluded.audio_path,
@@ -127,7 +135,8 @@ def save_entry(
                 sleep_quality=excluded.sleep_quality,
                 activity_level=excluded.activity_level,
                 music_mood_score=excluded.music_mood_score,
-                created_at=excluded.created_at"""
+                created_at=excluded.created_at,
+                entry_source=excluded.entry_source"""
         cur = conn.execute(
             sql,
             (
@@ -140,6 +149,7 @@ def save_entry(
                 sleep_quality,
                 activity_level,
                 music_mood_score,
+                entry_source,
             ),
         )
         if _DATABASE_URL:
@@ -161,6 +171,20 @@ def update_features(entry_id: int, feature_vector: list, readable_metrics: dict)
                SET feature_vector={ph}, readable_metrics={ph}, features_extracted=1
                WHERE id={ph}""",
             (json.dumps(feature_vector), json.dumps(readable_metrics), entry_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def update_entry_text(user_id: str, entry_date: str, text_raw: str, entry_source: str = "text"):
+    ph = _placeholder()
+    conn = _conn()
+    try:
+        conn.execute(
+            f"""UPDATE daily_entries SET text_raw={ph}, entry_source={ph}
+               WHERE user_id={ph} AND entry_date={ph}""",
+            (text_raw, entry_source, user_id, entry_date),
         )
         conn.commit()
     finally:
