@@ -10,8 +10,7 @@ app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "None"
-_is_https = os.environ.get("RENDER") or os.environ.get("HEROKU") or os.environ.get("FLASK_HTTPS")
-app.config["SESSION_COOKIE_SECURE"] = bool(_is_https)
+app.config["SESSION_COOKIE_SECURE"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
 CORS(app, supports_credentials=True, origins=["https://mental-health-digital-twin-ai-assis.vercel.app", "http://127.0.0.1:5173", "http://localhost:5173"])
 

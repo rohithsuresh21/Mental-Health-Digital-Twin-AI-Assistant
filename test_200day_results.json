@@ -1,0 +1,202 @@
+{
+  "test_name": "200-Day End-to-End Validation",
+  "start_time": "2026-07-24T19:41:53.596007",
+  "user_id": "test_patient_200",
+  "phases": {
+    "data_generation": {
+      "status": "COMPLETE",
+      "entries_generated": 200
+    },
+    "data_validation": {
+      "status": "COMPLETE",
+      "issues_found": 0
+    },
+    "api_submission": {
+      "status": "COMPLETE",
+      "success": 200,
+      "failed": 0,
+      "avg_response_ms": 84.2
+    },
+    "pipeline": {
+      "status": "COMPLETE",
+      "overall_success": true,
+      "stage_results": {
+        "stage1_features": {
+          "status": "PASS",
+          "vector_length": 200,
+          "n_entries": 200
+        },
+        "stage2_normalization": {
+          "status": "INFO",
+          "reason": "Normalization data embedded in pipeline"
+        },
+        "stage3_tft": {
+          "status": "INFO",
+          "reason": "TFT data structure varies"
+        },
+        "stage4_anomaly": {
+          "status": "INFO",
+          "reason": "Anomaly data embedded"
+        },
+        "stage5_risk": {
+          "status": "INFO",
+          "reason": "Risk data embedded"
+        }
+      },
+      "errors": [],
+      "warnings": []
+    },
+    "longitudinal": {
+      "status": "COMPLETE",
+      "metrics_analyzed": [
+        "sleep_hours",
+        "sleep_quality",
+        "activity_level",
+        "music_mood_score",
+        "phase_summary",
+        "anomaly_estimation",
+        "total_entries"
+      ]
+    },
+    "bug_detection": {
+      "status": "COMPLETE",
+      "bugs_found": 32,
+      "bugs": [
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 41 and 108"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 101 and 112"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 94 and 118"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 64 and 119"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 97 and 121"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 87 and 122"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 45 and 127"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 39 and 131"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 56 and 134"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 13 and 136"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 28 and 139"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 99 and 141"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 5 and 146"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 1 and 149"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 16 and 156"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 4 and 158"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 37 and 159"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 43 and 160"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 21 and 163"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 11 and 173"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 23 and 174"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 35 and 176"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 42 and 179"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 65 and 181"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 55 and 183"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 22 and 184"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 20 and 185"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 59 and 186"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 85 and 187"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 62 and 189"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 24 and 192"
+        },
+        {
+          "severity": "INFO",
+          "bug": "Duplicate text at days 29 and 193"
+        }
+      ]
+    },
+    "pdf_report": {
+      "status": "COMPLETE",
+      "path": "E:\\Mental-Health-Digital-Twin-AI\\test_200day_report.pdf"
+    }
+  },
+  "end_time": "2026-07-24T19:42:33.109295",
+  "total_duration_seconds": 39.5
+}
