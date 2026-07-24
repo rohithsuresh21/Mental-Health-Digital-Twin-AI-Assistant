@@ -24,7 +24,11 @@ import {
   Sun,
   Moon,
   ScrollText,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { IngestionInput, DiagnosticData } from './types';
 import { defaultDiagnosticData } from './defaultData';
@@ -1690,11 +1694,11 @@ export default function App() {
                       </span>
                       {searchMatchCount > 1 && (
                         <>
-                          <button onClick={() => navigateSearch('prev')} className="text-gray-500 hover:text-gray-300 text-xs cursor-pointer">‹</button>
-                          <button onClick={() => navigateSearch('next')} className="text-gray-500 hover:text-gray-300 text-xs cursor-pointer">›</button>
+                          <button onClick={() => navigateSearch('prev')} className="text-gray-500 hover:text-gray-300 cursor-pointer"><ChevronLeft className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => navigateSearch('next')} className="text-gray-500 hover:text-gray-300 cursor-pointer"><ChevronRight className="h-3.5 w-3.5" /></button>
                         </>
                       )}
-                      <button onClick={() => setSearchQuery('')} className="text-gray-500 hover:text-gray-300 text-xs cursor-pointer ml-0.5">×</button>
+                      <button onClick={() => setSearchQuery('')} className="text-gray-500 hover:text-gray-300 cursor-pointer ml-0.5"><X className="h-3.5 w-3.5" /></button>
                     </div>
                   )}
                 </div>
@@ -2654,7 +2658,8 @@ export default function App() {
                     className="w-full md:w-auto px-6 py-3 bg-[#43A0F5]/10 hover:bg-[#43A0F5]/25 border border-[#43A0F5]/30 hover:border-[#43A0F5]/80 text-[#43A0F5] hover:text-white rounded-lg text-sm font-bold tracking-normal flex items-center justify-center gap-2.5 transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-[0_0_15px_rgba(67,160,245,0.06)] shrink-0"
                   >
                     <Brain className="h-4.5 w-4.5 animate-pulse" />
-                    Explainable Analysis using AI →
+                    Explainable Analysis using AI
+                    <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
 
@@ -2695,7 +2700,7 @@ export default function App() {
                           className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
                           title="Zoom out"
                         >
-                          <span className="text-xs">−</span>
+                          <Minus className="h-3 w-3" />
                         </button>
                         <button
                           onClick={() => {
@@ -2709,7 +2714,7 @@ export default function App() {
                           className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
                           title="Zoom in"
                         >
-                          <span className="text-xs">+</span>
+                          <Plus className="h-3 w-3" />
                         </button>
                         <div className="w-px h-4 bg-white/[0.06]" />
                         <button
@@ -2724,7 +2729,7 @@ export default function App() {
                           className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                           title="Scroll left"
                         >
-                          ‹
+                          <ChevronLeft className="h-3 w-3" />
                         </button>
                         <button
                           onClick={() => {
@@ -2738,7 +2743,7 @@ export default function App() {
                           className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                           title="Scroll right"
                         >
-                          ›
+                          <ChevronRight className="h-3 w-3" />
                         </button>
                         <button
                           onClick={() => setChartViewport([0, nChart - 1])}
@@ -3500,7 +3505,7 @@ export default function App() {
                       </div>
 
                                        <p className="text-[11px] text-gray-500 leading-relaxed">
-                        This signal detects whether recent behavior has shifted consistently away from the established baseline. A single unusual entry does not trigger sustained drift — the signal increases when the change persists over time. ↑ Upward drift (red) · ↓ Downward drift (blue) · Dashed line = alert threshold.
+                        This signal detects whether recent behavior has shifted consistently away from the established baseline. A single unusual entry does not trigger sustained drift — the signal increases when the change persists over time. Red line = upward drift · Blue line = downward drift · Dashed line = alert threshold.
                       </p>
 
                       {/* Translucent Card wrapper for the CUSUM graph */}
@@ -3509,21 +3514,22 @@ export default function App() {
                         <div className="flex items-center gap-3 flex-wrap">
                           <div className="flex gap-1.5">
                             {[
-                              { key: 0, label: '↑ Upward drift', desc: 'Above baseline' },
-                              { key: 1, label: '↓ Downward drift', desc: 'Below baseline' },
-                              { key: 2, label: 'Both', desc: 'Show both directions' },
+                              { key: 0, label: 'Upward drift', desc: 'Above baseline', icon: TrendingUp },
+                              { key: 1, label: 'Downward drift', desc: 'Below baseline', icon: TrendingDown },
+                              { key: 2, label: 'Both', desc: 'Show both directions', icon: null },
                             ].map((tab) => (
                               <button
                                 key={tab.key}
                                 onClick={() => setSelectedCusumTab(tab.key)}
-                                className={`flex-shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                                className={`flex-shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ${
                                   selectedCusumTab === tab.key
                                     ? 'bg-white/[0.06] border-[#3B82F6] text-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.7)]'
                                     : 'bg-white/[0.02] border-white/[0.06] text-gray-400 hover:bg-white/[0.04] hover:text-gray-300'
                                 }`}
                               >
+                                {tab.icon && <tab.icon className="h-3 w-3" />}
                                 {tab.label}
-                                <span className="ml-1 text-[8px] text-gray-500 font-normal">{tab.desc}</span>
+                                <span className="text-[8px] text-gray-500 font-normal">{tab.desc}</span>
                               </button>
                             ))}
                           </div>
@@ -3546,7 +3552,7 @@ export default function App() {
                                 className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
                                 title="Zoom out"
                               >
-                                <span className="text-xs">−</span>
+                                <Minus className="h-3 w-3" />
                               </button>
                               <button
                                 onClick={() => {
@@ -3560,7 +3566,7 @@ export default function App() {
                                 className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
                                 title="Zoom in"
                               >
-                                <span className="text-xs">+</span>
+                                <Plus className="h-3 w-3" />
                               </button>
                               <div className="w-px h-4 bg-white/[0.06]" />
                               <button
@@ -3573,7 +3579,7 @@ export default function App() {
                                 className="text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
                                 title="Scroll left"
                               >
-                                <span className="text-xs">‹</span>
+                                <ChevronLeft className="h-3 w-3" />
                               </button>
                               <button
                                 onClick={() => {
@@ -3585,7 +3591,7 @@ export default function App() {
                                 className="text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
                                 title="Scroll right"
                               >
-                                <span className="text-xs">›</span>
+                                <ChevronRight className="h-3 w-3" />
                               </button>
                               <button
                                 onClick={() => setCusumViewport([0, cusumTotalLen - 1])}
@@ -3602,11 +3608,11 @@ export default function App() {
                         <div className="flex flex-wrap items-center gap-6 text-[10px] text-gray-400 font-sans">
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-4 h-0.5 bg-rose-500" />
-                            <span>↑ Upward drift</span>
+                            <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Upward drift</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-4 h-0.5 bg-blue-500" />
-                            <span>↓ Downward drift</span>
+                            <span className="flex items-center gap-1"><TrendingDown className="h-3 w-3" /> Downward drift</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-4 h-0.5 border-t border-dashed border-gray-500" />
@@ -4054,7 +4060,7 @@ export default function App() {
                         </div>
 
                         {/* ARROW */}
-                        <div className="text-gray-600 text-xl font-bold font-mono px-6 sm:px-8">→</div>
+                        <div className="text-gray-600 px-6 sm:px-8"><ArrowRight className="h-5 w-5" /></div>
 
                         {/* FINAL RISK SCORE */}
                         <div className="space-y-1">

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BarChart3, Stethoscope } from 'lucide-react';
 import NeuralBackground from '../NeuralBackground';
 
 export default function UserDetails() {
@@ -135,7 +136,7 @@ export default function UserDetails() {
                 disabled={loading}
                 className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-8 text-center hover:border-gray-600 transition-all group cursor-pointer disabled:opacity-50"
               >
-                <div className="text-3xl mb-3">&#x1F4CA;</div>
+                <div className="mb-3 flex justify-center"><BarChart3 className="h-8 w-8 text-blue-400 group-hover:text-blue-300 transition-colors" /></div>
                 <div className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">Admin</div>
                 <div className="text-[10px] text-gray-500 mt-2 leading-relaxed">
                   Full analytics dashboard with charts, risk scores, and anomaly detection
@@ -146,7 +147,7 @@ export default function UserDetails() {
                 disabled={loading}
                 className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-8 text-center hover:border-gray-600 transition-all group cursor-pointer disabled:opacity-50"
               >
-                <div className="text-3xl mb-3">&#x1F9EC;</div>
+                <div className="mb-3 flex justify-center"><Stethoscope className="h-8 w-8 text-emerald-400 group-hover:text-emerald-300 transition-colors" /></div>
                 <div className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">Patient</div>
                 <div className="text-[10px] text-gray-500 mt-2 leading-relaxed">
                   Daily check-in portal with health tracking and calibration progress
