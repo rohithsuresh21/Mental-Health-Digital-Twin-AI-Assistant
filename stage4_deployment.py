@@ -23,8 +23,8 @@ class Stage4DeploymentPipeline:
         with open(sanitizer_path, "rb") as f:
             self.sanitizer = pickle.load(f)
 
-        print(f"✓ Loaded pretrained detectors from {model_path}")
-        print(f"✓ Loaded threshold engine and sanitizer")
+        print(f"[OK] Loaded pretrained detectors from {model_path}")
+        print(f"[OK] Loaded threshold engine and sanitizer")
 
     def process_user_entry(
         self,

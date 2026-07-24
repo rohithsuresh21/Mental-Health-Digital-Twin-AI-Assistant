@@ -21,7 +21,7 @@ def _sec(title):
     _p(f"\n  [{title}]")
 
 def _ok(msg):
-    _p(f"    \u2713 {msg}")
+    _p(f"    [OK] {msg}")
 
 def _info(msg):
     _p(f"      {msg}")
@@ -305,7 +305,7 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         intervention = "Yes" if prediction['intervention_recommended'] else "No"
         _ok(f"Risk assessment: {risk} ({prob_pct:.1f}%)")
         _info(f"Intervention recommended: {intervention}")
-        _info(f"Raw probability: {prediction['probability_raw']:.4f} → Calibrated: {prediction['probability']:.4f}")
+        _info(f"Raw probability: {prediction['probability_raw']:.4f} -> Calibrated: {prediction['probability']:.4f}")
 
     if xgb["auroc"] is not None and xgb["auroc"] == xgb["auroc"]:
         _info(f"Model AUROC: {xgb['auroc']:.4f}")

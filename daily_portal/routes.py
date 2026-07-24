@@ -87,7 +87,7 @@ def submit():
         if not _check_submit_rate(user_id):
             return jsonify({"error": "Rate limit exceeded. Max 3 submissions per hour."}), 429
 
-        today_str = date.today().isoformat()
+        today_str = request.form.get("entry_date", "").strip() or date.today().isoformat()
 
         existing = db.get_entry(user_id, today_str)
         if existing and existing["features_extracted"]:

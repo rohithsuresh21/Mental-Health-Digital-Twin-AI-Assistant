@@ -143,9 +143,9 @@ class Stage4DetectorCalibration:
         with open(output_dir / "detector_statistics.json", "w") as f:
             json.dump(self.statistics, f, indent=2)
 
-        print("  ✓ stage4_detectors.pkl")
-        print("  ✓ stage4_threshold_engine.pkl")
-        print("  ✓ stage4_sanitizer.pkl")
-        print("  ✓ detector_statistics.json")
+        print("  [OK] stage4_detectors.pkl")
+        print("  [OK] stage4_threshold_engine.pkl")
+        print("  [OK] stage4_sanitizer.pkl")
+        print("  [OK] detector_statistics.json")
 
         return output_dir
