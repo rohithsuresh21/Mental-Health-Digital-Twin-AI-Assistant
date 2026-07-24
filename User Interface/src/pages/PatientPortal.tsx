@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, ArrowRight, Upload, FileText, Settings } from 'lucide-react';
+import { Activity, ArrowRight, Upload, FileText, Settings, MessageSquare, Hash, AtSign } from 'lucide-react';
 import NeuralBackground from '../NeuralBackground';
 
 interface DailyStatus {
@@ -44,6 +44,16 @@ export default function PatientPortal() {
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Chat import state
+  const [chatName, setChatName] = useState('');
+  const [chatFile, setChatFile] = useState<File | null>(null);
+  const [chatPlatform, setChatPlatform] = useState<'whatsapp' | 'telegram' | 'reddit'>('whatsapp');
+  const [chatSubType, setChatSubType] = useState<'posts' | 'comments' | 'text'>('text');
+  const [chatPreview, setChatPreview] = useState<{ date: string; platform: string; message: string; selected: boolean; matched: boolean }[]>([]);
+  const [chatParsing, setChatParsing] = useState(false);
+  const [chatMsg, setChatMsg] = useState('');
+  const chatFileRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => { refresh(); }, []);
 
   async function refresh() {
@@ -77,6 +87,48 @@ export default function PatientPortal() {
         refresh();
       }
     } catch (e: any) { setMsg('Error: ' + e.message); } finally { setLoading(false); }
+  }
+
+  async function handleChatParse() {
+    if (!chatFile || !chatName.trim()) { setChatMsg('Enter your name and select a file.'); return; }
+    setChatParsing(true);
+    setChatMsg('');
+    setChatPreview([]);
+    const fd = new FormData();
+    fd.append('user_id', userId);
+    fd.append('name', chatName.trim());
+    fd.append('platform', chatPlatform);
+    fd.append('sub_type', chatSubType);
+    fd.append('file', chatFile);
+    try {
+      const r = await fetch(`${BASE}/daily/import-chat`, { method: 'POST', body: fd });
+      const d = await r.json();
+      if (d.error) { setChatMsg(d.error); } else {
+        setChatPreview(d.entries.map((e: any) => ({ ...e, selected: e.matched })));
+        setChatMsg(`${d.entries.length} entries parsed, ${d.matched_count} matched your daily entries.`);
+      }
+    } catch (e: any) { setChatMsg('Error: ' + e.message); } finally { setChatParsing(false); }
+  }
+
+  async function handleChatImport() {
+    const selected = chatPreview.filter(e => e.selected);
+    if (selected.length === 0) { setChatMsg('No entries selected.'); return; }
+    setChatParsing(true);
+    try {
+      const r = await fetch(`${BASE}/daily/confirm-import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, entries: selected }),
+      });
+      const d = await r.json();
+      if (d.error) { setChatMsg(d.error); } else {
+        setChatMsg(`Imported ${d.imported} entries.`);
+        setChatPreview([]);
+        setChatFile(null);
+        if (chatFileRef.current) chatFileRef.current.value = '';
+        refresh();
+      }
+    } catch (e: any) { setChatMsg('Error: ' + e.message); } finally { setChatParsing(false); }
   }
 
   const count = status?.entry_count || 0;
@@ -179,6 +231,112 @@ export default function PatientPortal() {
                 <label className="block text-[11px] text-gray-500 mb-2">Audio Recording (.wav)</label>
                 <input type="file" accept=".wav" onChange={e => setAudioFile(e.target.files?.[0] || null)}
                   className="text-[12px] text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-[#1A202C] file:text-gray-300 hover:file:bg-[#232B3B] cursor-pointer" />
+              </div>
+
+              {/* Import from Chat History */}
+              <div className="border-t border-[#1A202C] pt-5 mb-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-px flex-1 bg-[#1A202C]" />
+                  <span className="text-[10px] tracking-widest text-gray-500 font-bold uppercase">Import from Chat History</span>
+                  <div className="h-px flex-1 bg-[#1A202C]" />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-[11px] text-gray-500 mb-1.5">Your Name (to filter messages)</label>
+                  <input type="text" value={chatName} onChange={e => setChatName(e.target.value)}
+                    placeholder="e.g. Rohith"
+                    className="w-full bg-[#0B0E14] border border-[#1A202C] rounded-lg px-3 py-2 text-[12px] text-gray-300 placeholder-gray-600 focus:border-blue-600 focus:outline-none transition-colors" />
+                </div>
+
+                {/* Platform tabs */}
+                <div className="flex gap-2 mb-3">
+                  {(['whatsapp', 'telegram', 'reddit'] as const).map(p => (
+                    <button key={p} onClick={() => { setChatPlatform(p); setChatFile(null); setChatPreview([]); if (chatFileRef.current) chatFileRef.current.value = ''; }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                        chatPlatform === p ? 'bg-[#1A202C] text-gray-200 border border-blue-600/40' : 'text-gray-500 hover:text-gray-400 border border-transparent'
+                      }`}>
+                      {p === 'whatsapp' && <MessageSquare className="h-3 w-3" />}
+                      {p === 'telegram' && <AtSign className="h-3 w-3" />}
+                      {p === 'reddit' && <Hash className="h-3 w-3" />}
+                      {p.charAt(0).toUpperCase() + p.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Reddit sub-type selector */}
+                {chatPlatform === 'reddit' && (
+                  <div className="flex gap-2 mb-3 ml-1">
+                    {(['posts', 'comments', 'text'] as const).map(s => (
+                      <button key={s} onClick={() => { setChatSubType(s); setChatFile(null); setChatPreview([]); }}
+                        className={`px-2.5 py-1 rounded text-[10px] font-medium transition-all cursor-pointer ${
+                          chatSubType === s ? 'bg-[#1A202C] text-gray-300 border border-blue-600/30' : 'text-gray-600 hover:text-gray-400 border border-transparent'
+                        }`}>
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* File upload */}
+                <div className="flex items-center gap-3 mb-3">
+                  <input ref={chatFileRef} type="file"
+                    accept={chatPlatform === 'whatsapp' ? '.txt' : chatPlatform === 'telegram' ? '.json' : chatSubType === 'posts' || chatSubType === 'comments' ? '.csv,.json' : '.txt'}
+                    onChange={e => setChatFile(e.target.files?.[0] || null)}
+                    className="text-[12px] text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#1A202C] file:text-gray-300 hover:file:bg-[#232B3B] cursor-pointer" />
+                  {chatFile && <span className="text-[11px] text-gray-400 truncate max-w-[200px]">{chatFile.name}</span>}
+                </div>
+
+                <button onClick={handleChatParse} disabled={chatParsing || !chatFile || !chatName.trim()}
+                  className="bg-[#1A202C] hover:bg-[#232B3B] text-gray-300 text-[11px] font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-30 cursor-pointer mb-3">
+                  {chatParsing ? 'Parsing...' : 'Parse & Preview'}
+                </button>
+
+                {/* Preview table */}
+                {chatPreview.length > 0 && (
+                  <div className="bg-[#0B0E14] border border-[#1A202C] rounded-xl overflow-hidden">
+                    <div className="px-3 py-2 border-b border-[#1A202C] flex items-center justify-between">
+                      <span className="text-[11px] text-gray-400">Preview ({chatPreview.filter(e => e.selected).length} selected)</span>
+                      <button onClick={() => setChatPreview(prev => prev.map(e => ({ ...e, selected: !prev.some(p => !p.selected) })))}
+                        className="text-[10px] text-blue-400 hover:text-blue-300 cursor-pointer">
+                        {chatPreview.every(e => e.selected) ? 'Deselect All' : 'Select All'}
+                      </button>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                      <table className="w-full text-[11px]">
+                        <thead className="sticky top-0 bg-[#0B0E14]">
+                          <tr className="text-gray-600">
+                            <th className="text-left py-1.5 px-3 font-medium w-8"></th>
+                            <th className="text-left py-1.5 pr-3 font-medium">Date</th>
+                            <th className="text-left py-1.5 pr-3 font-medium">Platform</th>
+                            <th className="text-left py-1.5 font-medium">Message</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {chatPreview.map((e, i) => (
+                            <tr key={i} className={`border-t border-[#1A202C]/60 ${e.matched ? 'hover:bg-[#11131C]/50' : 'opacity-50'}`}>
+                              <td className="py-1.5 px-3">
+                                <input type="checkbox" checked={e.selected} disabled={!e.matched}
+                                  onChange={() => setChatPreview(prev => prev.map((p, j) => j === i ? { ...p, selected: !p.selected } : p))}
+                                  className="accent-blue-500" />
+                              </td>
+                              <td className="py-1.5 pr-3 text-gray-400 whitespace-nowrap">{e.date}</td>
+                              <td className="py-1.5 pr-3"><span className="px-1.5 py-0.5 rounded text-[9px] bg-[#1A202C] text-gray-400">{e.platform}</span></td>
+                              <td className="py-1.5 text-gray-400 truncate max-w-[250px]">{e.message}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="px-3 py-2 border-t border-[#1A202C] flex justify-end">
+                      <button onClick={handleChatImport} disabled={chatParsing}
+                        className="bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold px-4 py-1.5 rounded-lg transition-all disabled:opacity-40 cursor-pointer">
+                        Import Selected
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {chatMsg && <p className="mt-2 text-[11px] text-gray-500">{chatMsg}</p>}
               </div>
 
               {/* Natural language prompts */}
