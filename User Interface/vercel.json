@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://deluxe-fighter-spots-desirable.trycloudflare.com/$1"
+                         "destination": "https://foods-expand-healthcare-tap.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
