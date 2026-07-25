@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://toolkit-bon-unless-realty.trycloudflare.com/$1"
+                         "destination": "https://paths-sculpture-manga-southern.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
