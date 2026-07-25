@@ -1249,13 +1249,30 @@ def forecast_detectors():
         body = request.get_json(force=True, silent=True) or {}
         user_id = (body.get("user_id") or body.get("fullName", "user_demo")).strip() or "user_demo"
 
+        text = ""
+        try:
+            from daily_portal import db as daily_db
+            daily_entries = daily_db.get_recent_entries(user_id, limit=500)
+            daily_texts = [
+                e.get("text_raw", "")
+                for e in daily_entries
+                if e.get("text_raw", "").strip()
+            ]
+            if daily_texts:
+                text = "\n".join(daily_texts)
+        except Exception as _de:
+            print(f"[forecast-detectors] Could not load daily entries: {_de}")
+
+        if not text.strip():
+            return jsonify({"detector_forecasts": {}, "error": "No user data found. Run /diagnose first."}), 400
+
         from pipeline_runner import run_pipeline
         import tempfile, os
 
         fd, tmp_path = tempfile.mkstemp(suffix=".txt")
         os.close(fd)
         with open(tmp_path, "w", encoding="utf-8") as f:
-            f.write("Today was a normal day.\nYesterday was fine.\nI feel okay today.")
+            f.write(text)
         try:
             result = run_pipeline(user_id, file_path=tmp_path)
         finally:

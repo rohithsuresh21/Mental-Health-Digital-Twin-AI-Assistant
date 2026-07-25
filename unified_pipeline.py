@@ -345,6 +345,48 @@ class UnifiedJournalPipeline:
         except Exception as e:
             print(f"  TFT forecast generation failed: {e}")
             return [0.5] * 7
+
+    def _generate_detector_forecasts(self, user_id: str, forecast_days: int = 7) -> dict:
+        """Train 4 GradientBoosting models (one per detector) and predict next 7 days."""
+        from stage_4.forecasting.dynamic_detector import DynamicTrajectoryForecastingEngine
+
+        result = {}
+        detector_keys = ["mahalanobis", "copula", "isolation_forest", "knn"]
+
+        user_scores = self.anomaly_scores.get(user_id, [])
+        if not user_scores:
+            print("[Detector Forecast] No anomaly scores found, returning nulls")
+            return {k: [None] * forecast_days for k in detector_keys}
+
+        for key in detector_keys:
+            try:
+                series = []
+                for entry in user_scores:
+                    ds = entry.get("detector_scores", entry) if isinstance(entry, dict) else {}
+                    val = ds.get(key, 0.5) if isinstance(ds, dict) else 0.5
+                    series.append(float(val))
+
+                arr = np.array(series, dtype=np.float64)
+                min_needed = 30 + forecast_days
+
+                if len(arr) < min_needed:
+                    print(f"  {key}: insufficient data ({len(arr)}/{min_needed}), skipping")
+                    result[key] = [None] * forecast_days
+                    continue
+
+                engine = DynamicTrajectoryForecastingEngine(
+                    window_size=30, max_horizon=forecast_days
+                )
+                engine.fit(arr.reshape(-1, 1))
+                forecast = engine.predict_lookahead(arr[-30:].reshape(-1, 1), forecast_days)
+                result[key] = [round(float(v), 4) for v in forecast]
+                print(f"  {key}: {[round(v, 3) for v in forecast]}")
+
+            except Exception as e:
+                print(f"  {key}: forecast failed - {e}")
+                result[key] = [None] * forecast_days
+
+        return result
     
     def _create_patched_data(self, num_patches: int = 30) -> Dict[str, Any]:
         patched = {}
