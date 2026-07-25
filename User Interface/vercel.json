@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://indicates-include-applicants-seller.trycloudflare.com/$1"
+                         "destination": "https://campus-hang-onion-occurring.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
