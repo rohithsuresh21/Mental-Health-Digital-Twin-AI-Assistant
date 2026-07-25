@@ -345,6 +345,7 @@ export default function App() {
   const [isForecastingDetectors, setIsForecastingDetectors] = useState(false);
   const [detectorForecastData, setDetectorForecastData] = useState<Record<string, number[]> | null>(null);
   const [detectorForecastError, setDetectorForecastError] = useState<string | null>(null);
+  const [selectedDetectorTab, setSelectedDetectorTab] = useState<string>('all');
 
   // CUSUM toggle tab: 0=Upper, 1=Lower, 2=Both
   const [selectedCusumTab, setSelectedCusumTab] = useState(2);
@@ -3898,23 +3899,44 @@ export default function App() {
               lines: { data: (number | null)[]; color: string; label: string; dashed?: boolean }[],
               title: string,
               subtitle: string,
-            ) => (
+            ) => {
+              const allVals = lines.flatMap(l => l.data.filter((v): v is number => v !== null && v !== undefined));
+              const dataMin = Math.min(...allVals);
+              const dataMax = Math.max(...allVals);
+              const range = dataMax - dataMin;
+              const pad = Math.max(range * 0.25, 0.02);
+              const autoMin = Math.max(0, dataMin - pad);
+              const autoMax = Math.min(1, dataMax + pad);
+              const useAutoZoom = range < 0.3 && allVals.length > 0;
+              const yMin = useAutoZoom ? autoMin : 0;
+              const yMax = useAutoZoom ? autoMax : 1.0;
+              const yRange = yMax - yMin;
+              const yToSvg = (val: number) => 15 + (1.0 - (val - yMin) / yRange) * 185;
+              const tickCount = 5;
+              const tickStep = yRange / tickCount;
+              const ticks = Array.from({ length: tickCount + 1 }, (_, i) => yMin + i * tickStep);
+              const bgBands = [
+                { from: yMin, to: yMin + yRange * 0.33, color: '#10B981', label: 'Low' },
+                { from: yMin + yRange * 0.33, to: yMin + yRange * 0.66, color: '#F59E0B', label: 'Moderate' },
+                { from: yMin + yRange * 0.66, to: yMax, color: '#EF4444', label: 'High' },
+              ];
+              return (
               <div className="glass-panel rounded-xl p-5">
                 <span className="text-xs font-bold text-gray-300 mb-1 block">{title}</span>
-                <p className="text-[10px] text-gray-500 mb-3">{subtitle}</p>
+                <p className="text-[10px] text-gray-500 mb-3">{subtitle}{useAutoZoom ? ` (zoomed: ${Math.round(yMin*100)}-${Math.round(yMax*100)}%)` : ''}</p>
                 <div className="relative h-56 w-full">
                   <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible">
-                    <rect x="35" y={15 + (1.0 - 1.0) * 185} width="450" height={(1.0 - 0.7) * 185} fill="#EF4444" opacity="0.05" rx="2" />
-                    <rect x="35" y={15 + (1.0 - 0.7) * 185} width="450" height={(0.7 - 0.4) * 185} fill="#F59E0B" opacity="0.05" rx="2" />
-                    <rect x="35" y={15 + (1.0 - 0.4) * 185} width="450" height={(0.4 - 0.0) * 185} fill="#10B981" opacity="0.05" rx="2" />
-                    <text x="487" y={15 + (1.0 - 0.85) * 185 + 3} fill="#EF4444" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">High</text>
-                    <text x="487" y={15 + (1.0 - 0.55) * 185 + 3} fill="#F59E0B" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Moderate</text>
-                    <text x="487" y={15 + (1.0 - 0.2) * 185 + 3} fill="#10B981" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Low</text>
-                    {[0, 0.2, 0.4, 0.6, 0.8, 1.0].map((val, idx) => {
-                      const y = 15 + (1.0 - val) * 185;
+                    {bgBands.map((band, bi) => (
+                      <rect key={bi} x="35" y={yToSvg(band.to)} width="450" height={yToSvg(band.from) - yToSvg(band.to)} fill={band.color} opacity="0.05" rx="2" />
+                    ))}
+                    {bgBands.map((band, bi) => (
+                      <text key={`lbl-${bi}`} x="487" y={yToSvg((band.from + band.to) / 2) + 3} fill={band.color} fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">{band.label}</text>
+                    ))}
+                    {ticks.map((val, idx) => {
+                      const y = yToSvg(val);
                       return (
                         <g key={idx}>
-                          <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray={val === 0 ? "none" : "3 3"} />
+                          <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray="3 3" />
                           <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{Math.round(val * 100)}</text>
                         </g>
                       );
@@ -3935,16 +3957,24 @@ export default function App() {
                       line.data.forEach((val, idx) => {
                         if (val === null || val === undefined) return;
                         const x = 35 + (idx / Math.max(1, line.data.length - 1)) * 450;
-                        const y = 15 + (1.0 - Math.min(1, Math.max(0, val))) * 185;
+                        const y = yToSvg(Math.min(yMax, Math.max(yMin, val)));
                         pathStr += (pathStr === '' ? 'M' : 'L') + ` ${x} ${y}`;
                       });
                       return (
-                        <path key={li} d={pathStr} fill="none" stroke={line.color}
-                          strokeWidth={line.dashed ? '1.5' : '2'}
-                          strokeDasharray={line.dashed ? '4 3' : undefined}
-                          opacity={0.8}
-                          className={line.dashed ? '' : 'drop-shadow-[0_0_4px_rgba(167,139,250,0.4)]'}
-                        />
+                        <g key={li}>
+                          <path d={pathStr} fill="none" stroke={line.color}
+                            strokeWidth={line.dashed ? '1.5' : '2'}
+                            strokeDasharray={line.dashed ? '4 3' : undefined}
+                            opacity={0.8}
+                            className={line.dashed ? '' : 'drop-shadow-[0_0_4px_rgba(167,139,250,0.4)]'}
+                          />
+                          {line.data.map((val, idx) => {
+                            if (val === null || val === undefined) return null;
+                            const x = 35 + (idx / Math.max(1, line.data.length - 1)) * 450;
+                            const y = yToSvg(Math.min(yMax, Math.max(yMin, val)));
+                            return <circle key={`dot-${li}-${idx}`} cx={x} cy={y} r="3" fill={line.color} opacity="0.9" />;
+                          })}
+                        </g>
                       );
                     })}
                     <line x1="35" y1="200" x2="485" y2="200" stroke="#1B2030" strokeWidth="1" />
@@ -3960,6 +3990,7 @@ export default function App() {
                 </div>
               </div>
             );
+            };
 
             const allLines: { data: (number | null)[]; color: string; label: string; dashed?: boolean }[] = [];
             if (forecastData.length > 0) {
@@ -3981,29 +4012,60 @@ export default function App() {
             return (
               <div className="space-y-8 animate-in fade-in duration-300 px-4 sm:px-8 py-8" id="forecast-container">
 
-                {/* TFT OVERALL RISK */}
-                {forecastData.length > 0 ? (
-                  renderForecastChart(
-                    [{ data: forecastData, color: '#a78bfa', label: 'TFT Overall Risk' }],
-                    'TFT Overall Risk Forecast',
-                    `Neural network predicts composite risk score for the next ${forecastData.length} days`,
-                  )
-                ) : (
-                  <div className="glass-panel rounded-xl p-8 text-center">
-                    <Brain className="h-8 w-8 text-purple-400 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm text-gray-400">No TFT forecast available. Run an analysis first.</p>
+                {/* SECTION 1: TFT OVERALL RISK FORECAST */}
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                      <Brain className="h-4 w-4 text-purple-400" />
+                      TFT Composite Risk Forecast
+                    </h3>
+                    <p className="text-[10px] text-gray-500 mt-1 ml-6">
+                      Temporal Fusion Transformer trained on 30-day sliding windows from your own history. Predicts the next {forecastData.length || 7} days as a composite risk score (50% anomaly + 25% sentiment + 25% health). Higher = more concern.
+                    </p>
                   </div>
-                )}
+                  {forecastData.length > 0 ? (
+                    <>
+                      {renderForecastChart(
+                        [{ data: forecastData, color: '#a78bfa', label: 'TFT Composite Risk' }],
+                        'TFT 7-Day Risk Forecast',
+                        `Predicted composite risk trajectory based on your last 30 entries. Range: ${Math.round(Math.min(...forecastData) * 100)}% - ${Math.round(Math.max(...forecastData) * 100)}%`,
+                      )}
+                      <div className="flex gap-3 flex-wrap">
+                        <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[120px]">
+                          <div className="text-[9px] text-gray-500 uppercase tracking-wider">Current</div>
+                          <div className="text-sm font-bold text-purple-300">{Math.round(forecastData[0] * 100)}%</div>
+                        </div>
+                        <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[120px]">
+                          <div className="text-[9px] text-gray-500 uppercase tracking-wider">Peak (7d)</div>
+                          <div className="text-sm font-bold text-rose-300">{Math.round(Math.max(...forecastData) * 100)}%</div>
+                        </div>
+                        <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[120px]">
+                          <div className="text-[9px] text-gray-500 uppercase tracking-wider">Trend</div>
+                          <div className={`text-sm font-bold ${forecastData[forecastData.length - 1] > forecastData[0] ? 'text-amber-300' : 'text-emerald-300'}`}>
+                            {forecastData[forecastData.length - 1] > forecastData[0] ? 'Rising' : 'Falling'}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="glass-panel rounded-xl p-8 text-center">
+                      <Brain className="h-8 w-8 text-purple-400 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm text-gray-400">No TFT forecast available. Run an analysis first.</p>
+                    </div>
+                  )}
+                </div>
 
-                {/* DETECTOR FORECASTS BUTTON + CHARTS */}
-                <div className="space-y-4">
+                {/* SECTION 2: PER-DETECTOR FORECASTS */}
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                         <Zap className="h-4 w-4 text-amber-400" />
-                        Per-Detector Forecast
+                        Per-Detector Forecasts
                       </h3>
-                      <p className="text-[10px] text-gray-500 mt-1 ml-6">Train 4 GradientBoosting models on each detector's history and predict next 7 days</p>
+                      <p className="text-[10px] text-gray-500 mt-1 ml-6">
+                        Each anomaly detector is trained independently on its own 30-day score history using GradientBoosting. Click each tab to see individual detector predictions.
+                      </p>
                     </div>
                     <button
                       onClick={handleForecastDetectors}
@@ -4034,65 +4096,141 @@ export default function App() {
                     </div>
                   )}
 
-                  {detectorForecastData ? (
-                    <>
-                      {/* Individual detector chart */}
-                      {renderForecastChart(
-                        [
-                          { data: detectorForecastData.mahalanobis || [], color: '#60a5fa', label: 'Mahalanobis', dashed: true },
-                          { data: detectorForecastData.copula || [], color: '#f87171', label: 'Copula', dashed: true },
-                          { data: detectorForecastData.isolation_forest || [], color: '#34d399', label: 'Isolation Forest', dashed: true },
-                          { data: detectorForecastData.knn || [], color: '#fbbf24', label: 'KNN', dashed: true },
-                        ],
-                        'Individual Detector Forecasts',
-                        'Each detector trained on its own historical score series (GradientBoosting, window=30)',
-                      )}
-
-                      {/* Combined view */}
-                      {allLines.length > 1 && renderForecastChart(
-                        allLines,
-                        'Combined Forecast View',
-                        'TFT overall risk (solid purple) overlaid with per-detector forecasts (dashed)',
-                      )}
-
-                      {/* Day-by-day breakdown */}
-                      {forecastData.length > 0 && detectorForecastData && (
-                        <div className="glass-panel rounded-xl p-5">
-                          <span className="text-xs font-bold text-gray-300 mb-3 block">Day-by-day breakdown</span>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs">
-                              <thead>
-                                <tr className="text-gray-500 border-b border-gray-800/60">
-                                  <th className="text-left py-1.5 pr-3 font-mono">Day</th>
-                                  <th className="text-right py-1.5 px-2 font-bold text-purple-400">TFT</th>
-                                  <th className="text-right py-1.5 px-2 font-bold text-blue-400">Mahal.</th>
-                                  <th className="text-right py-1.5 px-2 font-bold text-rose-400">Copula</th>
-                                  <th className="text-right py-1.5 px-2 font-bold text-emerald-400">IF</th>
-                                  <th className="text-right py-1.5 px-2 font-bold text-amber-400">KNN</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {forecastData.map((tftVal, idx) => (
-                                  <tr key={idx} className="border-b border-gray-800/30 hover:bg-white/[0.02]">
-                                    <td className="py-1.5 pr-3 font-mono text-gray-400">D{idx + 1}</td>
-                                    <td className="text-right py-1.5 px-2 text-purple-300 font-bold">{Math.round(tftVal * 100)}%</td>
-                                    <td className="text-right py-1.5 px-2 text-blue-300">{detectorForecastData.mahalanobis?.[idx] != null ? `${Math.round(detectorForecastData.mahalanobis[idx] * 100)}%` : '—'}</td>
-                                    <td className="text-right py-1.5 px-2 text-rose-300">{detectorForecastData.copula?.[idx] != null ? `${Math.round(detectorForecastData.copula[idx] * 100)}%` : '—'}</td>
-                                    <td className="text-right py-1.5 px-2 text-emerald-300">{detectorForecastData.isolation_forest?.[idx] != null ? `${Math.round(detectorForecastData.isolation_forest[idx] * 100)}%` : '—'}</td>
-                                    <td className="text-right py-1.5 px-2 text-amber-300">{detectorForecastData.knn?.[idx] != null ? `${Math.round(detectorForecastData.knn[idx] * 100)}%` : '—'}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
+                  {detectorForecastData ? (() => {
+                    const detTabs = [
+                      { key: 'all', label: 'All Detectors', color: '#a78bfa' },
+                      { key: 'mahalanobis', label: 'Mahalanobis', color: '#60a5fa' },
+                      { key: 'copula', label: 'Copula', color: '#f87171' },
+                      { key: 'isolation_forest', label: 'Isolation Forest', color: '#34d399' },
+                      { key: 'knn', label: 'KNN', color: '#fbbf24' },
+                    ];
+                    const detDescriptions: Record<string, string> = {
+                      mahalanobis: 'Mahalanobis Distance: Measures how far each entry deviates from the learned centroid of your normal feature space. Sensitive to shifts in overall mental state direction.',
+                      copula: 'Gaussian Copula: Models the dependency structure between features. Detects when the relationship between your sleep, activity, and mood breaks from normal patterns.',
+                      isolation_forest: 'Isolation Forest: Isolates anomalies by random splitting. Catches entries that are unusually different from the majority, regardless of direction.',
+                      knn: 'KNN Distance: Measures distance to your K nearest normal entries. Rises when recent entries are unlike anything seen in your history.',
+                    };
+                    const activeTab = selectedDetectorTab;
+                    const showCombined = activeTab === 'all';
+                    return (
+                      <>
+                        {/* Tab bar */}
+                        <div className="flex gap-1 p-1 bg-[#0F131A]/80 rounded-lg border border-[#20293B]/40 overflow-x-auto">
+                          {detTabs.map(tab => {
+                            const isActive = activeTab === tab.key;
+                            return (
+                              <button
+                                key={tab.key}
+                                onClick={() => setSelectedDetectorTab(tab.key)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
+                                  isActive
+                                    ? 'bg-white/[0.08] border border-white/10 text-white'
+                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
+                                }`}
+                              >
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tab.color }} />
+                                {tab.label}
+                              </button>
+                            );
+                          })}
                         </div>
-                      )}
-                    </>
-                  ) : !isForecastingDetectors && (
+
+                        {/* Description */}
+                        {activeTab !== 'all' && detDescriptions[activeTab] && (
+                          <p className="text-[10px] text-gray-500 italic ml-1">{detDescriptions[activeTab]}</p>
+                        )}
+
+                        {/* Charts */}
+                        {showCombined ? (
+                          <>
+                            {renderForecastChart(
+                              [
+                                { data: detectorForecastData.mahalanobis || [], color: '#60a5fa', label: 'Mahalanobis' },
+                                { data: detectorForecastData.copula || [], color: '#f87171', label: 'Copula' },
+                                { data: detectorForecastData.isolation_forest || [], color: '#34d399', label: 'Isolation Forest' },
+                                { data: detectorForecastData.knn || [], color: '#fbbf24', label: 'KNN' },
+                              ],
+                              'All Detectors — 7 Day Forecast',
+                              'Four independent models overlaid. Spread indicates model disagreement; tight grouping indicates consensus.',
+                            )}
+                            {allLines.length > 1 && renderForecastChart(
+                              allLines,
+                              'Combined View: TFT + Detectors',
+                              'TFT composite risk (solid) overlaid with per-detector forecasts (dashed).',
+                            )}
+                          </>
+                        ) : (() => {
+                          const vals = detectorForecastData[activeTab] || [];
+                          const cfg = detTabs.find(t => t.key === activeTab);
+                          if (!cfg || vals.length < 2) return (
+                            <div className="glass-panel rounded-xl p-6 text-center text-gray-500 text-xs">No data for this detector</div>
+                          );
+                          return (
+                            <>
+                              {renderForecastChart(
+                                [{ data: vals, color: cfg.color, label: cfg.label }],
+                                `${cfg.label} — 7 Day Forecast`,
+                                detDescriptions[activeTab],
+                              )}
+                              <div className="flex gap-3 flex-wrap">
+                                <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[100px]">
+                                  <div className="text-[9px] text-gray-500 uppercase tracking-wider">Day 1</div>
+                                  <div className="text-sm font-bold" style={{ color: cfg.color }}>{Math.round(vals[0] * 100)}%</div>
+                                </div>
+                                <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[100px]">
+                                  <div className="text-[9px] text-gray-500 uppercase tracking-wider">Day 7</div>
+                                  <div className="text-sm font-bold" style={{ color: cfg.color }}>{Math.round(vals[vals.length - 1] * 100)}%</div>
+                                </div>
+                                <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[100px]">
+                                  <div className="text-[9px] text-gray-500 uppercase tracking-wider">Delta</div>
+                                  <div className={`text-sm font-bold ${(vals[vals.length - 1] - vals[0]) > 0 ? 'text-rose-300' : 'text-emerald-300'}`}>
+                                    {(vals[vals.length - 1] - vals[0]) > 0 ? '+' : ''}{Math.round((vals[vals.length - 1] - vals[0]) * 100)}%
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
+
+                        {/* Day-by-day breakdown */}
+                        {forecastData.length > 0 && (
+                          <div className="glass-panel rounded-xl p-5">
+                            <span className="text-xs font-bold text-gray-300 mb-3 block">Day-by-Day Breakdown</span>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="text-gray-500 border-b border-gray-800/60">
+                                    <th className="text-left py-1.5 pr-3 font-mono">Day</th>
+                                    <th className="text-right py-1.5 px-2 font-bold text-purple-400">TFT</th>
+                                    <th className="text-right py-1.5 px-2 font-bold text-blue-400">Mahal.</th>
+                                    <th className="text-right py-1.5 px-2 font-bold text-rose-400">Copula</th>
+                                    <th className="text-right py-1.5 px-2 font-bold text-emerald-400">IF</th>
+                                    <th className="text-right py-1.5 px-2 font-bold text-amber-400">KNN</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {forecastData.map((tftVal, idx) => (
+                                    <tr key={idx} className="border-b border-gray-800/30 hover:bg-white/[0.02]">
+                                      <td className="py-1.5 pr-3 font-mono text-gray-400">D{idx + 1}</td>
+                                      <td className="text-right py-1.5 px-2 text-purple-300 font-bold">{Math.round(tftVal * 100)}%</td>
+                                      <td className="text-right py-1.5 px-2 text-blue-300">{detectorForecastData.mahalanobis?.[idx] != null ? `${Math.round(detectorForecastData.mahalanobis[idx] * 100)}%` : '—'}</td>
+                                      <td className="text-right py-1.5 px-2 text-rose-300">{detectorForecastData.copula?.[idx] != null ? `${Math.round(detectorForecastData.copula[idx] * 100)}%` : '—'}</td>
+                                      <td className="text-right py-1.5 px-2 text-emerald-300">{detectorForecastData.isolation_forest?.[idx] != null ? `${Math.round(detectorForecastData.isolation_forest[idx] * 100)}%` : '—'}</td>
+                                      <td className="text-right py-1.5 px-2 text-amber-300">{detectorForecastData.knn?.[idx] != null ? `${Math.round(detectorForecastData.knn[idx] * 100)}%` : '—'}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })() : !isForecastingDetectors && (
                     <div className="glass-panel rounded-xl p-8 text-center">
                       <Zap className="h-8 w-8 text-amber-400 mx-auto mb-3 opacity-30" />
                       <p className="text-sm text-gray-500">Click the button above to train per-detector forecast models</p>
-                      <p className="text-[10px] text-gray-600 mt-1">Each model trains in {'<'}200ms. Total {'<'}1 second for all 4.</p>
+                      <p className="text-[10px] text-gray-600 mt-1">Each model trains on its own detector's 30-day history in {'<'}200ms.</p>
                     </div>
                   )}
                 </div>

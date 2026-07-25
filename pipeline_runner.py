@@ -383,6 +383,17 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     except Exception as e:
         _warn(f"Per-detector forecast generation failed: {e}")
 
+    try:
+        import sys
+        if 'app' in sys.modules:
+            singleton = sys.modules['app'].get_pipeline()
+            singleton.anomaly_scores[user_id] = pipeline.anomaly_scores.get(user_id, [])
+            singleton.normalized_vectors[user_id] = pipeline.normalized_vectors.get(user_id, [])
+            if pipeline.anomaly_detector:
+                singleton.anomaly_detector = pipeline.anomaly_detector
+    except Exception as e:
+        _warn(f"Could not update singleton pipeline: {e}")
+
     return {
         "user_id":             user_id,
         "n_entries":           len(records),

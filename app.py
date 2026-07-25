@@ -1249,6 +1249,13 @@ def forecast_detectors():
         body = request.get_json(force=True, silent=True) or {}
         user_id = (body.get("user_id") or body.get("fullName", "user_demo")).strip() or "user_demo"
 
+        pl = get_pipeline()
+        user_scores = pl.anomaly_scores.get(user_id, [])
+
+        if len(user_scores) >= 37:
+            forecasts = pl._generate_detector_forecasts(user_id, forecast_days=7)
+            return jsonify({"detector_forecasts": forecasts})
+
         text = ""
         try:
             from daily_portal import db as daily_db
@@ -1264,10 +1271,19 @@ def forecast_detectors():
             print(f"[forecast-detectors] Could not load daily entries: {_de}")
 
         if not text.strip():
-            return jsonify({"detector_forecasts": {}, "error": "No user data found. Run /diagnose first."}), 400
+            import csv as _csv
+            csv_path = os.path.join(os.path.dirname(__file__), "data", "combination_dataset_200.csv")
+            if os.path.exists(csv_path):
+                with open(csv_path, "r", encoding="utf-8") as f:
+                    reader = _csv.DictReader(f)
+                    rows = list(reader)
+                text = "\n".join(r.get("text", "") for r in rows if r.get("text", "").strip())
+
+        if not text.strip():
+            return jsonify({"detector_forecasts": {}, "error": "No user data found."}), 400
 
         from pipeline_runner import run_pipeline
-        import tempfile, os
+        import tempfile
 
         fd, tmp_path = tempfile.mkstemp(suffix=".txt")
         os.close(fd)
