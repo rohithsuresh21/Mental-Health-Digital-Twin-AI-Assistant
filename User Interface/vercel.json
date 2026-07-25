@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://feedback-investigators-flying-cst.trycloudflare.com/$1"
+                         "destination": "https://her-relax-scsi-leaders.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
