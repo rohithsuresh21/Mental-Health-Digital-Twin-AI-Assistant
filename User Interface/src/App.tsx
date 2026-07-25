@@ -961,10 +961,10 @@ export default function App() {
     }, 2000);
 
     try {
-      let payload = inputs;
+      let payload = { ...inputs, user_id: userId };
       if (docFileObj) {
         const fileText = await docFileObj.text();
-        payload = { ...inputs, docFileContent: fileText, docFileName: docFileObj.name };
+        payload = { ...payload, docFileContent: fileText, docFileName: docFileObj.name };
       }
 
       const controller = new AbortController();
