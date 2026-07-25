@@ -1255,14 +1255,15 @@ def forecast_detectors():
         body = request.get_json(force=True, silent=True) or {}
         user_id = (body.get("user_id") or body.get("fullName", "user_demo")).strip() or "user_demo"
 
-        from pipeline_runner import _shared_pipeline
-        if _shared_pipeline is None:
+        import pipeline_runner as _pr
+        shared = _pr._shared_pipeline
+        if shared is None:
             return jsonify({"detector_forecasts": {}, "error": "No pipeline data. Run a diagnosis first."}), 400
 
-        user_scores = _shared_pipeline.anomaly_scores.get(user_id, [])
+        user_scores = shared.anomaly_scores.get(user_id, [])
 
         if len(user_scores) >= 37:
-            forecasts = _shared_pipeline._generate_detector_forecasts(user_id, forecast_days=7)
+            forecasts = shared._generate_detector_forecasts(user_id, forecast_days=7)
             return jsonify({"detector_forecasts": forecasts})
 
         return jsonify({
