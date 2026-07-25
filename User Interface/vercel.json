@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://weekends-calculators-peer-languages.trycloudflare.com/$1"
+                         "destination": "https://toolkit-bon-unless-realty.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
