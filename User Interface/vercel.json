@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://campus-hang-onion-occurring.trycloudflare.com/$1"
+                         "destination": "https://deluxe-fighter-spots-desirable.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
