@@ -58,6 +58,12 @@ export interface DiagnosticData {
   pipelineEmotionsSeries?: string[];
   pipelineNEntries?: number;
   pipelineForecast14Day?: number[];
+  pipelineDetectorForecasts?: {
+    mahalanobis?: number[];
+    copula?: number[];
+    isolation_forest?: number[];
+    knn?: number[];
+  };
 }
 
 export interface IngestionInput {

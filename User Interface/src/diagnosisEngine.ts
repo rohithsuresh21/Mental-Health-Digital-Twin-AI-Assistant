@@ -293,6 +293,7 @@ export function mapFlaskRunResponse(pipelineResult: any, input: Partial<Ingestio
     pipelineEmotionsSeries: pipelineResult.emotions_series,
     pipelineNEntries: pipelineResult.n_entries,
     pipelineForecast14Day: pipelineResult.tft_forecast_14day,
+    pipelineDetectorForecasts: pipelineResult.detector_forecasts || undefined,
   };
 }
 

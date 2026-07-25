@@ -1241,6 +1241,37 @@ def diagnose():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/forecast-detectors", methods=["POST"])
+@rate_limit("diagnose")
+def forecast_detectors():
+    """Train 4 per-detector GradientBoosting models and return 7-day forecasts."""
+    try:
+        body = request.get_json(force=True, silent=True) or {}
+        user_id = (body.get("user_id") or body.get("fullName", "user_demo")).strip() or "user_demo"
+
+        from pipeline_runner import run_pipeline
+        import tempfile, os
+
+        fd, tmp_path = tempfile.mkstemp(suffix=".txt")
+        os.close(fd)
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            f.write("Today was a normal day.\nYesterday was fine.\nI feel okay today.")
+        try:
+            result = run_pipeline(user_id, file_path=tmp_path)
+        finally:
+            for _delay in [0, 0.5, 1.0]:
+                try:
+                    os.unlink(tmp_path); break
+                except PermissionError:
+                    if _delay == 1.0: pass
+                    else: time.sleep(_delay)
+
+        return jsonify({"detector_forecasts": result.get("detector_forecasts", {})})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/generate-pdf", methods=["POST"])
 @rate_limit("generate_pdf")
 def generate_pdf():

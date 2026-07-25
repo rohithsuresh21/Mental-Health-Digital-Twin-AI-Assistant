@@ -374,6 +374,15 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         _p(f"  TFT latent shape:  {list(tft['latents'].shape)}")
     _p(f"{'-'*W}\n")
 
+    # Per-detector 7-day forecasts
+    detector_forecasts = {}
+    try:
+        if hasattr(pipeline, '_generate_detector_forecasts'):
+            detector_forecasts = pipeline._generate_detector_forecasts(user_id, forecast_days=7)
+            _ok(f"Per-detector forecasts generated: {list(detector_forecasts.keys())}")
+    except Exception as e:
+        _warn(f"Per-detector forecast generation failed: {e}")
+
     return {
         "user_id":             user_id,
         "n_entries":           len(records),
@@ -394,6 +403,7 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         "prediction":          prediction,
         "tft_latent_shape":    list(tft["latents"].shape) if tft is not None else None,
         "tft_forecast_14day":  pipeline.tft_forecast if hasattr(pipeline, 'tft_forecast') and pipeline.tft_forecast else None,
+        "detector_forecasts":  detector_forecasts,
         "xgb_auroc":           round(xgb["auroc"], 4) if xgb["auroc"] is not None and xgb["auroc"] == xgb["auroc"] else 0.0,
         "calibration_status":  calibration_status,
         "baseline_deviation_series": deviation_series,

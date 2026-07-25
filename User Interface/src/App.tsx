@@ -28,7 +28,9 @@ import {
   ChevronLeft,
   ChevronRight,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Cloud,
+  Zap
 } from 'lucide-react';
 import { IngestionInput, DiagnosticData } from './types';
 import { defaultDiagnosticData } from './defaultData';
@@ -87,7 +89,7 @@ export default function App() {
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
-  type Tab = 'dashboard' | 'clinical' | 'analytics' | 'explainable' | 'profile' | 'intake';
+  type Tab = 'dashboard' | 'clinical' | 'analytics' | 'forecast' | 'explainable' | 'profile' | 'intake';
   const [activeTab, setActiveTabState] = useState<Tab>('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [modalContent, setModalContent] = useState<'docs' | 'privacy' | 'terms' | null>(null);
@@ -338,6 +340,11 @@ export default function App() {
 
   // TFT Forecast viewport
   const [forecastViewport, setForecastViewport] = useState<[number, number]>([-1, -1]);
+
+  // Detector forecasts
+  const [isForecastingDetectors, setIsForecastingDetectors] = useState(false);
+  const [detectorForecastData, setDetectorForecastData] = useState<Record<string, number[]> | null>(null);
+  const [detectorForecastError, setDetectorForecastError] = useState<string | null>(null);
 
   // CUSUM toggle tab: 0=Upper, 1=Lower, 2=Both
   const [selectedCusumTab, setSelectedCusumTab] = useState(2);
@@ -1437,6 +1444,16 @@ export default function App() {
             </div>
           </div>
         );
+      case 'forecast':
+        return (
+          <div className="p-6 border-b border-[#1A202C]">
+            <div className="text-[10px] tracking-widest text-purple-400 font-bold uppercase mb-1">Predictions</div>
+            <div className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+              <Cloud className="h-5 w-5 text-purple-500 shadow-[0_0_8px_#a855f7]" />
+              FORECAST ENGINE
+            </div>
+          </div>
+        );
       case 'explainable':
         return (
           <div className="p-6 border-b border-[#1A202C]">
@@ -1568,6 +1585,20 @@ export default function App() {
                     <Activity className="h-4 w-4" />
                     Analysis {!patientData.status?.calibrated && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
                   </button>
+
+                  <button id="tab-patient-forecast"
+                    onClick={() => { 
+                      if (patientData.status?.calibrated) { setActiveTab('forecast'); setIsMenuOpen(false); }
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'forecast' 
+                        ? 'bg-gray-800 text-white border-l-2 border-purple-500' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <Cloud className="h-4 w-4" />
+                    Forecast {!patientData.status?.calibrated && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
+                  </button>
                 </>
               ) : (
                 <>
@@ -1620,6 +1651,21 @@ export default function App() {
                   >
                     <Activity className="h-4 w-4" />
                     Analytics {!hasRunAnalysis && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
+                  </button>
+
+                  <button id="tab-forecast"
+                    onClick={() => { 
+                      if (hasRunAnalysis) { setActiveTab('forecast'); setIsMenuOpen(false); }
+                      else { setActiveTab('clinical'); setIsMenuOpen(false); }
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'forecast' 
+                        ? 'bg-gray-800 text-white border-l-2 border-purple-500' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <Cloud className="h-4 w-4" />
+                    Forecast {!hasRunAnalysis && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
                   </button>
                 </>
               )}
@@ -3183,192 +3229,6 @@ export default function App() {
                     </div>
                   )}
 
-                {/* 1b. TFT FORECAST SECTION */}
-                {forecastData.length > 0 && (
-                  <div className="border-t border-gray-800/60 pt-6">
-                    <div
-                      className="flex items-center justify-between cursor-pointer group"
-                      onClick={() => setCollapsedSections(prev => ({ ...prev, tftForecast: !prev.tftForecast }))}
-                    >
-                      <div>
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
-                          <Brain className="h-4.5 w-4.5 text-purple-400" />
-                          7-Day Risk Forecast
-                        </h3>
-                        <p className="text-[10px] text-gray-500 mt-1 ml-7">TFT multi-step risk prediction (7 days ahead)</p>
-                      </div>
-                      <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
-                        {collapsedSections.tftForecast ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                      </button>
-                    </div>
-
-                    {!collapsedSections.tftForecast && (
-                      <div className="mt-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center justify-end gap-1.5 mb-3">
-                          <span className="text-[10px] text-gray-500 font-mono mr-auto">
-                            {forecastData.length} day forecast
-                          </span>
-                          <button
-                            onClick={() => setForecastViewport([0, forecastData.length - 1])}
-                            className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
-                            title="Reset zoom"
-                          >
-                            Reset
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-
-                        <div className="glass-panel rounded-xl p-5">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold text-gray-300">Predicted risk trajectory</span>
-                            <div className="flex items-center gap-2.5 text-[10px] text-gray-400">
-                              <div className="flex items-center gap-1">
-                                <span className="inline-block w-4 h-0.5 bg-purple-400 rounded-sm" style={{ borderTop: '1px dashed #c084fc' }} />
-                                <span>Forecast</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span className="inline-block w-1 h-1 bg-purple-400 rounded-full" />
-                                <span>Day {forecastData.length}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <p className="text-[10px] text-gray-500 mb-3">Y-axis: 0% low risk · 50% moderate · 100% high risk</p>
-
-                          <div className="relative h-60 w-full">
-                            <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible">
-                              <rect x="35" y={15 + (1.0 - 1.0) * 185} width="450" height={(1.0 - 0.7) * 185} fill="#EF4444" opacity="0.05" rx="2" />
-                              <rect x="35" y={15 + (1.0 - 0.7) * 185} width="450" height={(0.7 - 0.4) * 185} fill="#F59E0B" opacity="0.05" rx="2" />
-                              <rect x="35" y={15 + (1.0 - 0.4) * 185} width="450" height={(0.4 - 0.0) * 185} fill="#10B981" opacity="0.05" rx="2" />
-                              <text x="487" y={15 + (1.0 - 0.85) * 185 + 3} fill="#EF4444" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">High</text>
-                              <text x="487" y={15 + (1.0 - 0.55) * 185 + 3} fill="#F59E0B" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Moderate</text>
-                              <text x="487" y={15 + (1.0 - 0.2) * 185 + 3} fill="#10B981" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Low</text>
-                              {[0, 0.2, 0.4, 0.6, 0.8, 1.0].map((val, idx) => {
-                                const y = 15 + (1.0 - val) * 185;
-                                return (
-                                  <g key={idx}>
-                                    <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray={val === 0 ? "none" : "3 3"} />
-                                    <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{Math.round(val * 100)}</text>
-                                  </g>
-                                );
-                              })}
-
-                              {forecastData.map((val, idx) => {
-                                const x = 35 + (idx / Math.max(1, forecastData.length - 1)) * 450;
-                                return (
-                                  <g key={idx}>
-                                    <line x1={x} y1="15" x2={x} y2="200" stroke="#1B2030" strokeWidth="0.5" strokeDasharray="2 2" />
-                                    <text x={x} y="218" fill="#64748b" fontSize="7" textAnchor="middle" fontFamily="monospace">
-                                      D{idx + 1}
-                                    </text>
-                                  </g>
-                                );
-                              })}
-
-                              <path
-                                d={(() => {
-                                  let pathStr = "";
-                                  forecastData.forEach((val, idx) => {
-                                    const x = 35 + (idx / Math.max(1, forecastData.length - 1)) * 450;
-                                    const y = 15 + (1.0 - Math.min(1, Math.max(0, val))) * 185;
-                                    pathStr += (idx === 0 ? "M" : "L") + ` ${x} ${y}`;
-                                  });
-                                  return pathStr;
-                                })()}
-                                fill="none"
-                                stroke="#a78bfa"
-                                strokeWidth="2"
-                                strokeDasharray="4 3"
-                                className="drop-shadow-[0_0_4px_rgba(167,139,250,0.4)]"
-                              />
-
-                              {forecastData.map((val, idx) => {
-                                const x = 35 + (idx / Math.max(1, forecastData.length - 1)) * 450;
-                                const y = 15 + (1.0 - Math.min(1, Math.max(0, val))) * 185;
-                                const riskPct = Math.round(Math.min(1, Math.max(0, val)) * 100);
-                                let dotColor = "#10B981";
-                                if (riskPct >= 70) dotColor = "#EF4444";
-                                else if (riskPct >= 40) dotColor = "#F59E0B";
-                                return (
-                                  <circle
-                                    key={idx}
-                                    cx={x}
-                                    cy={y}
-                                    r="3.5"
-                                    fill={dotColor}
-                                    stroke="#0b0d13"
-                                    strokeWidth="1"
-                                    opacity="0.85"
-                                    className="hover:r-5 transition-all cursor-pointer"
-                                  />
-                                );
-                              })}
-
-                              <line x1="35" y1="200" x2="485" y2="200" stroke="#1B2030" strokeWidth="1" />
-                            </svg>
-                          </div>
-
-                          <p className="text-[10px] text-gray-500 leading-relaxed mt-4">
-                            Each point is one predicted day (Day 1 to Day {forecastData.length}). The TFT model predicts all {forecastData.length} days in a single forward pass using anomaly risk scores as the target variable. Dashed purple line shows the projected clinical risk trajectory.
-                          </p>
-                        </div>
-
-                        <div className="glass-panel rounded-xl p-5">
-                          <span className="text-xs font-bold text-gray-300 mb-3 block">Day-by-day breakdown</span>
-                          <div className="grid grid-cols-7 gap-1.5">
-                            {forecastData.map((val, idx) => {
-                              const riskPct = Math.round(Math.min(1, Math.max(0, val)) * 100);
-                              let bgColor = 'bg-emerald-500/10 border-emerald-500/20';
-                              let textColor = 'text-emerald-400';
-                              let label = 'Low';
-                              if (riskPct >= 70) { bgColor = 'bg-rose-500/10 border-rose-500/20'; textColor = 'text-rose-400'; label = 'High'; }
-                              else if (riskPct >= 40) { bgColor = 'bg-amber-500/10 border-amber-500/20'; textColor = 'text-amber-400'; label = 'Mod'; }
-                              return (
-                                <div key={idx} className={`p-1.5 rounded-lg border text-center ${bgColor}`}>
-                                  <div className="text-[8px] text-gray-500 mb-0.5">D{idx + 1}</div>
-                                  <div className={`text-xs font-bold ${textColor}`}>{riskPct}%</div>
-                                  <div className="text-[7px] text-gray-600">{label}</div>
-                                </div>
-                              );
-                            })}
-                          </div>
-
-                          <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                            {(() => {
-                              const first = Math.round(Math.min(1, Math.max(0, forecastData[0])) * 100);
-                              const last = Math.round(Math.min(1, Math.max(0, forecastData[forecastData.length - 1])) * 100);
-                              const max = Math.round(Math.min(1, Math.max(0, Math.max(...forecastData))) * 100);
-                              const min = Math.round(Math.min(1, Math.max(0, Math.min(...forecastData))) * 100);
-                              const avg = Math.round(forecastData.reduce((a, b) => a + b, 0) / forecastData.length * 100);
-                              const trend = last > first + 5 ? 'rising' : last < first - 5 ? 'declining' : 'stable';
-                              const trendColor = trend === 'rising' ? 'text-rose-400' : trend === 'declining' ? 'text-emerald-400' : 'text-gray-400';
-
-                              return (
-                                <div className="space-y-2">
-                                  <div className="grid grid-cols-4 gap-2 text-center">
-                                    <div><div className="text-[9px] text-gray-500">Start</div><div className="text-sm font-bold text-gray-300">{first}%</div></div>
-                                    <div><div className="text-[9px] text-gray-500">End</div><div className={`text-sm font-bold ${trendColor}`}>{last}%</div></div>
-                                    <div><div className="text-[9px] text-gray-500">Peak</div><div className="text-sm font-bold text-rose-400">{max}%</div></div>
-                                    <div><div className="text-[9px] text-gray-500">Avg</div><div className="text-sm font-bold text-gray-300">{avg}%</div></div>
-                                  </div>
-                                  <p className="text-[10px] text-gray-400 leading-relaxed">
-                                    <span className="font-bold text-gray-300">Interpretation:</span> Risk is <span className={`font-semibold ${trendColor}`}>{trend}</span> over the next {forecastData.length} days — from {first}% on Day 1 to {last}% on Day {forecastData.length}, with peak at {max}%.
-                                  </p>
-                                  <p className="text-[9px] text-gray-500 leading-relaxed mt-1">
-                                    Based on anomaly risk scores from Mahalanobis, Copula, Isolation Forest, and KNN detectors. TFT learned temporal patterns from your clinical feature vectors.
-                                  </p>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        </div>
-
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 </div>
 
                 {/* 2. YOUR PERSONAL BASELINE SECTION */}
@@ -4004,6 +3864,238 @@ export default function App() {
                   </div>
                 </div>
 
+              </div>
+            );
+          })()}
+
+          {/* TAB: FORECAST ENGINE */}
+          {activeTab === 'forecast' && (() => {
+            const pipeline = diagnosticData.pipelineTimestamps ? diagnosticData : null;
+            const forecastData: number[] = pipeline?.pipelineForecast14Day || [];
+            const detData = pipeline?.pipelineDetectorForecasts;
+
+            const handleForecastDetectors = async () => {
+              setIsForecastingDetectors(true);
+              setDetectorForecastError(null);
+              try {
+                const res = await fetch('/api/forecast-detectors', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ user_id: userId }),
+                  signal: AbortSignal.timeout(60000),
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                setDetectorForecastData(data.detector_forecasts || null);
+              } catch (e: any) {
+                setDetectorForecastError(e.message || 'Forecast failed');
+              } finally {
+                setIsForecastingDetectors(false);
+              }
+            };
+
+            const renderForecastChart = (
+              lines: { data: (number | null)[]; color: string; label: string; dashed?: boolean }[],
+              title: string,
+              subtitle: string,
+            ) => (
+              <div className="glass-panel rounded-xl p-5">
+                <span className="text-xs font-bold text-gray-300 mb-1 block">{title}</span>
+                <p className="text-[10px] text-gray-500 mb-3">{subtitle}</p>
+                <div className="relative h-56 w-full">
+                  <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible">
+                    <rect x="35" y={15 + (1.0 - 1.0) * 185} width="450" height={(1.0 - 0.7) * 185} fill="#EF4444" opacity="0.05" rx="2" />
+                    <rect x="35" y={15 + (1.0 - 0.7) * 185} width="450" height={(0.7 - 0.4) * 185} fill="#F59E0B" opacity="0.05" rx="2" />
+                    <rect x="35" y={15 + (1.0 - 0.4) * 185} width="450" height={(0.4 - 0.0) * 185} fill="#10B981" opacity="0.05" rx="2" />
+                    <text x="487" y={15 + (1.0 - 0.85) * 185 + 3} fill="#EF4444" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">High</text>
+                    <text x="487" y={15 + (1.0 - 0.55) * 185 + 3} fill="#F59E0B" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Moderate</text>
+                    <text x="487" y={15 + (1.0 - 0.2) * 185 + 3} fill="#10B981" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Low</text>
+                    {[0, 0.2, 0.4, 0.6, 0.8, 1.0].map((val, idx) => {
+                      const y = 15 + (1.0 - val) * 185;
+                      return (
+                        <g key={idx}>
+                          <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray={val === 0 ? "none" : "3 3"} />
+                          <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{Math.round(val * 100)}</text>
+                        </g>
+                      );
+                    })}
+                    {lines[0]?.data.filter(v => v !== null).length > 0 && lines[0].data.map((_, idx) => {
+                      const x = 35 + (idx / Math.max(1, lines[0].data.length - 1)) * 450;
+                      return (
+                        <g key={idx}>
+                          <line x1={x} y1="15" x2={x} y2="200" stroke="#1B2030" strokeWidth="0.5" strokeDasharray="2 2" />
+                          <text x={x} y="218" fill="#64748b" fontSize="7" textAnchor="middle" fontFamily="monospace">D{idx + 1}</text>
+                        </g>
+                      );
+                    })}
+                    {lines.map((line, li) => {
+                      const valid = line.data.filter((v): v is number => v !== null && v !== undefined);
+                      if (valid.length < 2) return null;
+                      let pathStr = '';
+                      line.data.forEach((val, idx) => {
+                        if (val === null || val === undefined) return;
+                        const x = 35 + (idx / Math.max(1, line.data.length - 1)) * 450;
+                        const y = 15 + (1.0 - Math.min(1, Math.max(0, val))) * 185;
+                        pathStr += (pathStr === '' ? 'M' : 'L') + ` ${x} ${y}`;
+                      });
+                      return (
+                        <path key={li} d={pathStr} fill="none" stroke={line.color}
+                          strokeWidth={line.dashed ? '1.5' : '2'}
+                          strokeDasharray={line.dashed ? '4 3' : undefined}
+                          opacity={0.8}
+                          className={line.dashed ? '' : 'drop-shadow-[0_0_4px_rgba(167,139,250,0.4)]'}
+                        />
+                      );
+                    })}
+                    <line x1="35" y1="200" x2="485" y2="200" stroke="#1B2030" strokeWidth="1" />
+                  </svg>
+                </div>
+                <div className="flex items-center gap-4 mt-2 flex-wrap">
+                  {lines.map((line, li) => (
+                    <div key={li} className="flex items-center gap-1.5">
+                      <span className="inline-block w-4 h-0.5 rounded-sm" style={{ backgroundColor: line.color, borderTop: line.dashed ? `1px dashed ${line.color}` : 'none' }} />
+                      <span className="text-[9px] text-gray-500">{line.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+
+            const allLines: { data: (number | null)[]; color: string; label: string; dashed?: boolean }[] = [];
+            if (forecastData.length > 0) {
+              allLines.push({ data: forecastData, color: '#a78bfa', label: 'TFT Overall Risk' });
+            }
+            if (detData) {
+              const detConfig: Record<string, { color: string; label: string }> = {
+                mahalanobis: { color: '#60a5fa', label: 'Mahalanobis' },
+                copula: { color: '#f87171', label: 'Copula' },
+                isolation_forest: { color: '#34d399', label: 'Isolation Forest' },
+                knn: { color: '#fbbf24', label: 'KNN' },
+              };
+              for (const [k, cfg] of Object.entries(detConfig)) {
+                const vals = detData[k as keyof typeof detData];
+                if (vals && vals.length > 0) allLines.push({ data: vals, color: cfg.color, label: cfg.label, dashed: true });
+              }
+            }
+
+            return (
+              <div className="space-y-8 animate-in fade-in duration-300 px-4 sm:px-8 py-8" id="forecast-container">
+
+                {/* TFT OVERALL RISK */}
+                {forecastData.length > 0 ? (
+                  renderForecastChart(
+                    [{ data: forecastData, color: '#a78bfa', label: 'TFT Overall Risk' }],
+                    'TFT Overall Risk Forecast',
+                    `Neural network predicts composite risk score for the next ${forecastData.length} days`,
+                  )
+                ) : (
+                  <div className="glass-panel rounded-xl p-8 text-center">
+                    <Brain className="h-8 w-8 text-purple-400 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm text-gray-400">No TFT forecast available. Run an analysis first.</p>
+                  </div>
+                )}
+
+                {/* DETECTOR FORECASTS BUTTON + CHARTS */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-amber-400" />
+                        Per-Detector Forecast
+                      </h3>
+                      <p className="text-[10px] text-gray-500 mt-1 ml-6">Train 4 GradientBoosting models on each detector's history and predict next 7 days</p>
+                    </div>
+                    <button
+                      onClick={handleForecastDetectors}
+                      disabled={isForecastingDetectors || !pipeline}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        isForecastingDetectors
+                          ? 'bg-purple-950/40 border border-purple-500/30 text-purple-400'
+                          : 'bg-purple-600/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600/40 hover:text-white'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {isForecastingDetectors ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Training Models...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-3.5 w-3.5" />
+                          Forecast Detectors 7 Days
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {detectorForecastError && (
+                    <div className="px-4 py-2 rounded-lg bg-red-950/20 border border-red-500/20 text-red-400 text-xs">
+                      {detectorForecastError}
+                    </div>
+                  )}
+
+                  {detectorForecastData ? (
+                    <>
+                      {/* Individual detector chart */}
+                      {renderForecastChart(
+                        [
+                          { data: detectorForecastData.mahalanobis || [], color: '#60a5fa', label: 'Mahalanobis', dashed: true },
+                          { data: detectorForecastData.copula || [], color: '#f87171', label: 'Copula', dashed: true },
+                          { data: detectorForecastData.isolation_forest || [], color: '#34d399', label: 'Isolation Forest', dashed: true },
+                          { data: detectorForecastData.knn || [], color: '#fbbf24', label: 'KNN', dashed: true },
+                        ],
+                        'Individual Detector Forecasts',
+                        'Each detector trained on its own historical score series (GradientBoosting, window=30)',
+                      )}
+
+                      {/* Combined view */}
+                      {allLines.length > 1 && renderForecastChart(
+                        allLines,
+                        'Combined Forecast View',
+                        'TFT overall risk (solid purple) overlaid with per-detector forecasts (dashed)',
+                      )}
+
+                      {/* Day-by-day breakdown */}
+                      {forecastData.length > 0 && detectorForecastData && (
+                        <div className="glass-panel rounded-xl p-5">
+                          <span className="text-xs font-bold text-gray-300 mb-3 block">Day-by-day breakdown</span>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="text-gray-500 border-b border-gray-800/60">
+                                  <th className="text-left py-1.5 pr-3 font-mono">Day</th>
+                                  <th className="text-right py-1.5 px-2 font-bold text-purple-400">TFT</th>
+                                  <th className="text-right py-1.5 px-2 font-bold text-blue-400">Mahal.</th>
+                                  <th className="text-right py-1.5 px-2 font-bold text-rose-400">Copula</th>
+                                  <th className="text-right py-1.5 px-2 font-bold text-emerald-400">IF</th>
+                                  <th className="text-right py-1.5 px-2 font-bold text-amber-400">KNN</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {forecastData.map((tftVal, idx) => (
+                                  <tr key={idx} className="border-b border-gray-800/30 hover:bg-white/[0.02]">
+                                    <td className="py-1.5 pr-3 font-mono text-gray-400">D{idx + 1}</td>
+                                    <td className="text-right py-1.5 px-2 text-purple-300 font-bold">{Math.round(tftVal * 100)}%</td>
+                                    <td className="text-right py-1.5 px-2 text-blue-300">{detectorForecastData.mahalanobis?.[idx] != null ? `${Math.round(detectorForecastData.mahalanobis[idx] * 100)}%` : '—'}</td>
+                                    <td className="text-right py-1.5 px-2 text-rose-300">{detectorForecastData.copula?.[idx] != null ? `${Math.round(detectorForecastData.copula[idx] * 100)}%` : '—'}</td>
+                                    <td className="text-right py-1.5 px-2 text-emerald-300">{detectorForecastData.isolation_forest?.[idx] != null ? `${Math.round(detectorForecastData.isolation_forest[idx] * 100)}%` : '—'}</td>
+                                    <td className="text-right py-1.5 px-2 text-amber-300">{detectorForecastData.knn?.[idx] != null ? `${Math.round(detectorForecastData.knn[idx] * 100)}%` : '—'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : !isForecastingDetectors && (
+                    <div className="glass-panel rounded-xl p-8 text-center">
+                      <Zap className="h-8 w-8 text-amber-400 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm text-gray-500">Click the button above to train per-detector forecast models</p>
+                      <p className="text-[10px] text-gray-600 mt-1">Each model trains in {'<'}200ms. Total {'<'}1 second for all 4.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })()}
