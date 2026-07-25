@@ -216,8 +216,14 @@ def _write_activity_row(row_data: dict):
     )
 
     if _ACTIVITY_XLSX.exists():
-        wb = load_workbook(str(_ACTIVITY_XLSX))
-        ws = wb.active
+        try:
+            wb = load_workbook(str(_ACTIVITY_XLSX))
+            ws = wb.active
+        except Exception:
+            _ACTIVITY_XLSX.unlink(missing_ok=True)
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "User Activity"
     else:
         wb = Workbook()
         ws = wb.active
@@ -1249,57 +1255,20 @@ def forecast_detectors():
         body = request.get_json(force=True, silent=True) or {}
         user_id = (body.get("user_id") or body.get("fullName", "user_demo")).strip() or "user_demo"
 
-        pl = get_pipeline()
-        user_scores = pl.anomaly_scores.get(user_id, [])
+        from pipeline_runner import _shared_pipeline
+        if _shared_pipeline is None:
+            return jsonify({"detector_forecasts": {}, "error": "No pipeline data. Run a diagnosis first."}), 400
+
+        user_scores = _shared_pipeline.anomaly_scores.get(user_id, [])
 
         if len(user_scores) >= 37:
-            forecasts = pl._generate_detector_forecasts(user_id, forecast_days=7)
+            forecasts = _shared_pipeline._generate_detector_forecasts(user_id, forecast_days=7)
             return jsonify({"detector_forecasts": forecasts})
 
-        text = ""
-        try:
-            from daily_portal import db as daily_db
-            daily_entries = daily_db.get_recent_entries(user_id, limit=500)
-            daily_texts = [
-                e.get("text_raw", "")
-                for e in daily_entries
-                if e.get("text_raw", "").strip()
-            ]
-            if daily_texts:
-                text = "\n".join(daily_texts)
-        except Exception as _de:
-            print(f"[forecast-detectors] Could not load daily entries: {_de}")
-
-        if not text.strip():
-            import csv as _csv
-            csv_path = os.path.join(os.path.dirname(__file__), "data", "combination_dataset_200.csv")
-            if os.path.exists(csv_path):
-                with open(csv_path, "r", encoding="utf-8") as f:
-                    reader = _csv.DictReader(f)
-                    rows = list(reader)
-                text = "\n".join(r.get("text", "") for r in rows if r.get("text", "").strip())
-
-        if not text.strip():
-            return jsonify({"detector_forecasts": {}, "error": "No user data found."}), 400
-
-        from pipeline_runner import run_pipeline
-        import tempfile
-
-        fd, tmp_path = tempfile.mkstemp(suffix=".txt")
-        os.close(fd)
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            f.write(text)
-        try:
-            result = run_pipeline(user_id, file_path=tmp_path)
-        finally:
-            for _delay in [0, 0.5, 1.0]:
-                try:
-                    os.unlink(tmp_path); break
-                except PermissionError:
-                    if _delay == 1.0: pass
-                    else: time.sleep(_delay)
-
-        return jsonify({"detector_forecasts": result.get("detector_forecasts", {})})
+        return jsonify({
+            "detector_forecasts": {},
+            "error": f"Insufficient data ({len(user_scores)}/37 entries). Run a diagnosis first to train the detector models."
+        }), 400
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500

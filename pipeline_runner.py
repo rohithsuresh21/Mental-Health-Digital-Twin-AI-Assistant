@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Optional
 from collections import Counter
 
+_shared_pipeline = None
+
 
 W = 64
 
@@ -384,15 +386,10 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         _warn(f"Per-detector forecast generation failed: {e}")
 
     try:
-        import sys
-        if 'app' in sys.modules:
-            singleton = sys.modules['app'].get_pipeline()
-            singleton.anomaly_scores[user_id] = pipeline.anomaly_scores.get(user_id, [])
-            singleton.normalized_vectors[user_id] = pipeline.normalized_vectors.get(user_id, [])
-            if pipeline.anomaly_detector:
-                singleton.anomaly_detector = pipeline.anomaly_detector
+        global _shared_pipeline
+        _shared_pipeline = pipeline
     except Exception as e:
-        _warn(f"Could not update singleton pipeline: {e}")
+        _warn(f"Could not store pipeline: {e}")
 
     return {
         "user_id":             user_id,
