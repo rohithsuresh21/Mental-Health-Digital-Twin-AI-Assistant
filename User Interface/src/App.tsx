@@ -3193,9 +3193,9 @@ export default function App() {
                       <div>
                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
                           <Brain className="h-4.5 w-4.5 text-purple-400" />
-                          14-Day Risk Forecast
+                          7-Day Risk Forecast
                         </h3>
-                        <p className="text-[10px] text-gray-500 mt-1 ml-7">TFT multi-step risk prediction (14 days ahead)</p>
+                        <p className="text-[10px] text-gray-500 mt-1 ml-7">TFT multi-step risk prediction (7 days ahead)</p>
                       </div>
                       <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
                         {collapsedSections.tftForecast ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
@@ -3309,7 +3309,7 @@ export default function App() {
                           </div>
 
                           <p className="text-[10px] text-gray-500 leading-relaxed mt-4">
-                            Each point is one predicted day (Day 1 to Day 14). The TFT model predicts all 14 days in a single forward pass using anomaly risk scores as the target variable. Dashed purple line shows the projected clinical risk trajectory.
+                            Each point is one predicted day (Day 1 to Day {forecastData.length}). The TFT model predicts all {forecastData.length} days in a single forward pass using anomaly risk scores as the target variable. Dashed purple line shows the projected clinical risk trajectory.
                           </p>
                         </div>
 
@@ -3352,7 +3352,7 @@ export default function App() {
                                     <div><div className="text-[9px] text-gray-500">Avg</div><div className="text-sm font-bold text-gray-300">{avg}%</div></div>
                                   </div>
                                   <p className="text-[10px] text-gray-400 leading-relaxed">
-                                    <span className="font-bold text-gray-300">Interpretation:</span> Risk is <span className={`font-semibold ${trendColor}`}>{trend}</span> over the next 14 days — from {first}% on Day 1 to {last}% on Day 14, with peak at {max}%.
+                                    <span className="font-bold text-gray-300">Interpretation:</span> Risk is <span className={`font-semibold ${trendColor}`}>{trend}</span> over the next {forecastData.length} days — from {first}% on Day 1 to {last}% on Day {forecastData.length}, with peak at {max}%.
                                   </p>
                                   <p className="text-[9px] text-gray-500 leading-relaxed mt-1">
                                     Based on anomaly risk scores from Mahalanobis, Copula, Isolation Forest, and KNN detectors. TFT learned temporal patterns from your clinical feature vectors.
@@ -3924,7 +3924,7 @@ export default function App() {
                       </p>
                       {(() => {
                         // Derive raw/calibrated values from pipeline
-                        const rawPct = pipeline ? diagnosticData.modelConfidence : null;
+                        const rawPct = pipeline ? (diagnosticData.modelConfidenceRaw ?? diagnosticData.modelConfidence) : null;
                         const calPct = pipeline ? (diagnosticData.modelConfidence ?? 50) : null;
                         const shift = rawPct && calPct ? (calPct - rawPct) : 0;
                         const shiftStr = shift >= 0 ? `+${shift.toFixed(1)}%` : `${shift.toFixed(1)}%`;

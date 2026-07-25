@@ -268,23 +268,9 @@ class UnifiedJournalPipeline:
         n_entries: int = 100
     ) -> Dict[str, Any]:
         if self.tft_model is not None:
-            print("[Stage 3] TFT model already loaded — skipping retraining.")
+            print("[Stage 3] TFT model already loaded -- skipping retraining.")
             if self.tft_forecast is None and self.normalized_vectors:
-                try:
-                    from stage_3.tft_model import generate_14day_forecast, build_dataset, build_dataframe
-                    patched_data, patched_risks = self._create_patched_data(num_patches)
-                    df = build_dataframe(patched_data, patched_risks)
-                    full_dataset = build_dataset(df, 466, num_patches=num_patches)
-                    forecast = generate_14day_forecast(
-                        self.tft_model["model"],
-                        full_dataset,
-                        forecast_days=14
-                    )
-                    self.tft_forecast = forecast
-                    print(f"  14-day forecast generated: {[round(f, 3) for f in forecast]}")
-                except Exception as e:
-                    print(f"  Warning: forecast generation failed: {e}")
-                    self.tft_forecast = None
+                self.tft_forecast = self._generate_tft_forecast(num_patches)
             return self.tft_model
         try:
             if not self.normalized_vectors or len(self.normalized_vectors) < 1:
@@ -323,21 +309,9 @@ class UnifiedJournalPipeline:
             print(f"  Latent shape: {list(self.tft_model['latents'].shape)}")
             print(f"  Attention shape: {list(self.tft_model['attention'].shape)}")
 
-            try:
-                from stage_3.tft_model import generate_14day_forecast, build_dataset, build_dataframe
-                patched_data, patched_risks = self._create_patched_data(num_patches)
-                df = build_dataframe(patched_data, patched_risks)
-                full_dataset = build_dataset(df, 466, num_patches=num_patches)
-                forecast = generate_14day_forecast(
-                    self.tft_model["model"],
-                    full_dataset,
-                    forecast_days=14
-                )
-                self.tft_forecast = forecast
-                print(f"  14-day forecast generated: {[round(f, 3) for f in forecast]}")
-            except Exception as forecast_err:
-                print(f"  Warning: forecast generation failed: {forecast_err}")
-                self.tft_forecast = None
+            self.tft_forecast = self._generate_tft_forecast(num_patches)
+            
+            return self.tft_model
             
             return self.tft_model
             
@@ -352,6 +326,25 @@ class UnifiedJournalPipeline:
             else:
                 print(f"Stage 3 error: {error_msg}")
             raise
+    
+    def _generate_tft_forecast(self, num_patches: int = 30) -> list:
+        """Generate 7-day TFT forecast from the trained model."""
+        try:
+            from stage_3.tft_model import generate_forecast, build_dataset, build_dataframe
+            patched_data, patched_risks = self._create_patched_data(num_patches)
+            df = build_dataframe(patched_data, patched_risks)
+            full_dataset = build_dataset(df, 466, num_patches=num_patches)
+            forecast = generate_forecast(
+                self.tft_model["model"],
+                full_dataset,
+                forecast_days=7
+            )
+            print(f"  7-day TFT forecast: {[round(f, 3) for f in forecast]}")
+            print(f"  Forecast range: {min(forecast):.4f} to {max(forecast):.4f}, std: {np.std(forecast):.4f}")
+            return forecast
+        except Exception as e:
+            print(f"  TFT forecast generation failed: {e}")
+            return [0.5] * 7
     
     def _create_patched_data(self, num_patches: int = 30) -> Dict[str, Any]:
         patched = {}

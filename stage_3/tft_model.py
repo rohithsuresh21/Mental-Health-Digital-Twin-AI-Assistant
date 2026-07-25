@@ -24,10 +24,21 @@ def build_dataframe(patched_data: dict, patched_risks: dict = None) -> pd.DataFr
             for patch_idx in range(windows.shape[1]):
                 feature_vec = windows[window_idx, patch_idx].numpy()
                 if risk_windows is not None and window_idx < risk_windows.shape[0]:
-                    target_val = float(risk_windows[window_idx, patch_idx])
+                    risk_val = float(risk_windows[window_idx, patch_idx])
                 else:
-                    text_features = feature_vec[:300]
-                    target_val = float(np.mean(np.abs(text_features)))
+                    risk_val = 0.5
+
+                sentiment = float(feature_vec[415]) if len(feature_vec) > 415 else 0.0
+                sleep_hours = float(feature_vec[436]) if len(feature_vec) > 436 else 0.0
+                sleep_quality = float(feature_vec[437]) if len(feature_vec) > 437 else 0.0
+                activity = float(feature_vec[439]) if len(feature_vec) > 439 else 0.0
+
+                sentiment_score = (sentiment + 1.0) / 2.0
+                health_score = np.clip((sleep_hours / 10.0 * 0.3 + sleep_quality * 0.4 + activity * 0.3), 0.0, 1.0)
+
+                target_val = risk_val * 0.5 + sentiment_score * 0.25 + health_score * 0.25
+                target_val = float(np.clip(target_val, 0.01, 0.99))
+
                 row = {
                     "user_id":   str(user_id),
                     "window_id": f"{user_id}_{window_idx}",
@@ -42,10 +53,10 @@ def build_dataframe(patched_data: dict, patched_risks: dict = None) -> pd.DataFr
 
 def build_dataset(df: pd.DataFrame, feature_dim: int, num_patches: int = 30) -> TimeSeriesDataSet:
     from pytorch_forecasting.data.encoders import NaNLabelEncoder
-    from pytorch_forecasting.data import EncoderNormalizer
+    from pytorch_forecasting.data import GroupNormalizer
 
     feature_cols = [f"feature_{i}" for i in range(feature_dim)]
-    max_prediction_length = 14
+    max_prediction_length = 7
     max_encoder_length    = num_patches - max_prediction_length
 
     return TimeSeriesDataSet(
@@ -58,8 +69,9 @@ def build_dataset(df: pd.DataFrame, feature_dim: int, num_patches: int = 30) -> 
         min_prediction_length=max_prediction_length,
         max_prediction_length=max_prediction_length,
         time_varying_unknown_reals=feature_cols + ["target"],
-        target_normalizer=EncoderNormalizer(
-            center=True,
+        target_normalizer=GroupNormalizer(
+            groups=["window_id"],
+            center=False,
             method="standard",
             transformation=None,
         ),
@@ -175,10 +187,10 @@ def project_umap(latents: torch.Tensor, n_components: int = 2, random_state: int
     return reducer.fit_transform(data)
 
 
-def generate_14day_forecast(
+def generate_forecast(
     tft: TemporalFusionTransformer,
     dataset: TimeSeriesDataSet,
-    forecast_days: int = 14,
+    forecast_days: int = 7,
 ) -> list:
     tft = tft.cpu()
     tft.eval()
@@ -278,7 +290,7 @@ def run_stage3(
             tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path)
             tft = tft.cpu()
 
-            expected_encoder_len = num_patches - 14
+            expected_encoder_len = num_patches - 7
             actual_encoder_len = tft.hparams.encoder_max_length if hasattr(tft.hparams, 'encoder_max_length') else None
             if actual_encoder_len and actual_encoder_len != expected_encoder_len:
                 raise ValueError(

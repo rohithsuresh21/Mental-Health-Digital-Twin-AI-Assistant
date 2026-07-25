@@ -103,23 +103,23 @@ function mapPipelineToDiagnostic(
     const last = detectorScores[detectorScores.length - 1];
     const entries = Object.entries(last).sort((a, b) => b[1] - a[1]);
     const labels: Record<string, string> = {
-      mahalanobis: 'Syntactic Complexity',
-      copula: 'Affective Valence',
-      isolation_forest: 'Motor Velocity',
-      knn: 'Social Engagement',
+      mahalanobis: 'Mahalanobis Distance',
+      copula: 'Gaussian Copula',
+      isolation_forest: 'Isolation Forest',
+      knn: 'KNN Distance',
     };
     entries.slice(0, 3).forEach(([key, val], i) => {
       top3.push({
         indexTarget: labels[key] || key,
         correlationScore: Math.round(val * 100) / 100,
-        confidence: Math.round((0.7 + Math.random() * 0.25) * 100) / 100,
+        confidence: Math.round(Math.min(0.99, val * 0.9 + 0.1) * 100) / 100,
         status: i === 0 && val > 0.7 ? 'CRITICAL_THRESHOLD' : undefined,
       });
     });
   }
   while (top3.length < 3) {
     top3.push({
-      indexTarget: ['Syntactic Complexity', 'Affective Valence', 'Motor Velocity'][top3.length],
+      indexTarget: ['Mahalanobis Distance', 'Gaussian Copula', 'Isolation Forest'][top3.length],
       correlationScore: Math.round((0.3 + Math.random() * 0.4) * 100) / 100,
       confidence: Math.round((0.75 + Math.random() * 0.2) * 100) / 100,
     });
@@ -182,6 +182,7 @@ export function mapFlaskRunResponse(pipelineResult: any, input: Partial<Ingestio
   const latestScore = anomalyScores.length > 0 ? anomalyScores[anomalyScores.length - 1] : 0.5;
   const anomalyScore = Math.round(Math.min(99, Math.max(1, latestScore * 100)));
   const prob = pred.probability ?? 0.5;
+  const probRaw = pred.probability_raw ?? prob;
   const riskScore = Math.round(Math.min(99, Math.max(1, prob * 100)));
   const nEntries = pipelineResult.n_entries || 0;
   const sleepDur = Number(input.sleepDuration) || 7.0;
@@ -200,9 +201,9 @@ export function mapFlaskRunResponse(pipelineResult: any, input: Partial<Ingestio
   const temporalPoints = Array.from({ length: 24 }, (_, i) => {
     const hour = i + 1;
     const baseVal = 50 + 10 * Math.sin((hour - 8) * Math.PI / 6);
-    const variance = (anomalyScore - 50) * 0.4;
-    const currentVal = Math.min(98, Math.max(20,
-      baseVal + variance * Math.sin((hour - 4) * Math.PI / 4) + (Math.random() * 6 - 3)));
+    const scoreIdx = Math.floor(i / 24 * anomalyScores.length);
+    const currentScore = anomalyScores.length > 0 ? anomalyScores[Math.min(scoreIdx, anomalyScores.length - 1)] : 0.5;
+    const currentVal = Math.min(98, Math.max(20, baseVal + (currentScore - 0.5) * 60));
     return { hour, current: Math.round(currentVal), baseline: Math.round(baseVal) };
   });
 
@@ -214,8 +215,8 @@ export function mapFlaskRunResponse(pipelineResult: any, input: Partial<Ingestio
     const last = detectorScores[detectorScores.length - 1];
     const entries = Object.entries(last).sort((a, b) => b[1] - a[1]);
     const labels: Record<string, string> = {
-      mahalanobis: 'Syntactic Complexity', copula: 'Affective Valence',
-      isolation_forest: 'Motor Velocity', knn: 'Social Engagement',
+      mahalanobis: 'Mahalanobis Distance', copula: 'Gaussian Copula',
+      isolation_forest: 'Isolation Forest', knn: 'KNN Distance',
     };
     entries.slice(0, 3).forEach(([key, val], i) => {
       top3.push({
@@ -260,19 +261,20 @@ export function mapFlaskRunResponse(pipelineResult: any, input: Partial<Ingestio
     linguisticShift: lingShift,
     behavioralProsody: prosody,
     routineDisruption: sleepRoutineDisrupt,
-    linguisticShiftSparkline: Array.from({ length: 10 }, () => Math.round(10 + lingShift * 50 + Math.random() * 15)),
-    behavioralProsodySparkline: Array.from({ length: 10 }, () => Math.round(15 + prosody * 40 + Math.random() * 15)),
-    routineDisruptionSparkline: Array.from({ length: 10 }, () => Math.round(5 + Math.abs(sleepRoutineDisrupt) * 0.8 + Math.random() * 20)),
+    linguisticShiftSparkline: Array.from({ length: 10 }, (_, i) => Math.round(10 + lingShift * 50 + Math.sin(i) * 5)),
+    behavioralProsodySparkline: Array.from({ length: 10 }, (_, i) => Math.round(15 + prosody * 40 + Math.cos(i) * 5)),
+    routineDisruptionSparkline: Array.from({ length: 10 }, (_, i) => Math.round(5 + Math.abs(sleepRoutineDisrupt) * 0.8 + Math.sin(i * 0.7) * 10)),
     top3FeatureIndices: top3,
     lifestyleVsDiagnosticCorrelation: [
-      { target: 'Mobility', correlation: Math.round(Math.min(1, (0.3 + physAct * 0.12 + Math.random() * 0.1)) * 100) / 100 },
-      { target: 'Dietary Consistency', correlation: Math.round(Math.min(1, (0.4 + sleepQual * 0.08 + Math.random() * 0.1)) * 100) / 100 },
-      { target: 'Sleep Hygiene', correlation: Math.round(Math.min(1, (0.2 + sleepDur * 0.08 + sleepQual * 0.06 + Math.random() * 0.05)) * 100) / 100 },
-      { target: 'Social Output', correlation: Math.round(Math.min(1, (0.5 + (textLen > 50 ? 0.15 : 0) + Math.random() * 0.1)) * 100) / 100 },
-      { target: 'Hydration', correlation: Math.round(Math.min(1, (0.3 + physAct * 0.08 + Math.random() * 0.1)) * 100) / 100 },
+      { target: 'Mobility', correlation: Math.round(Math.min(1, (0.3 + physAct * 0.12)) * 100) / 100 },
+      { target: 'Dietary Consistency', correlation: Math.round(Math.min(1, (0.4 + sleepQual * 0.08)) * 100) / 100 },
+      { target: 'Sleep Hygiene', correlation: Math.round(Math.min(1, (0.2 + sleepDur * 0.08 + sleepQual * 0.06)) * 100) / 100 },
+      { target: 'Social Output', correlation: Math.round(Math.min(1, (0.5 + (textLen > 50 ? 0.15 : 0))) * 100) / 100 },
+      { target: 'Hydration', correlation: Math.round(Math.min(1, (0.3 + physAct * 0.08)) * 100) / 100 },
     ],
     modelConfidence: Math.round(Math.min(99, Math.max(1, prob * 100)) * 10) / 10,
-    inferenceLatency: Math.round(100 + Math.random() * 200),
+    modelConfidenceRaw: Math.round(Math.min(99, Math.max(1, probRaw * 100)) * 10) / 10,
+    inferenceLatency: pipelineResult.inference_latency ?? 0,
     transparencyScore: Math.round((0.8 + Math.random() * 0.15) * 100) / 100,
     dataIngestionRate: Math.round((0.8 + Math.random() * 1.5) * 10) / 10,
     insights,

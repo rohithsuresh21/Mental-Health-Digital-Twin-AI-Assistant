@@ -35,6 +35,7 @@ export interface DiagnosticData {
   top3FeatureIndices: FeatureIndex[];
   lifestyleVsDiagnosticCorrelation: CorrelationPoint[];
   modelConfidence: number;
+  modelConfidenceRaw?: number;
   inferenceLatency: number;
   transparencyScore: number;
   dataIngestionRate: number;
