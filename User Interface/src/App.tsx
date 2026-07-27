@@ -89,7 +89,7 @@ export default function App() {
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
-  type Tab = 'dashboard' | 'clinical' | 'analytics' | 'forecast' | 'explainable' | 'profile' | 'intake';
+  type Tab = 'dashboard' | 'clinical' | 'analytics' | 'explainable' | 'profile' | 'intake';
   const [activeTab, setActiveTabState] = useState<Tab>('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [modalContent, setModalContent] = useState<'docs' | 'privacy' | 'terms' | null>(null);
@@ -316,7 +316,8 @@ export default function App() {
     cusum: false,
     whatsDriving: false,
     techDetails: true,
-    tftForecast: true
+    tftForecast: true,
+    forecast: true
   });
 
   // Collapsed sections in Explainable AI
@@ -339,8 +340,6 @@ export default function App() {
   const [cusumViewport, setCusumViewport] = useState<[number, number]>([-1, -1]);
 
   // TFT Forecast viewport
-  const [forecastViewport, setForecastViewport] = useState<[number, number]>([-1, -1]);
-
   // Detector forecasts
   const [isForecastingDetectors, setIsForecastingDetectors] = useState(false);
   const [detectorForecastData, setDetectorForecastData] = useState<Record<string, number[]> | null>(null);
@@ -1142,7 +1141,7 @@ export default function App() {
           <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" filter={`url(#${filterId})`} />
           <path d={linePath} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           {pointsArr.map((p, i) => (
-            <circle key={i} cx={p.x} cy={p.y} r={i === lastIdx ? 3 : 1.5} fill={i === lastIdx ? color : `${color}80`} stroke="#0D1117" strokeWidth={i === lastIdx ? 1.5 : 0.5} />
+            n <= 60 && <circle key={i} cx={p.x} cy={p.y} r={i === lastIdx ? 3 : 1.5} fill={i === lastIdx ? color : `${color}80`} stroke="#0D1117" strokeWidth={i === lastIdx ? 1.5 : 0.5} />
           ))}
           <circle cx={lastP.x} cy={lastP.y} r="5" fill="none" stroke={color} strokeWidth="1.5" opacity="0.5">
             <animate attributeName="r" values="3;6;3" dur="2s" repeatCount="indefinite" />
@@ -1446,16 +1445,6 @@ export default function App() {
             </div>
           </div>
         );
-      case 'forecast':
-        return (
-          <div className="p-6 border-b border-[#1A202C]">
-            <div className="text-[10px] tracking-widest text-purple-400 font-bold uppercase mb-1">Predictions</div>
-            <div className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-              <Cloud className="h-5 w-5 text-purple-500 shadow-[0_0_8px_#a855f7]" />
-              FORECAST ENGINE
-            </div>
-          </div>
-        );
       case 'explainable':
         return (
           <div className="p-6 border-b border-[#1A202C]">
@@ -1587,20 +1576,6 @@ export default function App() {
                     <Activity className="h-4 w-4" />
                     Analysis {!patientData.status?.calibrated && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
                   </button>
-
-                  <button id="tab-patient-forecast"
-                    onClick={() => { 
-                      if (patientData.status?.calibrated) { setActiveTab('forecast'); setIsMenuOpen(false); }
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
-                      activeTab === 'forecast' 
-                        ? 'bg-gray-800 text-white border-l-2 border-purple-500' 
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
-                    }`}
-                  >
-                    <Cloud className="h-4 w-4" />
-                    Forecast {!patientData.status?.calibrated && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
-                  </button>
                 </>
               ) : (
                 <>
@@ -1653,21 +1628,6 @@ export default function App() {
                   >
                     <Activity className="h-4 w-4" />
                     Analytics {!hasRunAnalysis && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
-                  </button>
-
-                  <button id="tab-forecast"
-                    onClick={() => { 
-                      if (hasRunAnalysis) { setActiveTab('forecast'); setIsMenuOpen(false); }
-                      else { setActiveTab('clinical'); setIsMenuOpen(false); }
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
-                      activeTab === 'forecast' 
-                        ? 'bg-gray-800 text-white border-l-2 border-purple-500' 
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
-                    }`}
-                  >
-                    <Cloud className="h-4 w-4" />
-                    Forecast {!hasRunAnalysis && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
                   </button>
                 </>
               )}
@@ -2447,11 +2407,11 @@ export default function App() {
               const scale = 500 / rect.width;
               const svgMouseX = mouseXPx * scale;
               const relativeX = svgMouseX - 35;
-              const chartWidth = 500 - 35 - 20;
-              const percentage = relativeX / chartWidth;
-              const rawIndex = percentage * lastIdx;
-              const closestIndex = Math.min(lastIdx, Math.max(0, Math.round(rawIndex)));
-              setHoveredPointIndex(closestIndex);
+              const chartWidth = 450;
+              const percentage = Math.max(0, Math.min(1, relativeX / chartWidth));
+              const rawIndex = vpStart + percentage * vpCount;
+              const closestIndex = Math.round(rawIndex);
+              setHoveredPointIndex(Math.max(vpStart, Math.min(vpEnd, closestIndex)));
             };
 
             const handleChartMouseLeave = () => {
@@ -3482,12 +3442,23 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="relative h-60 w-full" onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
+                        <div className="relative h-60 w-full" onMouseMove={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const mouseXPx = e.clientX - rect.left;
+                          const scale = 500 / rect.width;
+                          const svgMouseX = mouseXPx * scale;
+                          const relativeX = svgMouseX - 35;
+                          const chartWidth = 450;
+                          const percentage = Math.max(0, Math.min(1, relativeX / chartWidth));
+                          const rawIndex = cVpStart + percentage * cVpCount;
+                          const closestIndex = Math.round(rawIndex);
+                          setHoveredPointIndex(Math.max(cVpStart, Math.min(cVpEnd, closestIndex)));
+                        }} onMouseLeave={handleChartMouseLeave}>
                           {(() => {
-                            // Compute dynamic Y range for CUSUM (viewport-aware + tab-aware)
+                            // Compute dynamic Y range for CUSUM (viewport-aware, always show full range)
                             const allVisibleVals = [
-                              ...(selectedCusumTab !== 1 ? upperCusumVals.slice(cVpStart, cVpEnd + 1) : []),
-                              ...(selectedCusumTab !== 0 ? lowerCusumVals.slice(cVpStart, cVpEnd + 1) : []),
+                              ...upperCusumVals.slice(cVpStart, cVpEnd + 1),
+                              ...lowerCusumVals.slice(cVpStart, cVpEnd + 1),
                               cusumThreshold
                             ].filter(v => v !== null && v !== undefined);
                             const maxVal = allVisibleVals.length > 0 ? Math.max(...allVisibleVals) : 1;
@@ -3658,19 +3629,17 @@ export default function App() {
                           return { badge: `STABLE · ${pct} / 100`, style: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' };
                         }
 
-                        function buildSparkline(key: string): number[] {
-                          if (!detScores || detScores.length === 0) return [];
+                        function buildSparkline(key: string): { values: number[]; dates: string[] } {
+                          if (!detScores || detScores.length === 0) return { values: [], dates: [] };
                           const raw = detScores.map(s => (s[key] ?? 0) * 100);
-                          if (raw.length <= 10) return raw;
-                          const step = (raw.length - 1) / 9;
-                          return Array.from({ length: 10 }, (_, i) => raw[Math.round(i * step)]);
+                          return { values: raw, dates: chartDates.slice(0, raw.length) };
                         }
 
                         const activeKey = detectorKeys[selectedDetector] || 'mahalanobis';
                         const info = detLabels[activeKey];
                         const latestVal = lastScores[activeKey] ?? 0;
                         const { badge, style } = scoreBadge(latestVal);
-                        const sparkline = buildSparkline(activeKey);
+                        const { values: sparkline, dates: sparkDates } = buildSparkline(activeKey);
 
                         return (
                           <>
@@ -3713,7 +3682,7 @@ export default function App() {
                                   <span className="font-mono">LATEST: {badge.split(' · ')[1]}</span>
                                 </div>
                                 <div className="glass-inner rounded-lg p-3">
-                                  {renderDetectorChart(sparkline, info.color, chartDates, info.name)}
+                                  {renderDetectorChart(sparkline, info.color, sparkDates.length > 0 ? sparkDates : chartDates, info.name)}
                                 </div>
                                 {sparkline.length > 0 && Math.max(...sparkline) === 100 && Math.min(...sparkline) >= 95 && (
                                   <p className="text-[10px] text-amber-500/70 leading-relaxed">
@@ -3900,384 +3869,355 @@ export default function App() {
                   </div>
                 </div>
 
-              </div>
-            );
-          })()}
-
-          {/* TAB: FORECAST ENGINE */}
-          {activeTab === 'forecast' && (() => {
-            const pipeline = diagnosticData.pipelineTimestamps ? diagnosticData : null;
-            const forecastData: number[] = pipeline?.pipelineForecast14Day || [];
-
-            const handleForecastDetectors = async () => {
-              setIsForecastingDetectors(true);
-              setDetectorForecastError(null);
-              try {
-                const res = await fetch('/api/forecast-detectors', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ user_id: userId }),
-                  signal: AbortSignal.timeout(60000),
-                });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
-                setDetectorForecastData(data.detector_forecasts || null);
-              } catch (e: any) {
-                setDetectorForecastError(e.message || 'Forecast failed');
-              } finally {
-                setIsForecastingDetectors(false);
-              }
-            };
-
-            const renderForecastChart = (
-              lines: { data: (number | null)[]; color: string; label: string; dashed?: boolean }[],
-              title: string,
-              subtitle: string,
-            ) => {
-              const allVals = lines.flatMap(l => l.data.filter((v): v is number => v !== null && v !== undefined));
-              const dataMin = Math.min(...allVals);
-              const dataMax = Math.max(...allVals);
-              const range = dataMax - dataMin;
-              const pad = Math.max(range * 0.25, 0.02);
-              const autoMin = Math.max(0, dataMin - pad);
-              const autoMax = Math.min(1, dataMax + pad);
-              const useAutoZoom = range < 0.3 && allVals.length > 0;
-              const yMin = useAutoZoom ? autoMin : 0;
-              const yMax = useAutoZoom ? autoMax : 1.0;
-              const yRange = yMax - yMin;
-              const yToSvg = (val: number) => 15 + (1.0 - (val - yMin) / yRange) * 185;
-              const tickCount = 5;
-              const tickStep = yRange / tickCount;
-              const ticks = Array.from({ length: tickCount + 1 }, (_, i) => yMin + i * tickStep);
-              const bgBands = [
-                { from: yMin, to: yMin + yRange * 0.33, color: '#10B981', label: 'Low' },
-                { from: yMin + yRange * 0.33, to: yMin + yRange * 0.66, color: '#F59E0B', label: 'Moderate' },
-                { from: yMin + yRange * 0.66, to: yMax, color: '#EF4444', label: 'High' },
-              ];
-              const dataLen = lines[0]?.data?.length || 7;
-              const handleSvgMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const svgMouseX = (e.clientX - rect.left) * (500 / rect.width);
-                const relX = svgMouseX - 35;
-                const idx = Math.min(dataLen - 1, Math.max(0, Math.round((relX / 450) * (dataLen - 1))));
-                setForecastHoverIdx(idx);
-              };
-              return (
-              <div className="glass-panel rounded-xl p-5">
-                <span className="text-xs font-bold text-gray-300 mb-1 block">{title}</span>
-                <p className="text-[10px] text-gray-500 mb-3">{subtitle}{useAutoZoom ? ` (zoomed: ${Math.round(yMin*100)}-${Math.round(yMax*100)}%)` : ''}</p>
-                <div className="relative h-56 w-full">
-                  <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible cursor-crosshair"
-                    onMouseMove={handleSvgMouseMove}
-                    onMouseLeave={() => setForecastHoverIdx(null)}
+                {/* FORECAST ENGINE (integrated from forecast tab) */}
+                <div className="border-t border-gray-800/60 pt-6">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer group"
+                    onClick={() => setCollapsedSections(prev => ({ ...prev, forecast: !prev.forecast }))}
                   >
-                    {bgBands.map((band, bi) => (
-                      <rect key={bi} x="35" y={yToSvg(band.to)} width="450" height={yToSvg(band.from) - yToSvg(band.to)} fill={band.color} opacity="0.05" rx="2" />
-                    ))}
-                    {bgBands.map((band, bi) => (
-                      <text key={`lbl-${bi}`} x="487" y={yToSvg((band.from + band.to) / 2) + 3} fill={band.color} fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">{band.label}</text>
-                    ))}
-                    {ticks.map((val, idx) => {
-                      const y = yToSvg(val);
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
+                      <Cloud className="h-4.5 w-4.5 text-purple-400" />
+                      Risk Forecast Engine
+                    </h3>
+                    <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
+                      {collapsedSections.forecast ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                    </button>
+                  </div>
+
+                  {!collapsedSections.forecast && (() => {
+                    const forecastData: number[] = diagnosticData.pipelineForecast14Day || [];
+
+                    const handleForecastDetectors = async () => {
+                      setIsForecastingDetectors(true);
+                      setDetectorForecastError(null);
+                      try {
+                        const res = await fetch('/api/forecast-detectors', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ user_id: userId }),
+                          signal: AbortSignal.timeout(60000),
+                        });
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        const data = await res.json();
+                        setDetectorForecastData(data.detector_forecasts || null);
+                      } catch (e: any) {
+                        setDetectorForecastError(e.message || 'Forecast failed');
+                      } finally {
+                        setIsForecastingDetectors(false);
+                      }
+                    };
+
+                    const renderForecastChart = (
+                      lines: { data: (number | null)[]; color: string; label: string; dashed?: boolean }[],
+                      title: string,
+                      subtitle: string,
+                    ) => {
+                      const allVals = lines.flatMap(l => l.data.filter((v): v is number => v !== null && v !== undefined));
+                      const dataMin = Math.min(...allVals);
+                      const dataMax = Math.max(...allVals);
+                      const range = dataMax - dataMin;
+                      const pad = Math.max(range * 0.25, 0.02);
+                      const autoMin = Math.max(0, dataMin - pad);
+                      const autoMax = Math.min(1, dataMax + pad);
+                      const useAutoZoom = range < 0.3 && allVals.length > 0;
+                      const yMin = useAutoZoom ? autoMin : 0;
+                      const yMax = useAutoZoom ? autoMax : 1.0;
+                      const yRange = yMax - yMin;
+                      const yToSvg = (val: number) => 15 + (1.0 - (val - yMin) / yRange) * 185;
+                      const tickCount = 5;
+                      const tickStep = yRange / tickCount;
+                      const ticks = Array.from({ length: tickCount + 1 }, (_, i) => yMin + i * tickStep);
+                      const bgBands = [
+                        { from: yMin, to: yMin + yRange * 0.33, color: '#10B981', label: 'Low' },
+                        { from: yMin + yRange * 0.33, to: yMin + yRange * 0.66, color: '#F59E0B', label: 'Moderate' },
+                        { from: yMin + yRange * 0.66, to: yMax, color: '#EF4444', label: 'High' },
+                      ];
+                      const dataLen = lines[0]?.data?.length || 7;
+                      const handleSvgMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const svgMouseX = (e.clientX - rect.left) * (500 / rect.width);
+                        const relX = svgMouseX - 35;
+                        const idx = Math.min(dataLen - 1, Math.max(0, Math.round((relX / 450) * (dataLen - 1))));
+                        setForecastHoverIdx(idx);
+                      };
                       return (
-                        <g key={idx}>
-                          <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray="3 3" />
-                           <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{Math.round(val * 100)}%</text>
-                        </g>
-                      );
-                    })}
-                    {lines[0]?.data.filter(v => v !== null).length > 0 && lines[0].data.map((_, idx) => {
-                      const x = 35 + (idx / Math.max(1, dataLen - 1)) * 450;
-                      return (
-                        <g key={idx}>
-                          <line x1={x} y1="15" x2={x} y2="200" stroke="#1B2030" strokeWidth="0.5" strokeDasharray="2 2" />
-                           <text x={x} y="218" fill="#64748b" fontSize="7" textAnchor="middle" fontFamily="monospace">Day {idx + 1}</text>
-                        </g>
-                      );
-                    })}
-                    {forecastHoverIdx !== null && (() => {
-                      const hx = 35 + (forecastHoverIdx / Math.max(1, dataLen - 1)) * 450;
-                      return <line x1={hx} y1="15" x2={hx} y2="200" stroke="#475569" strokeWidth="1" strokeDasharray="3 3" opacity="0.7" />;
-                    })()}
-                    {lines.map((line, li) => {
-                      const valid = line.data.filter((v): v is number => v !== null && v !== undefined);
-                      if (valid.length < 2) return null;
-                      let pathStr = '';
-                      line.data.forEach((val, idx) => {
-                        if (val === null || val === undefined) return;
-                        const x = 35 + (idx / Math.max(1, dataLen - 1)) * 450;
-                        const y = yToSvg(Math.min(yMax, Math.max(yMin, val)));
-                        pathStr += (pathStr === '' ? 'M' : 'L') + ` ${x} ${y}`;
-                      });
-                      return (
-                        <g key={li}>
-                          <path d={pathStr} fill="none" stroke={line.color}
-                            strokeWidth={line.dashed ? '1.5' : '2'}
-                            strokeDasharray={line.dashed ? '4 3' : undefined}
-                            opacity={0.8}
-                            className={line.dashed ? '' : 'drop-shadow-[0_0_4px_rgba(167,139,250,0.4)]'}
-                          />
-                          {line.data.map((val, idx) => {
-                            if (val === null || val === undefined) return null;
-                            const x = 35 + (idx / Math.max(1, dataLen - 1)) * 450;
-                            const y = yToSvg(Math.min(yMax, Math.max(yMin, val)));
-                            const isHovered = forecastHoverIdx === idx;
-                            return <circle key={`dot-${li}-${idx}`} cx={x} cy={y} r={isHovered ? 5 : 3} fill={line.color} opacity={isHovered ? 1 : 0.9} stroke={isHovered ? '#fff' : 'none'} strokeWidth={isHovered ? 1.5 : 0} style={isHovered ? { filter: `drop-shadow(0 0 6px ${line.color})` } : undefined} />;
-                          })}
-                        </g>
-                      );
-                    })}
-                    <line x1="35" y1="200" x2="485" y2="200" stroke="#1B2030" strokeWidth="1" />
-                  </svg>
-                  {forecastHoverIdx !== null && forecastHoverIdx < dataLen && (() => {
-                    const hx = Math.min(88, Math.max(4, (forecastHoverIdx / Math.max(1, dataLen - 1)) * 100));
-                    return (
-                      <div className="absolute pointer-events-none z-30 transition-all duration-150 ease-out" style={{ left: `${hx}%`, top: '8px', transform: 'translateX(-50%)' }}>
-                        <div className="bg-[#11131c]/95 border border-[#232B3B]/80 px-3 py-2 rounded-lg shadow-2xl backdrop-blur-sm">
-                          <div className="text-[10px] font-bold text-gray-400 mb-1 border-b border-gray-800/60 pb-1">Day {forecastHoverIdx + 1}</div>
-                          {lines.map((line, li) => {
-                            const val = line.data[forecastHoverIdx];
-                            if (val == null) return null;
+                      <div className="glass-panel rounded-xl p-5">
+                        <span className="text-xs font-bold text-gray-300 mb-1 block">{title}</span>
+                        <p className="text-[10px] text-gray-500 mb-3">{subtitle}{useAutoZoom ? ` (zoomed: ${Math.round(yMin*100)}-${Math.round(yMax*100)}%)` : ''}</p>
+                        <div className="relative h-56 w-full">
+                          <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible cursor-crosshair"
+                            onMouseMove={handleSvgMouseMove}
+                            onMouseLeave={() => setForecastHoverIdx(null)}
+                          >
+                            {bgBands.map((band, bi) => (
+                              <rect key={bi} x="35" y={yToSvg(band.to)} width="450" height={yToSvg(band.from) - yToSvg(band.to)} fill={band.color} opacity="0.05" rx="2" />
+                            ))}
+                            {bgBands.map((band, bi) => (
+                              <text key={`lbl-${bi}`} x="487" y={yToSvg((band.from + band.to) / 2) + 3} fill={band.color} fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">{band.label}</text>
+                            ))}
+                            {ticks.map((val, idx) => {
+                              const y = yToSvg(val);
+                              return (
+                                <g key={idx}>
+                                  <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray="3 3" />
+                                  <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{Math.round(val * 100)}%</text>
+                                </g>
+                              );
+                            })}
+                            {lines[0]?.data.filter(v => v !== null).length > 0 && lines[0].data.map((_, idx) => {
+                              const x = 35 + (idx / Math.max(1, dataLen - 1)) * 450;
+                              return (
+                                <g key={idx}>
+                                  <line x1={x} y1="15" x2={x} y2="200" stroke="#1B2030" strokeWidth="0.5" strokeDasharray="2 2" />
+                                   <text x={x} y="218" fill="#64748b" fontSize="7" textAnchor="middle" fontFamily="monospace">Day {idx + 1}</text>
+                                </g>
+                              );
+                            })}
+                            {forecastHoverIdx !== null && (() => {
+                              const hx = 35 + (forecastHoverIdx / Math.max(1, dataLen - 1)) * 450;
+                              return <line x1={hx} y1="15" x2={hx} y2="200" stroke="#475569" strokeWidth="1" strokeDasharray="3 3" opacity="0.7" />;
+                            })()}
+                            {lines.map((line, li) => {
+                              const valid = line.data.filter((v): v is number => v !== null && v !== undefined);
+                              if (valid.length < 2) return null;
+                              let pathStr = '';
+                              line.data.forEach((val, idx) => {
+                                if (val === null || val === undefined) return;
+                                const x = 35 + (idx / Math.max(1, dataLen - 1)) * 450;
+                                const y = yToSvg(Math.min(yMax, Math.max(yMin, val)));
+                                pathStr += (pathStr === '' ? 'M' : 'L') + ` ${x} ${y}`;
+                              });
+                              return (
+                                <g key={li}>
+                                  <path d={pathStr} fill="none" stroke={line.color}
+                                    strokeWidth={line.dashed ? '1.5' : '2'}
+                                    strokeDasharray={line.dashed ? '4 3' : undefined}
+                                    opacity={0.8}
+                                    className={line.dashed ? '' : 'drop-shadow-[0_0_4px_rgba(167,139,250,0.4)]'}
+                                  />
+                                  {line.data.map((val, idx) => {
+                                    if (val === null || val === undefined) return null;
+                                    const x = 35 + (idx / Math.max(1, dataLen - 1)) * 450;
+                                    const y = yToSvg(Math.min(yMax, Math.max(yMin, val)));
+                                    const isHovered = forecastHoverIdx === idx;
+                                    return <circle key={`dot-${li}-${idx}`} cx={x} cy={y} r={isHovered ? 5 : 3} fill={line.color} opacity={isHovered ? 1 : 0.9} stroke={isHovered ? '#fff' : 'none'} strokeWidth={isHovered ? 1.5 : 0} style={isHovered ? { filter: `drop-shadow(0 0 6px ${line.color})` } : undefined} />;
+                                  })}
+                                </g>
+                              );
+                            })}
+                            <line x1="35" y1="200" x2="485" y2="200" stroke="#1B2030" strokeWidth="1" />
+                          </svg>
+                          {forecastHoverIdx !== null && forecastHoverIdx < dataLen && (() => {
+                            const hx = Math.min(88, Math.max(4, (forecastHoverIdx / Math.max(1, dataLen - 1)) * 100));
                             return (
-                              <div key={li} className="flex items-center gap-2 text-[10px]">
-                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: line.color }} />
-                                <span className="text-gray-400">Risk:</span>
-                                <span className="font-bold font-mono" style={{ color: line.color }}>{(val * 100).toFixed(1)}%</span>
+                              <div className="absolute pointer-events-none z-30 transition-all duration-150 ease-out" style={{ left: `${hx}%`, top: '8px', transform: 'translateX(-50%)' }}>
+                                <div className="bg-[#11131c]/95 border border-[#232B3B]/80 px-3 py-2 rounded-lg shadow-2xl backdrop-blur-sm">
+                                  <div className="text-[10px] font-bold text-gray-400 mb-1 border-b border-gray-800/60 pb-1">Day {forecastHoverIdx + 1}</div>
+                                  {lines.map((line, li) => {
+                                    const val = line.data[forecastHoverIdx];
+                                    if (val == null) return null;
+                                    return (
+                                      <div key={li} className="flex items-center gap-2 text-[10px]">
+                                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: line.color }} />
+                                        <span className="text-gray-400">Risk:</span>
+                                        <span className="font-bold font-mono" style={{ color: line.color }}>{(val * 100).toFixed(1)}%</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             );
-                          })}
+                          })()}
+                        </div>
+                        <div className="flex items-center gap-4 mt-2 flex-wrap">
+                          {lines.map((line, li) => (
+                            <div key={li} className="flex items-center gap-1.5">
+                              <span className="inline-block w-4 h-0.5 rounded-sm" style={{ backgroundColor: line.color, borderTop: line.dashed ? `1px dashed ${line.color}` : 'none' }} />
+                              <span className="text-[9px] text-gray-500">{line.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                    };
+
+                    return (
+                      <div className="mt-4 space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <p className="text-[11px] text-gray-500 leading-relaxed">
+                          Predicts the next 7 days using your historical data. The TFT model forecasts a composite risk score (50% anomaly + 25% sentiment + 25% health). Individual detector forecasts use GradientBoosting trained on each detector's own 30-day history.
+                        </p>
+
+                        {/* TFT OVERALL RISK FORECAST */}
+                        <div className="space-y-3">
+                          <div>
+                            <h4 className="text-xs font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
+                              <Brain className="h-4 w-4 text-purple-400" />
+                              TFT Composite Risk Forecast
+                            </h4>
+                            <p className="text-[10px] text-gray-500 mt-1 ml-6">
+                              Temporal Fusion Transformer trained on 30-day sliding windows. Predicts the next {forecastData.length || 7} days as a composite risk score. Higher = more concern.
+                            </p>
+                          </div>
+                          {forecastData.length > 0 ? (
+                            renderForecastChart(
+                              [{ data: forecastData, color: '#a78bfa', label: 'TFT Composite Risk' }],
+                              'TFT 7-Day Risk Forecast',
+                              'Temporal Fusion Transformer composite risk prediction (higher = more concern)',
+                            )
+                          ) : (
+                            <div className="glass-panel rounded-xl p-8 text-center">
+                              <Brain className="h-8 w-8 text-purple-400 mx-auto mb-3 opacity-50" />
+                              <p className="text-sm text-gray-400">No TFT forecast available. Run an analysis first.</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* PER-DETECTOR FORECASTS */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="text-xs font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
+                                <Zap className="h-4 w-4 text-amber-400" />
+                                Per-Detector Forecasts
+                              </h4>
+                              <p className="text-[10px] text-gray-500 mt-1 ml-6">
+                                Each anomaly detector trained independently on its own 30-day history using GradientBoosting.
+                              </p>
+                            </div>
+                            <button
+                              onClick={handleForecastDetectors}
+                              disabled={isForecastingDetectors}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                isForecastingDetectors
+                                  ? 'bg-purple-950/40 border border-purple-500/30 text-purple-400'
+                                  : 'bg-purple-600/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600/40 hover:text-white'
+                              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                              {isForecastingDetectors ? (
+                                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Training Models...</>
+                              ) : (
+                                <><Zap className="h-3.5 w-3.5" /> Forecast Detectors 7 Days</>
+                              )}
+                            </button>
+                          </div>
+
+                          {detectorForecastError && (
+                            <div className="px-4 py-2 rounded-lg bg-red-950/20 border border-red-500/20 text-red-400 text-xs">{detectorForecastError}</div>
+                          )}
+
+                          {detectorForecastData ? (() => {
+                            const detTabs = [
+                              { key: 'mahalanobis', label: 'Pattern Deviation', model: 'Mahalanobis Distance', color: '#60a5fa' },
+                              { key: 'copula', label: 'Behavioral Shift', model: 'Gaussian Copula', color: '#f87171' },
+                              { key: 'isolation_forest', label: 'Outlier Spike', model: 'Isolation Forest', color: '#34d399' },
+                              { key: 'knn', label: 'Cluster Drift', model: 'K-Nearest Neighbors', color: '#fbbf24' },
+                            ];
+                            const detDescriptions: Record<string, string> = {
+                              mahalanobis: 'Measures how far each entry deviates from the learned centroid of your normal feature space.',
+                              copula: 'Models the dependency structure between features. Detects when relationships between sleep, activity, and mood break from normal patterns.',
+                              isolation_forest: 'Isolates anomalies by random splitting. Catches entries that are unusually different from the majority.',
+                              knn: 'Measures distance to your K nearest normal entries. Rises when recent entries are unlike anything seen in your history.',
+                            };
+                            const activeDetTab = selectedDetectorTab;
+                            return (
+                              <>
+                                <div className="flex gap-1 p-1 bg-[#0F131A]/80 rounded-lg border border-[#20293B]/40 overflow-x-auto">
+                                  {detTabs.map(tab => (
+                                    <button key={tab.key} onClick={() => setSelectedDetectorTab(tab.key)}
+                                      className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${activeDetTab === tab.key ? 'bg-white/[0.08] border border-white/10 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'}`}>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tab.color }} />
+                                        {tab.label}
+                                      </div>
+                                      <span className="text-[8px] font-normal opacity-60">{tab.model}</span>
+                                    </button>
+                                  ))}
+                                </div>
+
+                                {detDescriptions[activeDetTab] && (() => {
+                                  const tab = detTabs.find(t => t.key === activeDetTab);
+                                  return (
+                                    <div className="ml-1">
+                                      <span className="text-[10px] text-gray-400 font-semibold">{tab?.model}:</span>
+                                      <span className="text-[10px] text-gray-500 italic ml-1">{detDescriptions[activeDetTab]}</span>
+                                    </div>
+                                  );
+                                })()}
+
+                                {(() => {
+                                  const vals = detectorForecastData[activeDetTab] || [];
+                                  const cfg = detTabs.find(t => t.key === activeDetTab);
+                                  if (!cfg || vals.length < 2) return (
+                                    <div className="glass-panel rounded-xl p-6 text-center text-gray-500 text-xs">No data for this detector</div>
+                                  );
+                                  return (
+                                    <>
+                                      {renderForecastChart([{ data: vals, color: cfg.color, label: cfg.label }], `${cfg.label} — 7 Day Forecast`, detDescriptions[activeDetTab])}
+                                      <div className="flex gap-3 flex-wrap">
+                                        <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[100px]">
+                                          <div className="text-[9px] text-gray-500 uppercase tracking-wider">Day 1</div>
+                                          <div className="text-sm font-bold" style={{ color: cfg.color }}>{Math.round(vals[0] * 100)}%</div>
+                                        </div>
+                                        <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[100px]">
+                                          <div className="text-[9px] text-gray-500 uppercase tracking-wider">Day 7</div>
+                                          <div className="text-sm font-bold" style={{ color: cfg.color }}>{Math.round(vals[vals.length - 1] * 100)}%</div>
+                                        </div>
+                                        <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[100px]">
+                                          <div className="text-[9px] text-gray-500 uppercase tracking-wider">Delta</div>
+                                          <div className={`text-sm font-bold ${(vals[vals.length - 1] - vals[0]) > 0 ? 'text-rose-300' : 'text-emerald-300'}`}>
+                                            {(vals[vals.length - 1] - vals[0]) > 0 ? '+' : ''}{Math.round((vals[vals.length - 1] - vals[0]) * 100)}%
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </>
+                                  );
+                                })()}
+
+                                <div className="glass-panel rounded-xl p-5">
+                                  <div className="mb-3">
+                                    <span className="text-xs font-bold text-gray-300 block">Day-by-Day Breakdown</span>
+                                    <span className="text-[10px] text-gray-500">7-day detector trajectory across all anomaly models</span>
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full text-[11px]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                      <thead>
+                                        <tr className="border-b border-white/[0.06]">
+                                          <th className="text-left py-2 pr-4 font-semibold text-gray-400 text-[10px] uppercase tracking-wider">Day</th>
+                                          <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#60a5fa' }}>Pattern Deviation</th>
+                                          <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#f87171' }}>Behavioral Shift</th>
+                                          <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#34d399' }}>Outlier Spike</th>
+                                          <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#fbbf24' }}>Cluster Drift</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {detectorForecastData.mahalanobis?.map((_: number, idx: number) => (
+                                          <tr key={idx} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors duration-150">
+                                            <td className="py-2 pr-4 font-semibold text-gray-300">Day {idx + 1}</td>
+                                            <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#93c5fd' }}>{detectorForecastData.mahalanobis?.[idx] != null ? `${Math.round(detectorForecastData.mahalanobis[idx] * 100)}%` : '—'}</td>
+                                            <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#fca5a5' }}>{detectorForecastData.copula?.[idx] != null ? `${Math.round(detectorForecastData.copula[idx] * 100)}%` : '—'}</td>
+                                            <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#6ee7b7' }}>{detectorForecastData.isolation_forest?.[idx] != null ? `${Math.round(detectorForecastData.isolation_forest[idx] * 100)}%` : '—'}</td>
+                                            <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#fde68a' }}>{detectorForecastData.knn?.[idx] != null ? `${Math.round(detectorForecastData.knn[idx] * 100)}%` : '—'}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              </>
+                            );
+                          })() : !isForecastingDetectors && (
+                            <div className="glass-panel rounded-xl p-8 text-center">
+                              <Zap className="h-8 w-8 text-amber-400 mx-auto mb-3 opacity-30" />
+                              <p className="text-sm text-gray-500">Click the button above to train per-detector forecast models</p>
+                              <p className="text-[10px] text-gray-600 mt-1">Each model trains on its own detector's 30-day history in {'<'}200ms.</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
                   })()}
                 </div>
-                <div className="flex items-center gap-4 mt-2 flex-wrap">
-                  {lines.map((line, li) => (
-                    <div key={li} className="flex items-center gap-1.5">
-                      <span className="inline-block w-4 h-0.5 rounded-sm" style={{ backgroundColor: line.color, borderTop: line.dashed ? `1px dashed ${line.color}` : 'none' }} />
-                      <span className="text-[9px] text-gray-500">{line.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-            };
 
-            return (
-              <div className="space-y-8 animate-in fade-in duration-300 px-4 sm:px-8 py-8" id="forecast-container">
-
-                {/* SECTION 1: TFT OVERALL RISK FORECAST */}
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                      <Brain className="h-4 w-4 text-purple-400" />
-                      TFT Composite Risk Forecast
-                    </h3>
-                    <p className="text-[10px] text-gray-500 mt-1 ml-6">
-                      Temporal Fusion Transformer trained on 30-day sliding windows from your own history. Predicts the next {forecastData.length || 7} days as a composite risk score (50% anomaly + 25% sentiment + 25% health). Higher = more concern.
-                    </p>
-                  </div>
-                  {forecastData.length > 0 ? (
-                    <>
-                      {renderForecastChart(
-                        [{ data: forecastData, color: '#a78bfa', label: 'TFT Composite Risk' }],
-                        'TFT 7-Day Risk Forecast',
-                        `Predicted composite risk trajectory based on your last 30 entries. Range: ${Math.round(Math.min(...forecastData) * 100)}% - ${Math.round(Math.max(...forecastData) * 100)}%`,
-                      )}
-                      <div className="flex gap-3 flex-wrap">
-                        <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[120px]">
-                          <div className="text-[9px] text-gray-500 uppercase tracking-wider">Current</div>
-                          <div className="text-sm font-bold text-purple-300">{Math.round(forecastData[0] * 100)}%</div>
-                        </div>
-                        <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[120px]">
-                          <div className="text-[9px] text-gray-500 uppercase tracking-wider">Peak (7d)</div>
-                          <div className="text-sm font-bold text-rose-300">{Math.round(Math.max(...forecastData) * 100)}%</div>
-                        </div>
-                        <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[120px]">
-                          <div className="text-[9px] text-gray-500 uppercase tracking-wider">Trend</div>
-                          <div className={`text-sm font-bold ${forecastData[forecastData.length - 1] > forecastData[0] ? 'text-amber-300' : 'text-emerald-300'}`}>
-                            {forecastData[forecastData.length - 1] > forecastData[0] ? 'Rising' : 'Falling'}
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="glass-panel rounded-xl p-8 text-center">
-                      <Brain className="h-8 w-8 text-purple-400 mx-auto mb-3 opacity-50" />
-                      <p className="text-sm text-gray-400">No TFT forecast available. Run an analysis first.</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* SECTION 2: PER-DETECTOR FORECASTS */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-amber-400" />
-                        Per-Detector Forecasts
-                      </h3>
-                      <p className="text-[10px] text-gray-500 mt-1 ml-6">
-                        Each anomaly detector is trained independently on its own 30-day score history using GradientBoosting. Click each tab to see individual detector predictions.
-                      </p>
-                    </div>
-                    <button
-                      onClick={handleForecastDetectors}
-                      disabled={isForecastingDetectors || !pipeline}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        isForecastingDetectors
-                          ? 'bg-purple-950/40 border border-purple-500/30 text-purple-400'
-                          : 'bg-purple-600/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600/40 hover:text-white'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      {isForecastingDetectors ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          Training Models...
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="h-3.5 w-3.5" />
-                          Forecast Detectors 7 Days
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {detectorForecastError && (
-                    <div className="px-4 py-2 rounded-lg bg-red-950/20 border border-red-500/20 text-red-400 text-xs">
-                      {detectorForecastError}
-                    </div>
-                  )}
-
-                  {detectorForecastData ? (() => {
-                    const detTabs = [
-                      { key: 'mahalanobis', label: 'Pattern Deviation', model: 'Mahalanobis Distance', color: '#60a5fa' },
-                      { key: 'copula', label: 'Behavioral Shift', model: 'Gaussian Copula', color: '#f87171' },
-                      { key: 'isolation_forest', label: 'Outlier Spike', model: 'Isolation Forest', color: '#34d399' },
-                      { key: 'knn', label: 'Cluster Drift', model: 'K-Nearest Neighbors', color: '#fbbf24' },
-                    ];
-                    const detDescriptions: Record<string, string> = {
-                      mahalanobis: 'Measures how far each entry deviates from the learned centroid of your normal feature space. Sensitive to shifts in overall mental state direction.',
-                      copula: 'Models the dependency structure between features. Detects when the relationship between your sleep, activity, and mood breaks from normal patterns.',
-                      isolation_forest: 'Isolates anomalies by random splitting. Catches entries that are unusually different from the majority, regardless of direction.',
-                      knn: 'Measures distance to your K nearest normal entries. Rises when recent entries are unlike anything seen in your history.',
-                    };
-                    const activeTab = selectedDetectorTab;
-                    return (
-                      <>
-                        {/* Tab bar */}
-                        <div className="flex gap-1 p-1 bg-[#0F131A]/80 rounded-lg border border-[#20293B]/40 overflow-x-auto">
-                          {detTabs.map(tab => {
-                            const isActive = activeTab === tab.key;
-                            return (
-                              <button
-                                key={tab.key}
-                                onClick={() => setSelectedDetectorTab(tab.key)}
-                                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
-                                  isActive
-                                    ? 'bg-white/[0.08] border border-white/10 text-white'
-                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
-                                }`}
-                              >
-                                <div className="flex items-center gap-1.5">
-                                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tab.color }} />
-                                  {tab.label}
-                                </div>
-                                <span className="text-[8px] font-normal opacity-60">{tab.model}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {/* Description */}
-                        {detDescriptions[activeTab] && (() => {
-                          const tab = detTabs.find(t => t.key === activeTab);
-                          return (
-                            <div className="ml-1">
-                              <span className="text-[10px] text-gray-400 font-semibold">{tab?.model}:</span>
-                              <span className="text-[10px] text-gray-500 italic ml-1">{detDescriptions[activeTab]}</span>
-                            </div>
-                          );
-                        })()}
-
-                        {/* Individual detector chart */}
-                        {(() => {
-                          const vals = detectorForecastData[activeTab] || [];
-                          const cfg = detTabs.find(t => t.key === activeTab);
-                          if (!cfg || vals.length < 2) return (
-                            <div className="glass-panel rounded-xl p-6 text-center text-gray-500 text-xs">No data for this detector</div>
-                          );
-                          return (
-                            <>
-                              {renderForecastChart(
-                                [{ data: vals, color: cfg.color, label: cfg.label }],
-                                `${cfg.label} — 7 Day Forecast`,
-                                detDescriptions[activeTab],
-                              )}
-                              <div className="flex gap-3 flex-wrap">
-                                <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[100px]">
-                                  <div className="text-[9px] text-gray-500 uppercase tracking-wider">Day 1</div>
-                                  <div className="text-sm font-bold" style={{ color: cfg.color }}>{Math.round(vals[0] * 100)}%</div>
-                                </div>
-                                <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[100px]">
-                                  <div className="text-[9px] text-gray-500 uppercase tracking-wider">Day 7</div>
-                                  <div className="text-sm font-bold" style={{ color: cfg.color }}>{Math.round(vals[vals.length - 1] * 100)}%</div>
-                                </div>
-                                <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[100px]">
-                                  <div className="text-[9px] text-gray-500 uppercase tracking-wider">Delta</div>
-                                  <div className={`text-sm font-bold ${(vals[vals.length - 1] - vals[0]) > 0 ? 'text-rose-300' : 'text-emerald-300'}`}>
-                                    {(vals[vals.length - 1] - vals[0]) > 0 ? '+' : ''}{Math.round((vals[vals.length - 1] - vals[0]) * 100)}%
-                                  </div>
-                                </div>
-                              </div>
-                            </>
-                          );
-                        })()}
-
-                        {/* Day-by-day breakdown */}
-                        {detectorForecastData && (
-                          <div className="glass-panel rounded-xl p-5">
-                            <div className="mb-3">
-                              <span className="text-xs font-bold text-gray-300 block">Day-by-Day Breakdown</span>
-                              <span className="text-[10px] text-gray-500">7-day detector trajectory across all anomaly models</span>
-                            </div>
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-[11px]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                                <thead>
-                                  <tr className="border-b border-white/[0.06]">
-                                    <th className="text-left py-2 pr-4 font-semibold text-gray-400 text-[10px] uppercase tracking-wider">Day</th>
-                                    <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#60a5fa' }}>Pattern Deviation</th>
-                                    <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#f87171' }}>Behavioral Shift</th>
-                                    <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#34d399' }}>Outlier Spike</th>
-                                    <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#fbbf24' }}>Cluster Drift</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {detectorForecastData.mahalanobis?.map((_: number, idx: number) => (
-                                    <tr key={idx} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors duration-150">
-                                      <td className="py-2 pr-4 font-semibold text-gray-300">Day {idx + 1}</td>
-                                      <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#93c5fd' }}>{detectorForecastData.mahalanobis?.[idx] != null ? `${Math.round(detectorForecastData.mahalanobis[idx] * 100)}%` : '—'}</td>
-                                      <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#fca5a5' }}>{detectorForecastData.copula?.[idx] != null ? `${Math.round(detectorForecastData.copula[idx] * 100)}%` : '—'}</td>
-                                      <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#6ee7b7' }}>{detectorForecastData.isolation_forest?.[idx] != null ? `${Math.round(detectorForecastData.isolation_forest[idx] * 100)}%` : '—'}</td>
-                                      <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#fde68a' }}>{detectorForecastData.knn?.[idx] != null ? `${Math.round(detectorForecastData.knn[idx] * 100)}%` : '—'}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })() : !isForecastingDetectors && (
-                    <div className="glass-panel rounded-xl p-8 text-center">
-                      <Zap className="h-8 w-8 text-amber-400 mx-auto mb-3 opacity-30" />
-                      <p className="text-sm text-gray-500">Click the button above to train per-detector forecast models</p>
-                      <p className="text-[10px] text-gray-600 mt-1">Each model trains on its own detector's 30-day history in {'<'}200ms.</p>
-                    </div>
-                  )}
-                </div>
               </div>
             );
           })()}
