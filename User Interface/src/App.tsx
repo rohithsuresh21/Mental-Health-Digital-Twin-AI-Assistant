@@ -320,6 +320,16 @@ export default function App() {
     forecast: true
   });
 
+  const scrollToForecast = () => {
+    setActiveTab('analytics');
+    setTimeout(() => {
+      setCollapsedSections(prev => ({ ...prev, forecast: false }));
+      setTimeout(() => {
+        document.getElementById('forecast-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }, 200);
+  };
+
   // Collapsed sections in Explainable AI
   const [explainWhyPredictionCollapsed, setExplainWhyPredictionCollapsed] = useState(false);
   const [explainRootCauseCollapsed, setExplainRootCauseCollapsed] = useState(false);
@@ -332,6 +342,10 @@ export default function App() {
 
   // Hover state for individual detector sparkline charts
   const [detectorHoveredIndex, setDetectorHoveredIndex] = useState<number | null>(null);
+
+  // Detector chart viewport: [startIndex, endIndex] for zoom/scroll
+  const [detectorViewport, setDetectorViewport] = useState<[number, number]>([-1, -1]);
+  const [detectorTimeMode, setDetectorTimeMode] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   // Chart viewport: [startIndex, endIndex] for zoom/scroll
   const [chartViewport, setChartViewport] = useState<[number, number]>([-1, -1]);
@@ -1576,6 +1590,20 @@ export default function App() {
                     <Activity className="h-4 w-4" />
                     Analysis {!patientData.status?.calibrated && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
                   </button>
+
+                  <button id="tab-patient-forecast"
+                    onClick={() => { 
+                      if (patientData.status?.calibrated) { scrollToForecast(); setIsMenuOpen(false); }
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                      activeTab === 'analytics' 
+                        ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40' 
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                    }`}
+                  >
+                    <Cloud className="h-4 w-4" />
+                    Forecast {!patientData.status?.calibrated && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
+                  </button>
                 </>
               ) : (
                 <>
@@ -1628,6 +1656,17 @@ export default function App() {
                   >
                     <Activity className="h-4 w-4" />
                     Analytics {!hasRunAnalysis && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
+                  </button>
+
+                  <button id="tab-forecast"
+                    onClick={() => { 
+                      if (hasRunAnalysis) { scrollToForecast(); setIsMenuOpen(false); }
+                      else { setActiveTab('clinical'); setIsMenuOpen(false); }
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer text-gray-400 hover:text-gray-200 hover:bg-gray-800/40`}
+                  >
+                    <Cloud className="h-4 w-4" />
+                    Forecast {!hasRunAnalysis && <span className="text-[9px] text-gray-600 ml-auto">Locked</span>}
                   </button>
                 </>
               )}
@@ -3294,13 +3333,13 @@ export default function App() {
                       },
                       upper_alert: {
                         dot: 'bg-rose-500 shadow-[0_0_10px_#ef4444] animate-pulse',
-                        title: 'Risk scores rising above baseline',
-                        msg: 'We\'ve noticed your risk readings are persistently above your normal range. This sustained shift may indicate your well-being is changing. Consider taking a moment to rest and monitor your condition.',
+                        title: 'Upper drift detected — scores persistently above baseline',
+                        msg: 'We\'ve noticed your scores are consistently drifting above your normal range. This sustained upper drift may indicate your well-being is changing. Consider taking a moment to rest and monitor your condition.',
                       },
                       lower_alert: {
                         dot: 'bg-blue-500 shadow-[0_0_10px_#3b82f6]',
-                        title: 'Risk scores improving below baseline',
-                        msg: 'Your readings are persistently below your usual risk level — this is a positive trend. Your patterns suggest improvement. Continue monitoring to ensure everything remains on track.',
+                        title: 'Lower drift detected — scores persistently below baseline',
+                        msg: 'Your scores are consistently drifting below your usual range — this is a positive trend. Your patterns suggest improvement. Continue monitoring to ensure everything remains on track.',
                       },
                       both_alert: {
                         dot: 'bg-purple-500 shadow-[0_0_10px_#a855f7]',
@@ -3336,8 +3375,8 @@ export default function App() {
                         <div className="flex items-center gap-3 flex-wrap">
                           <div className="flex gap-1.5">
                             {[
-                              { key: 0, label: 'Rising risk', desc: 'Scores trending above baseline', icon: TrendingUp },
-                              { key: 1, label: 'Improving', desc: 'Scores trending below baseline', icon: TrendingDown },
+                              { key: 0, label: 'Upper Drift', desc: 'Scores trending above baseline', icon: TrendingUp },
+                              { key: 1, label: 'Lower Drift', desc: 'Scores trending below baseline', icon: TrendingDown },
                               { key: 2, label: 'Both', desc: 'Show both directions', icon: null },
                             ].map((tab) => (
                               <button
@@ -3430,11 +3469,11 @@ export default function App() {
                         <div className="flex flex-wrap items-center gap-6 text-[10px] text-gray-400 font-sans">
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-4 h-0.5 bg-rose-500" />
-                            <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Rising risk (above baseline)</span>
+                            <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Upper drift (above baseline)</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-4 h-0.5 bg-blue-500" />
-                            <span className="flex items-center gap-1"><TrendingDown className="h-3 w-3" /> Improving (below baseline)</span>
+                            <span className="flex items-center gap-1"><TrendingDown className="h-3 w-3" /> Lower drift (below baseline)</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-4 h-0.5 border-t border-dashed border-gray-500" />
@@ -3546,10 +3585,10 @@ export default function App() {
                             >
                               <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex] || `Entry ${hoveredPointIndex + 1}`}</div>
                               {(selectedCusumTab === 0 || selectedCusumTab === 2) && (
-                                <div>Rising risk: <span className="text-rose-400 font-bold">{((upperCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
+                                <div>Upper drift: <span className="text-rose-400 font-bold">{((upperCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
                               )}
                               {(selectedCusumTab === 1 || selectedCusumTab === 2) && (
-                                <div>Improving: <span className="text-blue-400 font-bold">{((lowerCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
+                                <div>Lower drift: <span className="text-blue-400 font-bold">{((lowerCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
                               )}
                             </div>
                           )}
@@ -3631,8 +3670,34 @@ export default function App() {
 
                         function buildSparkline(key: string): { values: number[]; dates: string[] } {
                           if (!detScores || detScores.length === 0) return { values: [], dates: [] };
-                          const raw = detScores.map(s => (s[key] ?? 0) * 100);
-                          return { values: raw, dates: chartDates.slice(0, raw.length) };
+                          const rawVals = detScores.map(s => (s[key] ?? 0) * 100);
+                          const rawDates = chartDates.slice(0, rawVals.length);
+                          let values = rawVals;
+                          let dates = rawDates;
+                          if (detectorTimeMode === 'weekly' && rawVals.length > 7) {
+                            const groupSize = Math.max(1, Math.floor(rawVals.length / Math.ceil(rawVals.length / 7)));
+                            const newVals: number[] = [];
+                            const newDates: string[] = [];
+                            for (let i = 0; i < rawVals.length; i += groupSize) {
+                              const chunk = rawVals.slice(i, i + groupSize);
+                              newVals.push(chunk.reduce((a, b) => a + b, 0) / chunk.length);
+                              newDates.push(rawDates[i] || '');
+                            }
+                            values = newVals;
+                            dates = newDates;
+                          } else if (detectorTimeMode === 'monthly' && rawVals.length > 30) {
+                            const groupSize = Math.max(1, Math.floor(rawVals.length / Math.ceil(rawVals.length / 30)));
+                            const newVals: number[] = [];
+                            const newDates: string[] = [];
+                            for (let i = 0; i < rawVals.length; i += groupSize) {
+                              const chunk = rawVals.slice(i, i + groupSize);
+                              newVals.push(chunk.reduce((a, b) => a + b, 0) / chunk.length);
+                              newDates.push(rawDates[i] || '');
+                            }
+                            values = newVals;
+                            dates = newDates;
+                          }
+                          return { values, dates };
                         }
 
                         const activeKey = detectorKeys[selectedDetector] || 'mahalanobis';
@@ -3640,6 +3705,22 @@ export default function App() {
                         const latestVal = lastScores[activeKey] ?? 0;
                         const { badge, style } = scoreBadge(latestVal);
                         const { values: sparkline, dates: sparkDates } = buildSparkline(activeKey);
+
+                        // Detector viewport computation
+                        const dTotalLen = sparkline.length;
+                        let dVpStart2: number, dVpEnd2: number;
+                        if (detectorViewport[0] === -1 && dTotalLen > 0) {
+                          // Default: zoomed to last 20% or min(20, total)
+                          const defaultShow = Math.min(20, Math.max(6, Math.round(dTotalLen * 0.2)));
+                          dVpStart2 = Math.max(0, dTotalLen - defaultShow);
+                          dVpEnd2 = dTotalLen - 1;
+                        } else {
+                          dVpStart2 = Math.max(0, Math.min(detectorViewport[0], dTotalLen - 1));
+                          dVpEnd2 = Math.max(0, Math.min(detectorViewport[1] || dTotalLen - 1, dTotalLen - 1));
+                        }
+                        const dVpCount = dVpEnd2 - dVpStart2 + 1;
+                        const dVpSlice = sparkline.slice(dVpStart2, dVpEnd2 + 1);
+                        const dVpSliceDates = sparkDates.slice(dVpStart2, dVpEnd2 + 1);
 
                         return (
                           <>
@@ -3681,8 +3762,54 @@ export default function App() {
                                   <span>Score Timeline</span>
                                   <span className="font-mono">LATEST: {badge.split(' · ')[1]}</span>
                                 </div>
+                                {/* Time mode toggles + Zoom controls */}
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  <div className="flex gap-1">
+                                    {(['daily', 'weekly', 'monthly'] as const).map(mode => (
+                                      <button key={mode} onClick={() => { setDetectorTimeMode(mode); setDetectorViewport([-1, -1]); }}
+                                        className={`text-[9px] font-bold px-2 py-1 rounded-md border transition-all cursor-pointer ${detectorTimeMode === mode ? 'bg-white/[0.06] border-[#3B82F6] text-white' : 'border-white/[0.06] text-gray-500 hover:text-gray-300'}`}>
+                                        {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  {sparkline.length > 5 && (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-[9px] text-gray-500 font-mono mr-1">{dVpCount} of {sparkline.length}</span>
+                                      <button onClick={() => {
+                                        const range = dVpEnd2 - dVpStart2;
+                                        const newRange = Math.min(sparkline.length - 1, Math.round(range * 1.5));
+                                        const center = Math.round((dVpStart2 + dVpEnd2) / 2);
+                                        const e = Math.min(sparkline.length - 1, center + Math.round(newRange / 2));
+                                        const s = Math.max(0, e - newRange);
+                                        setDetectorViewport([s, e]);
+                                      }} className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/[0.06] text-gray-400 hover:text-gray-300 cursor-pointer" title="Zoom out"><Minus className="h-2.5 w-2.5" /></button>
+                                      <button onClick={() => {
+                                        const range = dVpEnd2 - dVpStart2;
+                                        const newRange = Math.max(4, Math.round(range / 1.5));
+                                        const center = Math.round((dVpStart2 + dVpEnd2) / 2);
+                                        const s = Math.max(0, center - Math.round(newRange / 2));
+                                        const e = Math.min(sparkline.length - 1, s + newRange);
+                                        setDetectorViewport([s, e]);
+                                      }} className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/[0.06] text-gray-400 hover:text-gray-300 cursor-pointer" title="Zoom in"><Plus className="h-2.5 w-2.5" /></button>
+                                      <div className="w-px h-3 bg-white/[0.06]" />
+                                      <button onClick={() => {
+                                        const range = dVpEnd2 - dVpStart2;
+                                        const shift = Math.max(1, Math.round(range * 0.3));
+                                        const s = Math.max(0, dVpStart2 - shift);
+                                        setDetectorViewport([s, Math.min(sparkline.length - 1, s + range)]);
+                                      }} className="text-[9px] font-bold px-1 py-0.5 rounded border border-white/[0.06] text-gray-400 hover:text-gray-300 cursor-pointer" title="Scroll left"><ChevronLeft className="h-2.5 w-2.5" /></button>
+                                      <button onClick={() => {
+                                        const range = dVpEnd2 - dVpStart2;
+                                        const shift = Math.max(1, Math.round(range * 0.3));
+                                        const e = Math.min(sparkline.length - 1, dVpEnd2 + shift);
+                                        setDetectorViewport([Math.max(0, e - range), e]);
+                                      }} className="text-[9px] font-bold px-1 py-0.5 rounded border border-white/[0.06] text-gray-400 hover:text-gray-300 cursor-pointer" title="Scroll right"><ChevronRight className="h-2.5 w-2.5" /></button>
+                                      <button onClick={() => setDetectorViewport([-1, -1])} className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/[0.06] text-gray-400 hover:text-gray-300 cursor-pointer" title="Reset zoom">Reset</button>
+                                    </div>
+                                  )}
+                                </div>
                                 <div className="glass-inner rounded-lg p-3">
-                                  {renderDetectorChart(sparkline, info.color, sparkDates.length > 0 ? sparkDates : chartDates, info.name)}
+                                  {renderDetectorChart(dVpSlice, info.color, dVpSliceDates, info.name)}
                                 </div>
                                 {sparkline.length > 0 && Math.max(...sparkline) === 100 && Math.min(...sparkline) >= 95 && (
                                   <p className="text-[10px] text-amber-500/70 leading-relaxed">
@@ -3870,7 +3997,7 @@ export default function App() {
                 </div>
 
                 {/* FORECAST ENGINE (integrated from forecast tab) */}
-                <div className="border-t border-gray-800/60 pt-6">
+                <div className="border-t border-gray-800/60 pt-6" id="forecast-section">
                   <div 
                     className="flex items-center justify-between cursor-pointer group"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, forecast: !prev.forecast }))}
