@@ -339,6 +339,10 @@ export default function App() {
 
   // Global hover state for longitudinal charts
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
+  const [chartMouseXPct, setChartMouseXPct] = useState(50);
+  const [cusumMouseXPct, setCusumMouseXPct] = useState(50);
+  const [forecastMouseXPct, setForecastMouseXPct] = useState(50);
+  const [detectorMouseXPct, setDetectorMouseXPct] = useState(50);
 
   // Hover state for individual detector sparkline charts
   const [detectorHoveredIndex, setDetectorHoveredIndex] = useState<number | null>(null);
@@ -1098,6 +1102,8 @@ export default function App() {
     const handleMouseMove = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
       const rect = e.currentTarget.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
+      const mousePct = Math.max(0, Math.min(100, (mouseX / rect.width) * 100));
+      setDetectorMouseXPct(mousePct);
       const svgWidth = rect.width;
       const scaleX = width / svgWidth;
       const svgMouseX = mouseX * scaleX;
@@ -1172,7 +1178,7 @@ export default function App() {
           <div
             className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 px-2.5 py-1.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
             style={{
-              left: `${Math.min(85, Math.max(5, (detectorHoveredIndex / lastIdx) * 100))}%`,
+              left: `${Math.min(85, Math.max(5, detectorMouseXPct))}%`,
               top: "-8px"
             }}
           >
@@ -1188,230 +1194,6 @@ export default function App() {
           </div>
           <span className="text-gray-600">{dates[0]?.slice(5).replace('-', '/') || ''} &ndash; {dates[lastIdx]?.slice(5).replace('-', '/') || ''}</span>
         </div>
-      </div>
-    );
-  };
-
-  // Render main spline line chart with interactive tooltip
-  const [hoveredChartPoint, setHoveredChartPoint] = useState<any>(null);
-  const [chartTooltipPos, setChartTooltipPos] = useState({ x: 0, y: 0 });
-
-  const renderTemporalCognitiveChart = () => {
-    const data = diagnosticData.temporalCognitiveAnalysis || defaultDiagnosticData.temporalCognitiveAnalysis;
-    const width = 640;
-    const height = 280;
-    const padding = { top: 20, right: 20, bottom: 40, left: 40 };
-
-    const xMax = 24;
-    const yMax = 80;
-    const yMin = 30;
-
-    const getX = (val: number) => padding.left + ((val - 1) / (xMax - 1)) * (width - padding.left - padding.right);
-    const getY = (val: number) => height - padding.bottom - ((val - yMin) / (yMax - yMin)) * (height - padding.top - padding.bottom);
-
-    // Dotted baseline path (smooth spline approximation using bezier)
-    let baselinePath = `M ${getX(data[0].hour)} ${getY(data[0].baseline)}`;
-    for (let i = 0; i < data.length - 1; i++) {
-      const x1 = getX(data[i].hour);
-      const y1 = getY(data[i].baseline);
-      const x2 = getX(data[i+1].hour);
-      const y2 = getY(data[i+1].baseline);
-      const cx1 = x1 + (x2 - x1) / 2;
-      const cy1 = y1;
-      const cx2 = x1 + (x2 - x1) / 2;
-      const cy2 = y2;
-      baselinePath += ` C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
-    }
-
-    // Current session line (glowing bright blue)
-    let currentPath = `M ${getX(data[0].hour)} ${getY(data[0].current)}`;
-    for (let i = 0; i < data.length - 1; i++) {
-      const x1 = getX(data[i].hour);
-      const y1 = getY(data[i].current);
-      const x2 = getX(data[i+1].hour);
-      const y2 = getY(data[i+1].current);
-      const cx1 = x1 + (x2 - x1) / 2;
-      const cy1 = y1;
-      const cx2 = x1 + (x2 - x1) / 2;
-      const cy2 = y2;
-      currentPath += ` C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
-    }
-
-    // Gridlines (Y-axis gridlines every 10 units)
-    const yGridValues = [30, 40, 50, 60, 70, 80];
-
-    const handleMouseMove = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      
-      // Map mouseX back to closest hour index
-      const chartWidth = width - padding.left - padding.right;
-      const relativeX = mouseX - padding.left;
-      const hourPct = relativeX / chartWidth;
-      const exactHour = 1 + hourPct * (xMax - 1);
-      const closestHourIndex = Math.min(23, Math.max(0, Math.round(exactHour) - 1));
-      const point = data[closestHourIndex];
-
-      if (point) {
-        setHoveredChartPoint(point);
-        setChartTooltipPos({
-          x: getX(point.hour),
-          y: getY(point.current)
-        });
-      }
-    };
-
-    const handleMouseLeave = () => {
-      setHoveredChartPoint(null);
-    };
-
-    return (
-      <div className="relative" id="temporal-analysis-chart-container">
-        <svg 
-          width="100%" 
-          height={height} 
-          viewBox={`0 0 ${width} ${height}`} 
-          className="overflow-visible select-none cursor-crosshair"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-        >
-          <defs>
-            {/* Filter for electric blue glow */}
-            <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="6" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            {/* Gradient for area fill */}
-            <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
-            </linearGradient>
-          </defs>
-
-          {/* Gridlines */}
-          {yGridValues.map((val) => (
-            <g key={val}>
-              <line 
-                x1={padding.left} 
-                y1={getY(val)} 
-                x2={width - padding.right} 
-                y2={getY(val)} 
-                stroke="#1B2030" 
-                strokeWidth="1" 
-                strokeDasharray={val === 30 ? 'none' : '4,4'}
-              />
-              <text 
-                x={padding.left - 12} 
-                y={getY(val) + 4} 
-                fill="#5F6E85" 
-                fontSize="11" 
-                textAnchor="end"
-                fontFamily="monospace"
-              >
-                {val}
-              </text>
-            </g>
-          ))}
-
-          {/* X Axis Labels (Hours 1, 2, ..., 24) */}
-          {Array.from({ length: 24 }, (_, i) => i + 1).map((hr) => (
-            hr % 2 === 1 || hr === 24 ? (
-              <text 
-                key={hr} 
-                x={getX(hr)} 
-                y={height - padding.bottom + 20} 
-                fill="#5F6E85" 
-                fontSize="10" 
-                textAnchor="middle"
-                fontFamily="monospace"
-              >
-                {hr}
-              </text>
-            ) : null
-          ))}
-
-          {/* Baseline dotted line */}
-          <path 
-            d={baselinePath} 
-            fill="none" 
-            stroke="#4A5568" 
-            strokeWidth="1.5" 
-            strokeDasharray="4,4" 
-            opacity="0.7"
-          />
-
-          {/* Area under current line */}
-          <path
-            d={`${currentPath} L ${getX(24)} ${getY(30)} L ${getX(1)} ${getY(30)} Z`}
-            fill="url(#area-grad)"
-          />
-
-          {/* Current session glowing line */}
-          <path 
-            d={currentPath} 
-            fill="none" 
-            stroke="#3B82F6" 
-            strokeWidth="2.5" 
-            filter="url(#neon-glow)"
-          />
-
-          {/* Active tooltip vertical tracker line */}
-          {hoveredChartPoint && (
-            <g>
-              <line
-                x1={chartTooltipPos.x}
-                y1={padding.top}
-                x2={chartTooltipPos.x}
-                y2={height - padding.bottom}
-                stroke="rgba(165, 192, 255, 0.25)"
-                strokeWidth="1"
-                strokeDasharray="2,2"
-              />
-              <circle
-                cx={chartTooltipPos.x}
-                cy={chartTooltipPos.y}
-                r="6"
-                fill="#3B82F6"
-                stroke="#FFFFFF"
-                strokeWidth="2"
-                className="shadow-lg"
-              />
-              <circle
-                cx={chartTooltipPos.x}
-                cy={getY(hoveredChartPoint.baseline)}
-                r="4"
-                fill="#4A5568"
-                stroke="#11131C"
-                strokeWidth="1.5"
-              />
-            </g>
-          )}
-        </svg>
-
-        {/* Custom Tooltip Overlay */}
-        {hoveredChartPoint && (
-          <div 
-            className="absolute z-30 bg-[#161B26]/95 border border-[#2D3748] rounded px-2.5 py-1.5 text-xs text-white pointer-events-none shadow-2xl transition-all duration-75"
-            style={{ 
-              left: `${chartTooltipPos.x - 60}px`, 
-              top: `${chartTooltipPos.y - 70}px` 
-            }}
-          >
-            <div className="font-semibold text-[#A5C0FF] mb-0.5">Hour {hoveredChartPoint.hour}:00</div>
-            <div className="flex justify-between gap-4 mb-0.5">
-              <span className="text-gray-400">Current:</span>
-              <span className="font-bold text-[#3B82F6]">{hoveredChartPoint.current}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-400">Baseline:</span>
-              <span className="font-semibold text-gray-300">{hoveredChartPoint.baseline}</span>
-            </div>
-          </div>
-        )}
       </div>
     );
   };
@@ -2386,12 +2168,6 @@ export default function App() {
               return Array.from({ length: 7 }, (_, i) => vpStart + Math.round(i * step));
             })();
 
-            const sentimentData = pipeline?.pipelineSentimentSeries || [
-              0.61, 0.68, 0.45, 0.59, 0.65, 0.66, 0.56, 0.61, 0.67, 0.63, 0.58, 0.66, 0.69, 0.62,
-              0.59, 0.56, 0.64, 0.68, 0.59, 0.53, 0.61, 0.57, 0.59, 0.54, 0.61, 0.56, 0.59, 0.66,
-              0.61, 0.58, 0.63, 0.56, 0.60, 0.64, 0.58, 0.61, 0.54, 0.62, 0.67, 0.61, 0.66, 0.64
-            ];
-
             const anomalyRiskData = pipeline?.pipelineAnomalyScores || [
               0.55, 0.42, 0.48, 0.38, 0.45, 0.52, 0.41, 0.44, 0.58, 0.49, 0.42, 0.55, 0.73, 0.44,
               0.51, 0.43, 0.39, 0.48, 0.52, 0.41, 0.48, 0.38, 0.46, 0.35, 0.42, 0.49, 0.36, 0.45,
@@ -2443,6 +2219,8 @@ export default function App() {
             const handleChartMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
               const rect = e.currentTarget.getBoundingClientRect();
               const mouseXPx = e.clientX - rect.left;
+              const mousePct = Math.max(0, Math.min(100, (mouseXPx / rect.width) * 100));
+              setChartMouseXPct(mousePct);
               const scale = 500 / rect.width;
               const svgMouseX = mouseXPx * scale;
               const relativeX = svgMouseX - 35;
@@ -2625,6 +2403,15 @@ export default function App() {
                   <div className="space-y-1">
                     <div className="text-3xl font-extrabold text-[#43A0F5] tracking-tight">{estimatedRisk}</div>
                     <div className="text-xs text-gray-400 font-medium">estimated risk</div>
+                    <div className={`text-[10px] font-semibold leading-snug mt-0.5 ${scoreVal > 55 ? 'text-rose-400/80' : scoreVal > 40 ? 'text-amber-400/80' : 'text-emerald-400/80'}`}>
+                      {scoreVal > 75
+                        ? 'High risk — immediate attention recommended.'
+                        : scoreVal > 55
+                        ? 'Moderate risk — some signals worth watching closely.'
+                        : scoreVal > 40
+                        ? 'Low-mild risk — patterns are within a concerning but manageable range.'
+                        : 'Low risk — no significant mental health concerns detected.'}
+                    </div>
                   </div>
 
                   {/* Third Card */}
@@ -2801,229 +2588,7 @@ export default function App() {
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                      
-                      {/* LEFT CHART: SENTIMENT */}
-                      <div className="glass-panel rounded-xl p-5">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-gray-300">Daily emotional tone</span>
-                          <div className="flex items-center gap-2.5 text-[10px] text-gray-400">
-                            <div className="flex items-center gap-1">
-                              <span className="inline-block w-4 h-0.5 bg-blue-500 rounded-sm" />
-                              <span>Raw</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="inline-block w-4 h-0.5 bg-blue-400 rounded-sm" style={{ borderTop: '1px dashed #60a5fa' }} />
-                              <span>Trend</span>
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-[10px] text-gray-500 mb-3">Y-axis: 1.0 strongly positive · 0.5 neutral · 0.0 strongly negative</p>
-
-                        <div className="relative h-60 w-full" onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
-                          {/* SVG Sentiment Chart */}
-                          <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible">
-                            {/* Sentiment Zone Bands — Positive (0.65–1.0), Neutral (0.35–0.65), Negative (0.0–0.35) */}
-                            <rect x="35" y={15 + ((1.0 - 1.0) / 1.0) * 185} width="450" height={((1.0 - 0.65) / 1.0) * 185} fill="#10B981" opacity="0.06" rx="2" />
-                            <rect x="35" y={15 + ((1.0 - 0.65) / 1.0) * 185} width="450" height={((0.65 - 0.35) / 1.0) * 185} fill="#F59E0B" opacity="0.06" rx="2" />
-                            <rect x="35" y={15 + ((1.0 - 0.35) / 1.0) * 185} width="450" height={((0.35 - 0.0) / 1.0) * 185} fill="#EF4444" opacity="0.06" rx="2" />
-                            {/* Zone labels */}
-                            <text x="487" y={15 + ((1.0 - 0.825) / 1.0) * 185 + 3} fill="#10B981" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Positive</text>
-                            <text x="487" y={15 + ((1.0 - 0.5) / 1.0) * 185 + 3} fill="#F59E0B" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Neutral</text>
-                            <text x="487" y={15 + ((1.0 - 0.175) / 1.0) * 185 + 3} fill="#EF4444" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Negative</text>
-                            {/* Grid Lines & Labels */}
-                            {[0.0, 0.25, 0.5, 0.75, 1.0].map((val, idx) => {
-                              const y = 15 + ((1.0 - val) / 1.0) * 185;
-                              return (
-                                <g key={idx}>
-                                  <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray={val === 0.5 ? "none" : "3 3"} />
-                                  <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{(val * 100).toFixed(0)}%</text>
-                                </g>
-                              );
-                            })}
-
-                            {/* X Axis Date Labels (viewport-aware) */}
-                            {vpXLabels.map((ptIndex) => {
-                              const x = 35 + ((ptIndex - vpStart) / vpLastIdx) * 450;
-                              return (
-                                <g key={ptIndex}>
-                                  <line x1={x} y1="15" x2={x} y2="200" stroke="#1B2030" strokeWidth="0.5" strokeDasharray="2 2" />
-                                  <text 
-                                    x={x} 
-                                    y="218" 
-                                    fill="#64748b" 
-                                    fontSize="8" 
-                                    textAnchor="middle" 
-                                    fontFamily="monospace"
-                                  >
-                                    {chartDates[ptIndex]}
-                                  </text>
-                                </g>
-                              );
-                            })}
-
-                            {/* Sentiment Line Path (viewport-sliced) */}
-                            <path 
-                              d={(() => {
-                                const sliced = sentimentData.slice(vpStart, vpEnd + 1);
-                                let pathStr = "";
-                                sliced.forEach((val, idx) => {
-                                  const x = 35 + (idx / vpLastIdx) * 450;
-                                  const y = 15 + (1.0 - val) * 185;
-                                  pathStr += (idx === 0 ? "M" : "L") + ` ${x} ${y}`;
-                                });
-                                return pathStr;
-                              })()}
-                              fill="none"
-                              stroke="#3b82f6"
-                              strokeWidth="2"
-                              className="drop-shadow-[0_0_3px_rgba(59,130,246,0.3)]"
-                            />
-
-                            {/* Smoothed Trend Line (5-point moving average) */}
-                            {(() => {
-                              const sliced = sentimentData.slice(vpStart, vpEnd + 1);
-                              const windowSize = 5;
-                              const smoothed: number[] = [];
-                              for (let i = 0; i < sliced.length; i++) {
-                                const start = Math.max(0, i - Math.floor(windowSize / 2));
-                                const end = Math.min(sliced.length, i + Math.ceil(windowSize / 2));
-                                const avg = sliced.slice(start, end).reduce((a, b) => a + b, 0) / (end - start);
-                                smoothed.push(avg);
-                              }
-                              let pathStr = "";
-                              smoothed.forEach((val, idx) => {
-                                const x = 35 + (idx / vpLastIdx) * 450;
-                                const y = 15 + (1.0 - val) * 185;
-                                pathStr += (idx === 0 ? "M" : "L") + ` ${x} ${y}`;
-                              });
-                              return (
-                                <path
-                                  d={pathStr}
-                                  fill="none"
-                                  stroke="#60a5fa"
-                                  strokeWidth="1.5"
-                                  strokeDasharray="4 3"
-                                  opacity="0.5"
-                                />
-                              );
-                            })()}
-
-                            {/* Peak/Valley anchor diamonds (viewport-sliced) */}
-                            {(() => {
-                              const sliced = sentimentData.slice(vpStart, vpEnd + 1);
-                              const extrema: { idx: number; type: 'peak' | 'valley' }[] = [];
-                              for (let i = 1; i < sliced.length - 1; i++) {
-                                if (sliced[i] > sliced[i-1] && sliced[i] > sliced[i+1]) extrema.push({ idx: vpStart + i, type: 'peak' });
-                                if (sliced[i] < sliced[i-1] && sliced[i] < sliced[i+1]) extrema.push({ idx: vpStart + i, type: 'valley' });
-                              }
-                              return extrema.map(({ idx, type }) => {
-                                const x = 35 + ((idx - vpStart) / vpLastIdx) * 450;
-                                const y = 15 + (1.0 - sentimentData[idx]) * 185;
-                                return (
-                                  <polygon
-                                    key={idx}
-                                    points={`${x},${y-5} ${x+4},${y} ${x},${y+5} ${x-4},${y}`}
-                                    fill={type === 'peak' ? '#EF4444' : '#10B981'}
-                                    stroke="#0b0d13"
-                                    strokeWidth="1"
-                                    opacity="0.65"
-                                    className="cursor-pointer hover:opacity-100 transition-opacity"
-                                    onClick={() => setHoveredPointIndex(idx)}
-                                  />
-                                );
-                              });
-                            })()}
-
-                            {/* Global Hover Crosshair & Indicators (viewport-aware) */}
-                            {hoveredPointIndex !== null && hoveredPointIndex >= vpStart && hoveredPointIndex <= vpEnd && (
-                              <g>
-                                <line 
-                                  x1={35 + ((hoveredPointIndex - vpStart) / vpLastIdx) * 450} 
-                                  y1="15" 
-                                  x2={35 + ((hoveredPointIndex - vpStart) / vpLastIdx) * 450} 
-                                  y2="200" 
-                                  stroke="#3b82f6" 
-                                  strokeWidth="1.5" 
-                                  strokeDasharray="3 3" 
-                                />
-                                <circle 
-                                  cx={35 + ((hoveredPointIndex - vpStart) / vpLastIdx) * 450} 
-                                  cy={15 + (1.0 - sentimentData[hoveredPointIndex]) * 185} 
-                                  r="5" 
-                                  fill="#3b82f6" 
-                                  stroke="#0b0d13" 
-                                  strokeWidth="1.5" 
-                                />
-                              </g>
-                            )}
-                          </svg>
-
-                          {/* Interactive Tooltip Overlay (viewport-aware) */}
-                          {hoveredPointIndex !== null && hoveredPointIndex >= vpStart && hoveredPointIndex <= vpEnd && (() => {
-                            const val = sentimentData[hoveredPointIndex] ?? 0;
-                            let status = 'Neutral';
-                            let statusColor = 'text-gray-400';
-                            if (val > 0.65) { status = 'Positive'; statusColor = 'text-emerald-400'; }
-                            else if (val > 0.55) { status = 'Mildly positive'; statusColor = 'text-emerald-400'; }
-                            else if (val < 0.35) { status = 'Negative'; statusColor = 'text-rose-400'; }
-                            else if (val < 0.45) { status = 'Mildly negative'; statusColor = 'text-amber-400'; }
-                            return (
-                              <div 
-                                className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 p-2.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
-                                style={{ 
-                                  left: `${Math.min(72, Math.max(5, ((hoveredPointIndex - vpStart) / vpLastIdx) * 100))}%`,
-                                  top: "20px"
-                                }}
-                              >
-                                <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex]}</div>
-                                <div>Sentiment: <span className="text-blue-400 font-bold">{val.toFixed(2)}</span></div>
-                                <div>Status: <span className={`font-bold ${statusColor}`}>{status}</span></div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-
-                        <p className="text-[10px] text-gray-500 leading-relaxed mt-4">
-                          Each point is one journal entry, in order by date (X-axis). The Y-axis is the sentiment of that entry's writing, from 0 (very negative tone) to 100% (very positive tone), with 50% being neutral. The dashed line shows the smoothed trend.
-                        </p>
-
-                        {(() => {
-                          const sliced = sentimentData.slice(vpStart, vpEnd + 1);
-                          if (sliced.length < 3) return null;
-                          const firstHalf = sliced.slice(0, Math.floor(sliced.length / 2));
-                          const secondHalf = sliced.slice(Math.floor(sliced.length / 2));
-                          const avgFirst = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
-                          const avgSecond = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-                          const diff = avgSecond - avgFirst;
-                          const avgRecent = sliced.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, sliced.length);
-                          const currentVal = sliced[sliced.length - 1];
-
-                          let trend = 'relatively stable';
-                          let trendColor = 'text-gray-400';
-                          if (diff > 0.15) { trend = 'improving overall'; trendColor = 'text-emerald-400'; }
-                          else if (diff > 0.05) { trend = 'gradually trending positive'; trendColor = 'text-emerald-400'; }
-                          else if (diff < -0.15) { trend = 'declining overall'; trendColor = 'text-rose-400'; }
-                          else if (diff < -0.05) { trend = 'gradually trending negative'; trendColor = 'text-amber-400'; }
-
-                          let tone = 'neutral';
-                          let toneColor = 'text-gray-400';
-                          if (currentVal > 0.65) { tone = 'positive'; toneColor = 'text-emerald-400'; }
-                          else if (currentVal > 0.55) { tone = 'mildly positive'; toneColor = 'text-emerald-400'; }
-                          else if (currentVal < 0.35) { tone = 'negative'; toneColor = 'text-rose-400'; }
-                          else if (currentVal < 0.45) { tone = 'mildly negative'; toneColor = 'text-amber-400'; }
-
-                          return (
-                            <div className="mt-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                              <p className="text-[11px] text-gray-400 leading-relaxed">
-                                <span className="font-bold text-gray-300">Interpretation:</span> The most recent entry reads as <span className={`font-semibold ${toneColor}`}>{tone}</span>. Over the visible range, emotional tone is <span className={`font-semibold ${trendColor}`}>{trend}</span> — the second half averages {Math.round(avgSecond * 100)}% compared to {Math.round(avgFirst * 100)}% in the first half{Math.abs(diff) >= 0.05 ? ` (Δ ${diff > 0 ? '+' : ''}${Math.round(diff * 100)}%)` : ''}.
-                              </p>
-                            </div>
-                          );
-                        })()}
-                      </div>
-
-                      {/* RIGHT CHART: ANOMALY RISK */}
+                      {/* ANOMALY RISK CHART */}
                       <div className="glass-panel rounded-xl p-5">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-bold text-gray-300">Unusual behavioral patterns</span>
@@ -3155,7 +2720,7 @@ export default function App() {
                               <div 
                                 className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 p-2.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
                                 style={{ 
-                                  left: `${Math.min(72, Math.max(5, ((hoveredPointIndex - vpStart) / vpLastIdx) * 100))}%`,
+                                  left: `${Math.min(80, Math.max(2, chartMouseXPct))}%`,
                                   top: "20px"
                                 }}
                               >
@@ -3226,7 +2791,6 @@ export default function App() {
                         })()}
                       </div>
 
-                    </div>
                     </div>
                   )}
 
@@ -3484,6 +3048,8 @@ export default function App() {
                         <div className="relative h-60 w-full" onMouseMove={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
                           const rect = e.currentTarget.getBoundingClientRect();
                           const mouseXPx = e.clientX - rect.left;
+                          const mousePct = Math.max(0, Math.min(100, (mouseXPx / rect.width) * 100));
+                          setCusumMouseXPct(mousePct);
                           const scale = 500 / rect.width;
                           const svgMouseX = mouseXPx * scale;
                           const relativeX = svgMouseX - 35;
@@ -3542,10 +3108,8 @@ export default function App() {
                               );
                             })}
 
-                            {/* Dashed Threshold Line with label */}
-                            <line x1="35" y1={yScale(cusumThreshold)} x2="485" y2={yScale(cusumThreshold)} stroke="#94a3b8" strokeWidth="1.2" strokeDasharray="4 4" />
-                            <rect x="36" y={yScale(cusumThreshold) - 12} width="68" height="12" rx="2" fill="#1a1e2e" opacity="0.9" />
-                            <text x="70" y={yScale(cusumThreshold) - 3} fill="#94a3b8" fontSize="7" textAnchor="middle" fontFamily="monospace" fontWeight="bold">Threshold: {cusumThreshold.toFixed(2)}</text>
+                            {/* Threshold reference line inside chart (faint) */}
+                            <line x1="35" y1={yScale(cusumThreshold)} x2="485" y2={yScale(cusumThreshold)} stroke="#94a3b8" strokeWidth="0.8" strokeDasharray="4 4" opacity="0.35" />
 
                             {/* Lower CUSUM Path (blue) — conditionally shown */}
                             {(selectedCusumTab === 1 || selectedCusumTab === 2) && (
@@ -3574,12 +3138,18 @@ export default function App() {
                           </svg>);
                           })()}
 
+                          {/* Threshold indicator outside chart */}
+                          <div className="absolute top-1 right-2 flex items-center gap-1.5 bg-[#0E1119]/80 border border-gray-700/40 rounded-md px-2 py-0.5 pointer-events-none z-10">
+                            <span className="w-3 h-0 border-t border-dashed border-gray-400" />
+                            <span className="text-[9px] font-mono text-gray-400">Threshold: {cusumThreshold.toFixed(2)}</span>
+                          </div>
+
                           {/* Interactive Tooltip Overlay (CUSUM viewport-aware) */}
                           {hoveredPointIndex !== null && hoveredPointIndex >= cVpStart && hoveredPointIndex <= cVpEnd && (
                             <div 
                               className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 p-2.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
                               style={{ 
-                                left: `${Math.min(72, Math.max(5, ((hoveredPointIndex - cVpStart) / cVpLastIdx) * 100))}%`,
+                                left: `${Math.min(80, Math.max(2, cusumMouseXPct))}%`,
                                 top: "20px"
                               }}
                             >
@@ -4054,14 +3624,16 @@ export default function App() {
                       const tickCount = 5;
                       const tickStep = yRange / tickCount;
                       const ticks = Array.from({ length: tickCount + 1 }, (_, i) => yMin + i * tickStep);
-                      const bgBands = [
-                        { from: yMin, to: yMin + yRange * 0.33, color: '#10B981', label: 'Low' },
-                        { from: yMin + yRange * 0.33, to: yMin + yRange * 0.66, color: '#F59E0B', label: 'Moderate' },
-                        { from: yMin + yRange * 0.66, to: yMax, color: '#EF4444', label: 'High' },
+                      const bgBandLabels = [
+                        { pos: 0.17, color: '#10B981', label: 'Low' },
+                        { pos: 0.50, color: '#F59E0B', label: 'Moderate' },
+                        { pos: 0.83, color: '#EF4444', label: 'High' },
                       ];
                       const dataLen = lines[0]?.data?.length || 7;
                       const handleSvgMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
                         const rect = e.currentTarget.getBoundingClientRect();
+                        const mousePct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+                        setForecastMouseXPct(mousePct);
                         const svgMouseX = (e.clientX - rect.left) * (500 / rect.width);
                         const relX = svgMouseX - 35;
                         const idx = Math.min(dataLen - 1, Math.max(0, Math.round((relX / 450) * (dataLen - 1))));
@@ -4076,11 +3648,19 @@ export default function App() {
                             onMouseMove={handleSvgMouseMove}
                             onMouseLeave={() => setForecastHoverIdx(null)}
                           >
-                            {bgBands.map((band, bi) => (
-                              <rect key={bi} x="35" y={yToSvg(band.to)} width="450" height={yToSvg(band.from) - yToSvg(band.to)} fill={band.color} opacity="0.05" rx="2" />
-                            ))}
-                            {bgBands.map((band, bi) => (
-                              <text key={`lbl-${bi}`} x="487" y={yToSvg((band.from + band.to) / 2) + 3} fill={band.color} fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">{band.label}</text>
+                            <defs>
+                              <linearGradient id="forecastZoneGrad" x1="0" y1="0" x2="0" y2="1" spreadMethod="pad">
+                                <stop offset="0%" stopColor="#EF4444" stopOpacity="0.12" />
+                                <stop offset="34%" stopColor="#EF4444" stopOpacity="0.06" />
+                                <stop offset="40%" stopColor="#F59E0B" stopOpacity="0.06" />
+                                <stop offset="60%" stopColor="#F59E0B" stopOpacity="0.06" />
+                                <stop offset="66%" stopColor="#10B981" stopOpacity="0.06" />
+                                <stop offset="100%" stopColor="#10B981" stopOpacity="0.12" />
+                              </linearGradient>
+                            </defs>
+                            <rect x="35" y="15" width="450" height="185" fill="url(#forecastZoneGrad)" rx="2" />
+                            {bgBandLabels.map((lbl, bi) => (
+                              <text key={`lbl-${bi}`} x="487" y={yToSvg(yMin + yRange * lbl.pos) + 3} fill={lbl.color} fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">{lbl.label}</text>
                             ))}
                             {ticks.map((val, idx) => {
                               const y = yToSvg(val);
@@ -4135,9 +3715,8 @@ export default function App() {
                             <line x1="35" y1="200" x2="485" y2="200" stroke="#1B2030" strokeWidth="1" />
                           </svg>
                           {forecastHoverIdx !== null && forecastHoverIdx < dataLen && (() => {
-                            const hx = Math.min(88, Math.max(4, (forecastHoverIdx / Math.max(1, dataLen - 1)) * 100));
                             return (
-                              <div className="absolute pointer-events-none z-30 transition-all duration-150 ease-out" style={{ left: `${hx}%`, top: '8px', transform: 'translateX(-50%)' }}>
+                              <div className="absolute pointer-events-none z-30 transition-all duration-150 ease-out" style={{ left: `${Math.min(90, Math.max(2, forecastMouseXPct))}%`, top: '8px', transform: 'translateX(-50%)' }}>
                                 <div className="bg-[#11131c]/95 border border-[#232B3B]/80 px-3 py-2 rounded-lg shadow-2xl backdrop-blur-sm">
                                   <div className="text-[10px] font-bold text-gray-400 mb-1 border-b border-gray-800/60 pb-1">Day {forecastHoverIdx + 1}</div>
                                   {lines.map((line, li) => {
@@ -4198,6 +3777,68 @@ export default function App() {
                             </div>
                           )}
                         </div>
+
+                        {/* INTERACTIVE FORECAST BOXES */}
+                        {forecastData.length > 0 && (() => {
+                          const dayLabels = ['Today', 'Tomorrow', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'];
+                          const avgForecast = forecastData.reduce((a, b) => a + b, 0) / forecastData.length;
+                          const firstVal = forecastData[0] ?? 0;
+                          const lastVal = forecastData[forecastData.length - 1] ?? 0;
+                          const delta = lastVal - firstVal;
+                          const riskTrend = delta > 0.05 ? 'increasing' : delta < -0.05 ? 'decreasing' : 'stable';
+                          const trendColor = riskTrend === 'increasing' ? 'text-rose-400' : riskTrend === 'decreasing' ? 'text-emerald-400' : 'text-gray-300';
+                          const trendIcon = riskTrend === 'increasing' ? '↑' : riskTrend === 'decreasing' ? '↓' : '→';
+                          const trendMsg = riskTrend === 'increasing'
+                            ? 'The risk seems to increase over the next 7 days. Consider monitoring entries more closely and prioritizing self-care routines.'
+                            : riskTrend === 'decreasing'
+                            ? 'The risk seems to decrease over the next 7 days. Current patterns suggest a positive trajectory — keep it up.'
+                            : 'The risk appears stable over the next 7 days. No significant upward or downward movement detected.';
+
+                          return (
+                            <div className="space-y-3 animate-in fade-in duration-300">
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Day-by-Day Forecast</span>
+                              <div className="grid grid-cols-7 gap-2">
+                                {forecastData.slice(0, 7).map((val, idx) => {
+                                  const pct = Math.round((val ?? 0) * 100);
+                                  const barColor = pct >= 70 ? 'bg-rose-500' : pct >= 45 ? 'bg-amber-500' : 'bg-emerald-500';
+                                  const textColor = pct >= 70 ? 'text-rose-400' : pct >= 45 ? 'text-amber-400' : 'text-emerald-400';
+                                  return (
+                                    <button
+                                      key={idx}
+                                      onClick={() => setForecastHoverIdx(idx)}
+                                      className={`glass-panel rounded-lg p-2.5 text-center transition-all duration-200 cursor-pointer border ${
+                                        forecastHoverIdx === idx ? 'border-purple-500/40 bg-purple-950/20 shadow-lg shadow-purple-900/10' : 'border-white/[0.04] hover:border-white/[0.1]'
+                                      }`}
+                                    >
+                                      <div className="text-[8px] text-gray-500 uppercase tracking-wider mb-1">{dayLabels[idx] || `Day ${idx + 1}`}</div>
+                                      <div className={`text-sm font-bold font-mono ${textColor}`}>{pct}%</div>
+                                      <div className="w-full h-1 bg-white/[0.05] rounded-full mt-1.5 overflow-hidden">
+                                        <div className={`h-full rounded-full ${barColor} transition-all duration-500`} style={{ width: `${pct}%` }} />
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <div className={`glass-panel rounded-xl p-4 border-l-4 ${
+                                riskTrend === 'increasing' ? 'border-l-rose-500 bg-rose-950/10' : riskTrend === 'decreasing' ? 'border-l-emerald-500 bg-emerald-950/10' : 'border-l-gray-500 bg-white/[0.02]'
+                              }`}>
+                                <div className="flex items-start gap-3">
+                                  <span className={`text-lg ${trendColor}`}>{trendIcon}</span>
+                                  <div>
+                                    <p className={`text-xs font-bold ${trendColor} mb-1`}>7-Day Outlook: Risk is {riskTrend}</p>
+                                    <p className="text-[11px] text-gray-400 leading-relaxed">{trendMsg}</p>
+                                    <div className="flex gap-4 mt-2 text-[10px] text-gray-500">
+                                      <span>Day 1: <span className="font-mono text-gray-300">{Math.round(firstVal * 100)}%</span></span>
+                                      <span>Day 7: <span className="font-mono text-gray-300">{Math.round(lastVal * 100)}%</span></span>
+                                      <span>Δ: <span className={`font-mono font-bold ${delta > 0 ? 'text-rose-400' : delta < 0 ? 'text-emerald-400' : 'text-gray-300'}`}>{delta > 0 ? '+' : ''}{Math.round(delta * 100)}%</span></span>
+                                      <span>Avg: <span className="font-mono text-gray-300">{Math.round(avgForecast * 100)}%</span></span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         {/* PER-DETECTOR FORECASTS */}
                         <div className="space-y-3">
@@ -4353,14 +3994,29 @@ export default function App() {
           {activeTab === 'explainable' && (
             <div className="space-y-8 animate-in fade-in duration-300" id="explainable-ai-container">
               
-              {/* RETURN TO ANALYSIS BUTTON */}
-              <button
-                onClick={() => setActiveTab('analytics')}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#121620]/60 border border-[#20293B]/40 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:border-gray-500 transition-all cursor-pointer"
-              >
-                <ArrowRight className="h-3.5 w-3.5 rotate-180" />
-                Return to Analysis
-              </button>
+              {/* BUTTONS ROW */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={() => setActiveTab('analytics')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#121620]/60 border border-[#20293B]/40 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:border-gray-500 transition-all cursor-pointer"
+                >
+                  <ArrowRight className="h-3.5 w-3.5 rotate-180" />
+                  Return to Analysis
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('analytics');
+                    setTimeout(() => {
+                      setCollapsedSections(prev => ({ ...prev, forecast: false }));
+                      document.getElementById('forecast-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600/10 border border-purple-500/30 rounded-lg text-xs font-bold text-purple-300 hover:bg-purple-600/25 hover:text-white transition-all cursor-pointer"
+                >
+                  <Brain className="h-3.5 w-3.5" />
+                  View 7-Day Forecast
+                </button>
+              </div>
 
               {/* TOP BANNER */}
               <div className="flex">
