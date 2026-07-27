@@ -173,7 +173,7 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         )
         prev_ts = rec["timestamp"]
         m = result["stage_1"]["readable_metrics"]["raw_display_metrics"]
-        sentiment_series.append(round(m["sentiment_score"], 4))
+        sentiment_series.append(round((m["sentiment_score"] + 1.0) / 2.0, 4))
         emotions_series.append(m["dominant_emotion"])
         timestamps.append(rec["timestamp"])
         context_bin_series.append(result["stage_2"]["context_bin"])

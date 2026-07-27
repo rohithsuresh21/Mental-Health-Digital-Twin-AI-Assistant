@@ -348,9 +348,9 @@ export function generateDynamicMock(input: IngestionInput): DiagnosticData {
   for (let i = 0; i < nEntries; i++) {
     const t = i / nEntries;
     const waveAmp = 0.15 + (1 - wellnessScore) * 0.2;
-    const baseSent = (wellnessScore - 0.5) * 1.6;
-    const sentiment = baseSent + Math.sin(t * 4 + 1) * waveAmp + (prng() - 0.5) * 0.15;
-    sentimentSeries.push(Math.max(-1, Math.min(1, sentiment)));
+    const baseSent = 0.5 + (wellnessScore - 0.5) * 0.6;
+    const sentiment = baseSent + Math.sin(t * 4 + 1) * waveAmp * 0.5 + (prng() - 0.5) * 0.1;
+    sentimentSeries.push(Math.max(0, Math.min(1, sentiment)));
 
     const temporalRise = concernCount > 2 ? t * 0.2 : (concernCount > 0 ? t * 0.08 : t * 0.02);
     const anomaly = baseRisk + Math.sin(t * 3 + 2) * 0.1 + temporalRise + (prng() - 0.5) * 0.08;

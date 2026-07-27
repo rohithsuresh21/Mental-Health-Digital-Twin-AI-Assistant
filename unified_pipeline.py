@@ -96,19 +96,9 @@ class UnifiedJournalPipeline:
                 print(f"[Stage 5] Failed to load model: {e}")
                 self.xgb_model = None
 
-        # PCA preprocessor (StandardScaler + PCA)
-        pca_path = os.path.join(DAIC_MODEL_DIR, "pca.pkl")
-        if os.path.exists(pca_path):
-            try:
-                with open(pca_path, "rb") as f:
-                    pca_dict = pickle.load(f)
-                self.scaler = pca_dict["scaler"]
-                self.pca = pca_dict["pca"]
-                print(f"[Stage 5] Loaded PCA: {self.pca.n_components_} components from {self.scaler.n_features_in_} features")
-            except Exception as e:
-                print(f"[Stage 5] Failed to load PCA: {e}")
-                self.scaler = None
-                self.pca = None
+        # PCA preprocessor (unused in inference — kept for reference)
+        # pca.pkl and isotonic_new.pkl are loaded here in earlier versions but
+        # never applied during inference. Removed to save memory.
 
         # Temperature scaling
         temp_path = os.path.join(DAIC_MODEL_DIR, "temperature.json")
@@ -134,16 +124,6 @@ class UnifiedJournalPipeline:
                 print(f"[Stage 5] Loaded Platt calibrator (A={A:.4f}, B={B:.4f})")
             except Exception as e:
                 print(f"[Stage 5] Failed to load Platt calibrator: {e}")
-
-        # Isotonic calibrator
-        isotonic_path = os.path.join(DAIC_MODEL_DIR, "isotonic_new.pkl")
-        if os.path.exists(isotonic_path):
-            try:
-                with open(isotonic_path, "rb") as f:
-                    self.isotonic_calibrator = pickle.load(f)
-                print(f"[Stage 5] Loaded isotonic calibrator")
-            except Exception as e:
-                print(f"[Stage 5] Failed to load isotonic calibrator: {e}")
 
     def _normalize_user_id(self, user_id: str) -> str:
         if user_id not in self._user_id_mapping:

@@ -2387,9 +2387,9 @@ export default function App() {
             })();
 
             const sentimentData = pipeline?.pipelineSentimentSeries || [
-              0.22, 0.35, -0.1, 0.18, 0.29, 0.32, 0.12, 0.21, 0.34, 0.26, 0.15, 0.32, 0.38, 0.24,
-              0.18, 0.12, 0.28, 0.35, 0.18, 0.05, 0.22, 0.14, 0.18, 0.08, 0.21, 0.12, 0.18, 0.31,
-              0.22, 0.16, 0.25, 0.12, 0.19, 0.28, 0.15, 0.22, 0.08, 0.24, 0.33, 0.21, 0.31, 0.28
+              0.61, 0.68, 0.45, 0.59, 0.65, 0.66, 0.56, 0.61, 0.67, 0.63, 0.58, 0.66, 0.69, 0.62,
+              0.59, 0.56, 0.64, 0.68, 0.59, 0.53, 0.61, 0.57, 0.59, 0.54, 0.61, 0.56, 0.59, 0.66,
+              0.61, 0.58, 0.63, 0.56, 0.60, 0.64, 0.58, 0.61, 0.54, 0.62, 0.67, 0.61, 0.66, 0.64
             ];
 
             const anomalyRiskData = pipeline?.pipelineAnomalyScores || [
@@ -2818,26 +2818,26 @@ export default function App() {
                             </div>
                           </div>
                         </div>
-                        <p className="text-[10px] text-gray-500 mb-3">Y-axis: +1.0 strongly positive · 0 neutral · −1.0 strongly negative</p>
+                        <p className="text-[10px] text-gray-500 mb-3">Y-axis: 1.0 strongly positive · 0.5 neutral · 0.0 strongly negative</p>
 
                         <div className="relative h-60 w-full" onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
                           {/* SVG Sentiment Chart */}
                           <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible">
-                            {/* Sentiment Zone Bands — Positive (0.3–1.0), Neutral (-0.3–0.3), Negative (-1.0–-0.3) */}
-                            <rect x="35" y={15 + ((1.0 - 1.0) / 2) * 185} width="450" height={((1.0 - 0.3) / 2) * 185} fill="#10B981" opacity="0.06" rx="2" />
-                            <rect x="35" y={15 + ((1.0 - 0.3) / 2) * 185} width="450" height={((0.3 - -0.3) / 2) * 185} fill="#F59E0B" opacity="0.06" rx="2" />
-                            <rect x="35" y={15 + ((1.0 - -0.3) / 2) * 185} width="450" height={((-0.3 - -1.0) / 2) * 185} fill="#EF4444" opacity="0.06" rx="2" />
+                            {/* Sentiment Zone Bands — Positive (0.65–1.0), Neutral (0.35–0.65), Negative (0.0–0.35) */}
+                            <rect x="35" y={15 + ((1.0 - 1.0) / 1.0) * 185} width="450" height={((1.0 - 0.65) / 1.0) * 185} fill="#10B981" opacity="0.06" rx="2" />
+                            <rect x="35" y={15 + ((1.0 - 0.65) / 1.0) * 185} width="450" height={((0.65 - 0.35) / 1.0) * 185} fill="#F59E0B" opacity="0.06" rx="2" />
+                            <rect x="35" y={15 + ((1.0 - 0.35) / 1.0) * 185} width="450" height={((0.35 - 0.0) / 1.0) * 185} fill="#EF4444" opacity="0.06" rx="2" />
                             {/* Zone labels */}
-                            <text x="487" y={15 + ((1.0 - 0.65) / 2) * 185 + 3} fill="#10B981" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Positive</text>
-                            <text x="487" y={15 + ((1.0 - 0) / 2) * 185 + 3} fill="#F59E0B" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Neutral</text>
-                            <text x="487" y={15 + ((1.0 - -0.65) / 2) * 185 + 3} fill="#EF4444" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Negative</text>
+                            <text x="487" y={15 + ((1.0 - 0.825) / 1.0) * 185 + 3} fill="#10B981" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Positive</text>
+                            <text x="487" y={15 + ((1.0 - 0.5) / 1.0) * 185 + 3} fill="#F59E0B" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Neutral</text>
+                            <text x="487" y={15 + ((1.0 - 0.175) / 1.0) * 185 + 3} fill="#EF4444" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Negative</text>
                             {/* Grid Lines & Labels */}
-                            {[-1.0, -0.5, 0, 0.5, 1.0].map((val, idx) => {
-                              const y = 15 + ((1.0 - val) / 2.0) * 185;
+                            {[0.0, 0.25, 0.5, 0.75, 1.0].map((val, idx) => {
+                              const y = 15 + ((1.0 - val) / 1.0) * 185;
                               return (
                                 <g key={idx}>
-                                  <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray={val === 0 ? "none" : "3 3"} />
-                                  <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{val.toFixed(1)}</text>
+                                  <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray={val === 0.5 ? "none" : "3 3"} />
+                                  <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{(val * 100).toFixed(0)}%</text>
                                 </g>
                               );
                             })}
@@ -2869,7 +2869,7 @@ export default function App() {
                                 let pathStr = "";
                                 sliced.forEach((val, idx) => {
                                   const x = 35 + (idx / vpLastIdx) * 450;
-                                  const y = 15 + ((1.0 - val) / 2.0) * 185;
+                                  const y = 15 + (1.0 - val) * 185;
                                   pathStr += (idx === 0 ? "M" : "L") + ` ${x} ${y}`;
                                 });
                                 return pathStr;
@@ -2894,7 +2894,7 @@ export default function App() {
                               let pathStr = "";
                               smoothed.forEach((val, idx) => {
                                 const x = 35 + (idx / vpLastIdx) * 450;
-                                const y = 15 + ((1.0 - val) / 2.0) * 185;
+                                const y = 15 + (1.0 - val) * 185;
                                 pathStr += (idx === 0 ? "M" : "L") + ` ${x} ${y}`;
                               });
                               return (
@@ -2919,7 +2919,7 @@ export default function App() {
                               }
                               return extrema.map(({ idx, type }) => {
                                 const x = 35 + ((idx - vpStart) / vpLastIdx) * 450;
-                                const y = 15 + ((1.0 - sentimentData[idx]) / 2.0) * 185;
+                                const y = 15 + (1.0 - sentimentData[idx]) * 185;
                                 return (
                                   <polygon
                                     key={idx}
@@ -2949,7 +2949,7 @@ export default function App() {
                                 />
                                 <circle 
                                   cx={35 + ((hoveredPointIndex - vpStart) / vpLastIdx) * 450} 
-                                  cy={15 + ((1.0 - sentimentData[hoveredPointIndex]) / 2.0) * 185} 
+                                  cy={15 + (1.0 - sentimentData[hoveredPointIndex]) * 185} 
                                   r="5" 
                                   fill="#3b82f6" 
                                   stroke="#0b0d13" 
@@ -2964,10 +2964,10 @@ export default function App() {
                             const val = sentimentData[hoveredPointIndex] ?? 0;
                             let status = 'Neutral';
                             let statusColor = 'text-gray-400';
-                            if (val > 0.3) { status = 'Positive'; statusColor = 'text-emerald-400'; }
-                            else if (val > 0.05) { status = 'Mildly positive'; statusColor = 'text-emerald-400'; }
-                            else if (val < -0.3) { status = 'Negative'; statusColor = 'text-rose-400'; }
-                            else if (val < -0.05) { status = 'Mildly negative'; statusColor = 'text-amber-400'; }
+                            if (val > 0.65) { status = 'Positive'; statusColor = 'text-emerald-400'; }
+                            else if (val > 0.55) { status = 'Mildly positive'; statusColor = 'text-emerald-400'; }
+                            else if (val < 0.35) { status = 'Negative'; statusColor = 'text-rose-400'; }
+                            else if (val < 0.45) { status = 'Mildly negative'; statusColor = 'text-amber-400'; }
                             return (
                               <div 
                                 className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 p-2.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
@@ -2985,7 +2985,7 @@ export default function App() {
                         </div>
 
                         <p className="text-[10px] text-gray-500 leading-relaxed mt-4">
-                          Each point is one journal entry, in order by date (X-axis). The Y-axis is the sentiment of that entry's writing, from -1 (very negative tone) to +1 (very positive tone), with 0 being neutral. The dashed line shows the smoothed trend.
+                          Each point is one journal entry, in order by date (X-axis). The Y-axis is the sentiment of that entry's writing, from 0 (very negative tone) to 100% (very positive tone), with 50% being neutral. The dashed line shows the smoothed trend.
                         </p>
 
                         {(() => {
@@ -3008,15 +3008,15 @@ export default function App() {
 
                           let tone = 'neutral';
                           let toneColor = 'text-gray-400';
-                          if (currentVal > 0.3) { tone = 'positive'; toneColor = 'text-emerald-400'; }
-                          else if (currentVal > 0.05) { tone = 'mildly positive'; toneColor = 'text-emerald-400'; }
-                          else if (currentVal < -0.3) { tone = 'negative'; toneColor = 'text-rose-400'; }
-                          else if (currentVal < -0.05) { tone = 'mildly negative'; toneColor = 'text-amber-400'; }
+                          if (currentVal > 0.65) { tone = 'positive'; toneColor = 'text-emerald-400'; }
+                          else if (currentVal > 0.55) { tone = 'mildly positive'; toneColor = 'text-emerald-400'; }
+                          else if (currentVal < 0.35) { tone = 'negative'; toneColor = 'text-rose-400'; }
+                          else if (currentVal < 0.45) { tone = 'mildly negative'; toneColor = 'text-amber-400'; }
 
                           return (
                             <div className="mt-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
                               <p className="text-[11px] text-gray-400 leading-relaxed">
-                                <span className="font-bold text-gray-300">Interpretation:</span> The most recent entry reads as <span className={`font-semibold ${toneColor}`}>{tone}</span>. Over the visible range, emotional tone is <span className={`font-semibold ${trendColor}`}>{trend}</span> — the second half averages {avgSecond > 0 ? '+' : ''}{avgSecond.toFixed(2)} compared to {avgFirst > 0 ? '+' : ''}{avgFirst.toFixed(2)} in the first half{Math.abs(diff) >= 0.05 ? ` (Δ ${diff > 0 ? '+' : ''}${diff.toFixed(2)})` : ''}.
+                                <span className="font-bold text-gray-300">Interpretation:</span> The most recent entry reads as <span className={`font-semibold ${toneColor}`}>{tone}</span>. Over the visible range, emotional tone is <span className={`font-semibold ${trendColor}`}>{trend}</span> — the second half averages {Math.round(avgSecond * 100)}% compared to {Math.round(avgFirst * 100)}% in the first half{Math.abs(diff) >= 0.05 ? ` (Δ ${diff > 0 ? '+' : ''}${Math.round(diff * 100)}%)` : ''}.
                               </p>
                             </div>
                           );
@@ -3032,7 +3032,7 @@ export default function App() {
                             <span>Anomaly Risk</span>
                           </div>
                         </div>
-                        <p className="text-[10px] text-gray-500 mb-3">Y-axis: 0.0 typical · 0.5 moderately unusual · 1.0 highly unusual</p>
+                        <p className="text-[10px] text-gray-500 mb-3">Y-axis: 0% typical · 50% moderately unusual · 100% highly unusual</p>
 
                         <div className="relative h-60 w-full" onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
                           {/* SVG Anomaly Risk Chart */}
@@ -3051,7 +3051,7 @@ export default function App() {
                               return (
                                 <g key={idx}>
                                   <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray={val === 0 ? "none" : "3 3"} />
-                                  <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{val.toFixed(1)}</text>
+                                  <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{(val * 100).toFixed(0)}%</text>
                                 </g>
                               );
                             })}
@@ -3160,7 +3160,7 @@ export default function App() {
                                 }}
                               >
                                 <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex]}</div>
-                                <div>Deviation: <span className="text-rose-400 font-bold">{(val * 100).toFixed(0)} / 100</span></div>
+                                <div>Deviation: <span className="text-rose-400 font-bold">{(val * 100).toFixed(0)}%</span></div>
                                 <div>Status: <span className={`font-bold ${statusColor}`}>{status}</span></div>
                               </div>
                             );
@@ -3168,7 +3168,7 @@ export default function App() {
                         </div>
 
                         <p className="text-[10px] text-gray-500 leading-relaxed mt-4">
-                          Each point is one journal entry, in order by date (X-axis). The Y-axis is how unusual that entry looked compared to this person's own typical pattern, from 0 (completely typical) to 1 (very unusual).
+                          Each point is one journal entry, in order by date (X-axis). The Y-axis is how unusual that entry looked compared to your own typical pattern, from 0% (completely typical) to 100% (very unusual).
                         </p>
 
                         {(() => {
@@ -3333,13 +3333,13 @@ export default function App() {
                       },
                       upper_alert: {
                         dot: 'bg-rose-500 shadow-[0_0_10px_#ef4444] animate-pulse',
-                        title: 'Drifting above baseline',
-                        msg: 'We\'ve noticed your readings are moving above your normal range. This may indicate your well-being is changing. Consider taking a moment to rest and monitor your condition.',
+                        title: 'Risk scores rising above baseline',
+                        msg: 'We\'ve noticed your risk readings are persistently above your normal range. This sustained shift may indicate your well-being is changing. Consider taking a moment to rest and monitor your condition.',
                       },
                       lower_alert: {
                         dot: 'bg-blue-500 shadow-[0_0_10px_#3b82f6]',
-                        title: 'Drifting below baseline',
-                        msg: 'Your readings are lower than your usual range. This could mean your body is calming down or responding differently than usual. Continue monitoring to ensure everything remains on track.',
+                        title: 'Risk scores improving below baseline',
+                        msg: 'Your readings are persistently below your usual risk level — this is a positive trend. Your patterns suggest improvement. Continue monitoring to ensure everything remains on track.',
                       },
                       both_alert: {
                         dot: 'bg-purple-500 shadow-[0_0_10px_#a855f7]',
@@ -3366,7 +3366,7 @@ export default function App() {
                       </div>
 
                                        <p className="text-[11px] text-gray-500 leading-relaxed">
-                        This signal detects whether recent behavior has shifted consistently away from the established baseline. A single unusual entry does not trigger sustained drift — the signal increases when the change persists over time. Red line = upward drift · Blue line = downward drift · Dashed line = alert threshold.
+                        This signal detects whether recent behavior has shifted consistently away from the established baseline. A single unusual entry does not trigger sustained drift — the signal accumulates only when the change persists over multiple entries. Red line = risk scores rising above your normal range · Blue line = risk scores improving below your normal range · Dashed line = alert threshold.
                       </p>
 
                       {/* Translucent Card wrapper for the CUSUM graph */}
@@ -3375,8 +3375,8 @@ export default function App() {
                         <div className="flex items-center gap-3 flex-wrap">
                           <div className="flex gap-1.5">
                             {[
-                              { key: 0, label: 'Upward drift', desc: 'Above baseline', icon: TrendingUp },
-                              { key: 1, label: 'Downward drift', desc: 'Below baseline', icon: TrendingDown },
+                              { key: 0, label: 'Rising risk', desc: 'Scores trending above baseline', icon: TrendingUp },
+                              { key: 1, label: 'Improving', desc: 'Scores trending below baseline', icon: TrendingDown },
                               { key: 2, label: 'Both', desc: 'Show both directions', icon: null },
                             ].map((tab) => (
                               <button
@@ -3469,15 +3469,15 @@ export default function App() {
                         <div className="flex flex-wrap items-center gap-6 text-[10px] text-gray-400 font-sans">
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-4 h-0.5 bg-rose-500" />
-                            <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Upward drift</span>
+                            <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Rising risk (above baseline)</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-4 h-0.5 bg-blue-500" />
-                            <span className="flex items-center gap-1"><TrendingDown className="h-3 w-3" /> Downward drift</span>
+                            <span className="flex items-center gap-1"><TrendingDown className="h-3 w-3" /> Improving (below baseline)</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-4 h-0.5 border-t border-dashed border-gray-500" />
-                            <span>Alert threshold</span>
+                            <span>Alert threshold (sustained shift)</span>
                           </div>
                         </div>
 
@@ -3525,14 +3525,16 @@ export default function App() {
                                     textAnchor="middle" 
                                     fontFamily="monospace"
                                   >
-                                    {chartDates[ptIndex] || `#${ptIndex + 1}`}
+                                    {chartDates[ptIndex] || `Entry ${ptIndex + 1}`}
                                   </text>
                                 </g>
                               );
                             })}
 
-                            {/* Dashed Threshold Line */}
+                            {/* Dashed Threshold Line with label */}
                             <line x1="35" y1={yScale(cusumThreshold)} x2="485" y2={yScale(cusumThreshold)} stroke="#94a3b8" strokeWidth="1.2" strokeDasharray="4 4" />
+                            <rect x="36" y={yScale(cusumThreshold) - 12} width="68" height="12" rx="2" fill="#1a1e2e" opacity="0.9" />
+                            <text x="70" y={yScale(cusumThreshold) - 3} fill="#94a3b8" fontSize="7" textAnchor="middle" fontFamily="monospace" fontWeight="bold">Threshold: {cusumThreshold.toFixed(2)}</text>
 
                             {/* Lower CUSUM Path (blue) — conditionally shown */}
                             {(selectedCusumTab === 1 || selectedCusumTab === 2) && (
@@ -3570,19 +3572,19 @@ export default function App() {
                                 top: "20px"
                               }}
                             >
-                              <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex] || `#${hoveredPointIndex + 1}`}</div>
+                              <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex] || `Entry ${hoveredPointIndex + 1}`}</div>
                               {(selectedCusumTab === 0 || selectedCusumTab === 2) && (
-                                <div>Upper CUSUM: <span className="text-rose-400 font-bold">{((upperCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
+                                <div>Rising risk: <span className="text-rose-400 font-bold">{((upperCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
                               )}
                               {(selectedCusumTab === 1 || selectedCusumTab === 2) && (
-                                <div>Lower CUSUM: <span className="text-blue-400 font-bold">{((lowerCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
+                                <div>Improving: <span className="text-blue-400 font-bold">{((lowerCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
                               )}
                             </div>
                           )}
                         </div>
 
                         <p className="text-[10px] text-gray-500 leading-relaxed font-sans">
-                          X-axis: date of each entry. Y-axis: cumulative drift from baseline. The dashed line is the alert threshold — crossing it means the shift has been sustained, not just a single unusual entry.
+                          X-axis: date of each entry. Y-axis: cumulative drift score — how far risk has consistently moved from your baseline. The dashed line is the alert threshold: crossing it means the shift is sustained, not just a single unusual entry. Red line rising = risk is consistently above your normal · Blue line rising = risk is consistently below your normal (improvement).
                         </p>
                       </div>
 
@@ -3936,7 +3938,7 @@ export default function App() {
                       return (
                         <g key={idx}>
                           <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray="3 3" />
-                          <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{Math.round(val * 100)}</text>
+                           <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{Math.round(val * 100)}%</text>
                         </g>
                       );
                     })}
