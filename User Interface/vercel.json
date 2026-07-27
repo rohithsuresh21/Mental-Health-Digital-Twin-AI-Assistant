@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://watching-frequencies-screw-remarks.trycloudflare.com/$1"
+                         "destination": "https://barnes-coordinate-happy-casey.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
