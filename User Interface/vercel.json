@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://dome-out-gifts-from.trycloudflare.com/$1"
+                         "destination": "https://bronze-glory-hence-relation.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
