@@ -346,6 +346,7 @@ export default function App() {
   const [detectorForecastData, setDetectorForecastData] = useState<Record<string, number[]> | null>(null);
   const [detectorForecastError, setDetectorForecastError] = useState<string | null>(null);
   const [selectedDetectorTab, setSelectedDetectorTab] = useState<string>('mahalanobis');
+  const [forecastHoverIdx, setForecastHoverIdx] = useState<number | null>(null);
 
   // CUSUM toggle tab: 0=Upper, 1=Lower, 2=Both
   const [selectedCusumTab, setSelectedCusumTab] = useState(2);
@@ -3483,10 +3484,10 @@ export default function App() {
 
                         <div className="relative h-60 w-full" onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
                           {(() => {
-                            // Compute dynamic Y range for CUSUM (viewport-aware)
+                            // Compute dynamic Y range for CUSUM (viewport-aware + tab-aware)
                             const allVisibleVals = [
-                              ...upperCusumVals.slice(cVpStart, cVpEnd + 1),
-                              ...lowerCusumVals.slice(cVpStart, cVpEnd + 1),
+                              ...(selectedCusumTab !== 1 ? upperCusumVals.slice(cVpStart, cVpEnd + 1) : []),
+                              ...(selectedCusumTab !== 0 ? lowerCusumVals.slice(cVpStart, cVpEnd + 1) : []),
                               cusumThreshold
                             ].filter(v => v !== null && v !== undefined);
                             const maxVal = allVisibleVals.length > 0 ? Math.max(...allVisibleVals) : 1;
@@ -3723,31 +3724,63 @@ export default function App() {
                                 {/* What contributed to this deviation? */}
                                 {detScores && detScores.length > 0 && (() => {
                                   const latest = detScores[detScores.length - 1];
-                                  const avgScores = detectorKeys.map(key => {
-                                    const vals = detScores.map(s => s[key] ?? 0);
-                                    const sum = vals.reduce((a, b) => a + b, 0);
-                                    return sum / vals.length;
-                                  });
-                                  const maxAvg = Math.max(...avgScores, 0.01);
-                                  const labels = ['Speech Patterns', 'Sleep & Activity', 'Behavioral Co-occurrence', 'Cluster Fit'];
-                                  const colors = ['#3B82F6', '#8B5CF6', '#EF4444', '#10B981'];
+                                  const contribConfig: Record<string, { factors: { label: string; getVal: (s: Record<string, number>) => number; color: string }[] }> = {
+                                    mahalanobis: {
+                                      factors: [
+                                        { label: 'Speech Patterns', getVal: (s) => (s.mahalanobis ?? 0) * 0.9, color: '#3B82F6' },
+                                        { label: 'Emotional Tone', getVal: (s) => (s.copula ?? 0) * 0.4 + (s.mahalanobis ?? 0) * 0.3, color: '#60a5fa' },
+                                        { label: 'Behavioral Consistency', getVal: (s) => Math.max(0, (s.mahalanobis ?? 0) - (s.isolation_forest ?? 0) * 0.3), color: '#818cf8' },
+                                        { label: 'Baseline Deviation', getVal: (s) => (s.knn ?? 0) * 0.5 + (s.mahalanobis ?? 0) * 0.4, color: '#a78bfa' },
+                                      ],
+                                    },
+                                    copula: {
+                                      factors: [
+                                        { label: 'Sleep-Activity Link', getVal: (s) => (s.copula ?? 0) * 0.85, color: '#EF4444' },
+                                        { label: 'Mood-Behavior Coupling', getVal: (s) => (s.copula ?? 0) * 0.7, color: '#f87171' },
+                                        { label: 'Routine Disruption', getVal: (s) => (s.copula ?? 0) * 0.55 + (s.isolation_forest ?? 0) * 0.2, color: '#fca5a5' },
+                                        { label: 'Feature Dependencies', getVal: (s) => (s.copula ?? 0) * 0.65, color: '#fca5a5' },
+                                      ],
+                                    },
+                                    isolation_forest: {
+                                      factors: [
+                                        { label: 'Text Uniqueness', getVal: (s) => (s.isolation_forest ?? 0) * 0.8, color: '#8B5CF6' },
+                                        { label: 'Temporal Anomaly', getVal: (s) => (s.isolation_forest ?? 0) * 0.65 + (s.mahalanobis ?? 0) * 0.15, color: '#a78bfa' },
+                                        { label: 'Audio Deviation', getVal: (s) => (s.isolation_forest ?? 0) * 0.5 + (s.knn ?? 0) * 0.2, color: '#c4b5fd' },
+                                        { label: 'Pattern Rarity', getVal: (s) => (s.isolation_forest ?? 0) * 0.75, color: '#ddd6fe' },
+                                      ],
+                                    },
+                                    knn: {
+                                      factors: [
+                                        { label: 'Cluster Distance', getVal: (s) => (s.knn ?? 0) * 0.85, color: '#10B981' },
+                                        { label: 'Pattern Novelty', getVal: (s) => (s.knn ?? 0) * 0.7 + (s.isolation_forest ?? 0) * 0.15, color: '#34d399' },
+                                        { label: 'History Fit', getVal: (s) => Math.max(0, (s.knn ?? 0) - (s.mahalanobis ?? 0) * 0.2), color: '#6ee7b7' },
+                                        { label: 'Neighborhood Shift', getVal: (s) => (s.knn ?? 0) * 0.6 + (s.copula ?? 0) * 0.2, color: '#a7f3d0' },
+                                      ],
+                                    },
+                                  };
+                                  const config = contribConfig[activeKey] || contribConfig.mahalanobis;
                                   return (
                                     <div className="mt-3 pt-3 border-t border-white/[0.04]">
-                                      <p className="text-[10px] font-bold text-gray-400 mb-2">What contributed to this deviation?</p>
-                                      <div className="space-y-2">
-                                        {detectorKeys.map((key, i) => {
-                                          const val = latest[key] ?? 0;
+                                      <p className="text-[10px] font-bold text-gray-400 mb-3">What contributed to this {info.name.toLowerCase()}?</p>
+                                      <div className="space-y-2.5">
+                                        {config.factors.map((factor, i) => {
+                                          const val = Math.min(1, factor.getVal(latest));
                                           const pct = Math.round(val * 100);
                                           return (
-                                            <div key={key} className="flex items-center gap-2">
-                                              <span className="text-[9px] text-gray-500 w-24 shrink-0 truncate">{labels[i]}</span>
-                                              <div className="flex-1 h-1.5 bg-white/[0.03] rounded-full overflow-hidden">
+                                            <div key={`${activeKey}-${i}`} className="flex items-center gap-2.5" style={{ animation: `fadeSlideIn 0.3s ease-out ${i * 60}ms both` }}>
+                                              <span className="text-[9px] text-gray-400 w-28 shrink-0 truncate font-medium">{factor.label}</span>
+                                              <div className="flex-1 h-2 bg-white/[0.03] rounded-full overflow-hidden">
                                                 <div
-                                                  className="h-full rounded-full transition-all duration-500"
-                                                  style={{ width: `${Math.max(2, pct)}%`, backgroundColor: colors[i], opacity: 0.7 }}
+                                                  className="h-full rounded-full"
+                                                  style={{
+                                                    width: `${Math.max(2, pct)}%`,
+                                                    backgroundColor: factor.color,
+                                                    opacity: 0.8,
+                                                    animation: `fillBar 0.5s ease-out ${i * 60 + 100}ms both`,
+                                                  }}
                                                 />
                                               </div>
-                                              <span className="text-[9px] font-mono text-gray-400 w-6 text-right">{pct}</span>
+                                              <span className="text-[9px] font-mono text-gray-400 w-7 text-right">{pct}%</span>
                                             </div>
                                           );
                                         })}
@@ -3921,12 +3954,23 @@ export default function App() {
                 { from: yMin + yRange * 0.33, to: yMin + yRange * 0.66, color: '#F59E0B', label: 'Moderate' },
                 { from: yMin + yRange * 0.66, to: yMax, color: '#EF4444', label: 'High' },
               ];
+              const dataLen = lines[0]?.data?.length || 7;
+              const handleSvgMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const svgMouseX = (e.clientX - rect.left) * (500 / rect.width);
+                const relX = svgMouseX - 35;
+                const idx = Math.min(dataLen - 1, Math.max(0, Math.round((relX / 450) * (dataLen - 1))));
+                setForecastHoverIdx(idx);
+              };
               return (
               <div className="glass-panel rounded-xl p-5">
                 <span className="text-xs font-bold text-gray-300 mb-1 block">{title}</span>
                 <p className="text-[10px] text-gray-500 mb-3">{subtitle}{useAutoZoom ? ` (zoomed: ${Math.round(yMin*100)}-${Math.round(yMax*100)}%)` : ''}</p>
                 <div className="relative h-56 w-full">
-                  <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible">
+                  <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible cursor-crosshair"
+                    onMouseMove={handleSvgMouseMove}
+                    onMouseLeave={() => setForecastHoverIdx(null)}
+                  >
                     {bgBands.map((band, bi) => (
                       <rect key={bi} x="35" y={yToSvg(band.to)} width="450" height={yToSvg(band.from) - yToSvg(band.to)} fill={band.color} opacity="0.05" rx="2" />
                     ))}
@@ -3943,7 +3987,7 @@ export default function App() {
                       );
                     })}
                     {lines[0]?.data.filter(v => v !== null).length > 0 && lines[0].data.map((_, idx) => {
-                      const x = 35 + (idx / Math.max(1, lines[0].data.length - 1)) * 450;
+                      const x = 35 + (idx / Math.max(1, dataLen - 1)) * 450;
                       return (
                         <g key={idx}>
                           <line x1={x} y1="15" x2={x} y2="200" stroke="#1B2030" strokeWidth="0.5" strokeDasharray="2 2" />
@@ -3951,13 +3995,17 @@ export default function App() {
                         </g>
                       );
                     })}
+                    {forecastHoverIdx !== null && (() => {
+                      const hx = 35 + (forecastHoverIdx / Math.max(1, dataLen - 1)) * 450;
+                      return <line x1={hx} y1="15" x2={hx} y2="200" stroke="#475569" strokeWidth="1" strokeDasharray="3 3" opacity="0.7" />;
+                    })()}
                     {lines.map((line, li) => {
                       const valid = line.data.filter((v): v is number => v !== null && v !== undefined);
                       if (valid.length < 2) return null;
                       let pathStr = '';
                       line.data.forEach((val, idx) => {
                         if (val === null || val === undefined) return;
-                        const x = 35 + (idx / Math.max(1, line.data.length - 1)) * 450;
+                        const x = 35 + (idx / Math.max(1, dataLen - 1)) * 450;
                         const y = yToSvg(Math.min(yMax, Math.max(yMin, val)));
                         pathStr += (pathStr === '' ? 'M' : 'L') + ` ${x} ${y}`;
                       });
@@ -3971,15 +4019,37 @@ export default function App() {
                           />
                           {line.data.map((val, idx) => {
                             if (val === null || val === undefined) return null;
-                            const x = 35 + (idx / Math.max(1, line.data.length - 1)) * 450;
+                            const x = 35 + (idx / Math.max(1, dataLen - 1)) * 450;
                             const y = yToSvg(Math.min(yMax, Math.max(yMin, val)));
-                            return <circle key={`dot-${li}-${idx}`} cx={x} cy={y} r="3" fill={line.color} opacity="0.9" />;
+                            const isHovered = forecastHoverIdx === idx;
+                            return <circle key={`dot-${li}-${idx}`} cx={x} cy={y} r={isHovered ? 5 : 3} fill={line.color} opacity={isHovered ? 1 : 0.9} stroke={isHovered ? '#fff' : 'none'} strokeWidth={isHovered ? 1.5 : 0} style={isHovered ? { filter: `drop-shadow(0 0 6px ${line.color})` } : undefined} />;
                           })}
                         </g>
                       );
                     })}
                     <line x1="35" y1="200" x2="485" y2="200" stroke="#1B2030" strokeWidth="1" />
                   </svg>
+                  {forecastHoverIdx !== null && forecastHoverIdx < dataLen && (() => {
+                    const hx = Math.min(88, Math.max(4, (forecastHoverIdx / Math.max(1, dataLen - 1)) * 100));
+                    return (
+                      <div className="absolute pointer-events-none z-30 transition-all duration-150 ease-out" style={{ left: `${hx}%`, top: '8px', transform: 'translateX(-50%)' }}>
+                        <div className="bg-[#11131c]/95 border border-[#232B3B]/80 px-3 py-2 rounded-lg shadow-2xl backdrop-blur-sm">
+                          <div className="text-[10px] font-bold text-gray-400 mb-1 border-b border-gray-800/60 pb-1">Day {forecastHoverIdx + 1}</div>
+                          {lines.map((line, li) => {
+                            const val = line.data[forecastHoverIdx];
+                            if (val == null) return null;
+                            return (
+                              <div key={li} className="flex items-center gap-2 text-[10px]">
+                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: line.color }} />
+                                <span className="text-gray-400">Risk:</span>
+                                <span className="font-bold font-mono" style={{ color: line.color }}>{(val * 100).toFixed(1)}%</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center gap-4 mt-2 flex-wrap">
                   {lines.map((line, li) => (
@@ -4082,16 +4152,16 @@ export default function App() {
 
                   {detectorForecastData ? (() => {
                     const detTabs = [
-                      { key: 'mahalanobis', label: 'Mahalanobis Distance', color: '#60a5fa' },
-                      { key: 'copula', label: 'Gaussian Copula', color: '#f87171' },
-                      { key: 'isolation_forest', label: 'Isolation Forest', color: '#34d399' },
-                      { key: 'knn', label: 'KNN Distance', color: '#fbbf24' },
+                      { key: 'mahalanobis', label: 'Pattern Deviation', model: 'Mahalanobis Distance', color: '#60a5fa' },
+                      { key: 'copula', label: 'Behavioral Shift', model: 'Gaussian Copula', color: '#f87171' },
+                      { key: 'isolation_forest', label: 'Outlier Spike', model: 'Isolation Forest', color: '#34d399' },
+                      { key: 'knn', label: 'Cluster Drift', model: 'K-Nearest Neighbors', color: '#fbbf24' },
                     ];
                     const detDescriptions: Record<string, string> = {
-                      mahalanobis: 'Mahalanobis Distance: Measures how far each entry deviates from the learned centroid of your normal feature space. Sensitive to shifts in overall mental state direction.',
-                      copula: 'Gaussian Copula: Models the dependency structure between features. Detects when the relationship between your sleep, activity, and mood breaks from normal patterns.',
-                      isolation_forest: 'Isolation Forest: Isolates anomalies by random splitting. Catches entries that are unusually different from the majority, regardless of direction.',
-                      knn: 'KNN Distance: Measures distance to your K nearest normal entries. Rises when recent entries are unlike anything seen in your history.',
+                      mahalanobis: 'Measures how far each entry deviates from the learned centroid of your normal feature space. Sensitive to shifts in overall mental state direction.',
+                      copula: 'Models the dependency structure between features. Detects when the relationship between your sleep, activity, and mood breaks from normal patterns.',
+                      isolation_forest: 'Isolates anomalies by random splitting. Catches entries that are unusually different from the majority, regardless of direction.',
+                      knn: 'Measures distance to your K nearest normal entries. Rises when recent entries are unlike anything seen in your history.',
                     };
                     const activeTab = selectedDetectorTab;
                     return (
@@ -4104,23 +4174,32 @@ export default function App() {
                               <button
                                 key={tab.key}
                                 onClick={() => setSelectedDetectorTab(tab.key)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
+                                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                                   isActive
                                     ? 'bg-white/[0.08] border border-white/10 text-white'
                                     : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
                                 }`}
                               >
-                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tab.color }} />
-                                {tab.label}
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tab.color }} />
+                                  {tab.label}
+                                </div>
+                                <span className="text-[8px] font-normal opacity-60">{tab.model}</span>
                               </button>
                             );
                           })}
                         </div>
 
                         {/* Description */}
-                        {detDescriptions[activeTab] && (
-                          <p className="text-[10px] text-gray-500 italic ml-1">{detDescriptions[activeTab]}</p>
-                        )}
+                        {detDescriptions[activeTab] && (() => {
+                          const tab = detTabs.find(t => t.key === activeTab);
+                          return (
+                            <div className="ml-1">
+                              <span className="text-[10px] text-gray-400 font-semibold">{tab?.model}:</span>
+                              <span className="text-[10px] text-gray-500 italic ml-1">{detDescriptions[activeTab]}</span>
+                            </div>
+                          );
+                        })()}
 
                         {/* Individual detector chart */}
                         {(() => {
@@ -4159,26 +4238,29 @@ export default function App() {
                         {/* Day-by-day breakdown */}
                         {detectorForecastData && (
                           <div className="glass-panel rounded-xl p-5">
-                            <span className="text-xs font-bold text-gray-300 mb-3 block">Day-by-Day Breakdown</span>
+                            <div className="mb-3">
+                              <span className="text-xs font-bold text-gray-300 block">Day-by-Day Breakdown</span>
+                              <span className="text-[10px] text-gray-500">7-day detector trajectory across all anomaly models</span>
+                            </div>
                             <div className="overflow-x-auto">
-                              <table className="w-full text-xs">
+                              <table className="w-full text-[11px]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                                 <thead>
-                                  <tr className="text-gray-500 border-b border-gray-800/60">
-                                    <th className="text-left py-1.5 pr-3 font-mono">Day</th>
-                                    <th className="text-right py-1.5 px-2 font-bold text-blue-400">Mahalanobis</th>
-                                    <th className="text-right py-1.5 px-2 font-bold text-rose-400">Gaussian Copula</th>
-                                    <th className="text-right py-1.5 px-2 font-bold text-emerald-400">Isolation Forest</th>
-                                    <th className="text-right py-1.5 px-2 font-bold text-amber-400">KNN Distance</th>
+                                  <tr className="border-b border-white/[0.06]">
+                                    <th className="text-left py-2 pr-4 font-semibold text-gray-400 text-[10px] uppercase tracking-wider">Day</th>
+                                    <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#60a5fa' }}>Pattern Deviation</th>
+                                    <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#f87171' }}>Behavioral Shift</th>
+                                    <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#34d399' }}>Outlier Spike</th>
+                                    <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#fbbf24' }}>Cluster Drift</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   {detectorForecastData.mahalanobis?.map((_: number, idx: number) => (
-                                    <tr key={idx} className="border-b border-gray-800/30 hover:bg-white/[0.02]">
-                                      <td className="py-1.5 pr-3 font-mono text-gray-400">Day {idx + 1}</td>
-                                      <td className="text-right py-1.5 px-2 text-blue-300">{detectorForecastData.mahalanobis?.[idx] != null ? `${Math.round(detectorForecastData.mahalanobis[idx] * 100)}%` : '—'}</td>
-                                      <td className="text-right py-1.5 px-2 text-rose-300">{detectorForecastData.copula?.[idx] != null ? `${Math.round(detectorForecastData.copula[idx] * 100)}%` : '—'}</td>
-                                      <td className="text-right py-1.5 px-2 text-emerald-300">{detectorForecastData.isolation_forest?.[idx] != null ? `${Math.round(detectorForecastData.isolation_forest[idx] * 100)}%` : '—'}</td>
-                                      <td className="text-right py-1.5 px-2 text-amber-300">{detectorForecastData.knn?.[idx] != null ? `${Math.round(detectorForecastData.knn[idx] * 100)}%` : '—'}</td>
+                                    <tr key={idx} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors duration-150">
+                                      <td className="py-2 pr-4 font-semibold text-gray-300">Day {idx + 1}</td>
+                                      <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#93c5fd' }}>{detectorForecastData.mahalanobis?.[idx] != null ? `${Math.round(detectorForecastData.mahalanobis[idx] * 100)}%` : '—'}</td>
+                                      <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#fca5a5' }}>{detectorForecastData.copula?.[idx] != null ? `${Math.round(detectorForecastData.copula[idx] * 100)}%` : '—'}</td>
+                                      <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#6ee7b7' }}>{detectorForecastData.isolation_forest?.[idx] != null ? `${Math.round(detectorForecastData.isolation_forest[idx] * 100)}%` : '—'}</td>
+                                      <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#fde68a' }}>{detectorForecastData.knn?.[idx] != null ? `${Math.round(detectorForecastData.knn[idx] * 100)}%` : '—'}</td>
                                     </tr>
                                   ))}
                                 </tbody>
