@@ -345,7 +345,7 @@ export default function App() {
   const [isForecastingDetectors, setIsForecastingDetectors] = useState(false);
   const [detectorForecastData, setDetectorForecastData] = useState<Record<string, number[]> | null>(null);
   const [detectorForecastError, setDetectorForecastError] = useState<string | null>(null);
-  const [selectedDetectorTab, setSelectedDetectorTab] = useState<string>('all');
+  const [selectedDetectorTab, setSelectedDetectorTab] = useState<string>('mahalanobis');
 
   // CUSUM toggle tab: 0=Upper, 1=Lower, 2=Both
   const [selectedCusumTab, setSelectedCusumTab] = useState(2);
@@ -3873,7 +3873,6 @@ export default function App() {
           {activeTab === 'forecast' && (() => {
             const pipeline = diagnosticData.pipelineTimestamps ? diagnosticData : null;
             const forecastData: number[] = pipeline?.pipelineForecast14Day || [];
-            const detData = pipeline?.pipelineDetectorForecasts;
 
             const handleForecastDetectors = async () => {
               setIsForecastingDetectors(true);
@@ -3946,7 +3945,7 @@ export default function App() {
                       return (
                         <g key={idx}>
                           <line x1={x} y1="15" x2={x} y2="200" stroke="#1B2030" strokeWidth="0.5" strokeDasharray="2 2" />
-                          <text x={x} y="218" fill="#64748b" fontSize="7" textAnchor="middle" fontFamily="monospace">D{idx + 1}</text>
+                           <text x={x} y="218" fill="#64748b" fontSize="7" textAnchor="middle" fontFamily="monospace">Day {idx + 1}</text>
                         </g>
                       );
                     })}
@@ -3991,23 +3990,6 @@ export default function App() {
               </div>
             );
             };
-
-            const allLines: { data: (number | null)[]; color: string; label: string; dashed?: boolean }[] = [];
-            if (forecastData.length > 0) {
-              allLines.push({ data: forecastData, color: '#a78bfa', label: 'TFT Overall Risk' });
-            }
-            if (detData) {
-              const detConfig: Record<string, { color: string; label: string }> = {
-                mahalanobis: { color: '#60a5fa', label: 'Mahalanobis' },
-                copula: { color: '#f87171', label: 'Copula' },
-                isolation_forest: { color: '#34d399', label: 'Isolation Forest' },
-                knn: { color: '#fbbf24', label: 'KNN' },
-              };
-              for (const [k, cfg] of Object.entries(detConfig)) {
-                const vals = detData[k as keyof typeof detData];
-                if (vals && vals.length > 0) allLines.push({ data: vals, color: cfg.color, label: cfg.label, dashed: true });
-              }
-            }
 
             return (
               <div className="space-y-8 animate-in fade-in duration-300 px-4 sm:px-8 py-8" id="forecast-container">
@@ -4098,11 +4080,10 @@ export default function App() {
 
                   {detectorForecastData ? (() => {
                     const detTabs = [
-                      { key: 'all', label: 'All Detectors', color: '#a78bfa' },
-                      { key: 'mahalanobis', label: 'Mahalanobis', color: '#60a5fa' },
-                      { key: 'copula', label: 'Copula', color: '#f87171' },
+                      { key: 'mahalanobis', label: 'Mahalanobis Distance', color: '#60a5fa' },
+                      { key: 'copula', label: 'Gaussian Copula', color: '#f87171' },
                       { key: 'isolation_forest', label: 'Isolation Forest', color: '#34d399' },
-                      { key: 'knn', label: 'KNN', color: '#fbbf24' },
+                      { key: 'knn', label: 'KNN Distance', color: '#fbbf24' },
                     ];
                     const detDescriptions: Record<string, string> = {
                       mahalanobis: 'Mahalanobis Distance: Measures how far each entry deviates from the learned centroid of your normal feature space. Sensitive to shifts in overall mental state direction.',
@@ -4111,7 +4092,6 @@ export default function App() {
                       knn: 'KNN Distance: Measures distance to your K nearest normal entries. Rises when recent entries are unlike anything seen in your history.',
                     };
                     const activeTab = selectedDetectorTab;
-                    const showCombined = activeTab === 'all';
                     return (
                       <>
                         {/* Tab bar */}
@@ -4136,30 +4116,12 @@ export default function App() {
                         </div>
 
                         {/* Description */}
-                        {activeTab !== 'all' && detDescriptions[activeTab] && (
+                        {detDescriptions[activeTab] && (
                           <p className="text-[10px] text-gray-500 italic ml-1">{detDescriptions[activeTab]}</p>
                         )}
 
-                        {/* Charts */}
-                        {showCombined ? (
-                          <>
-                            {renderForecastChart(
-                              [
-                                { data: detectorForecastData.mahalanobis || [], color: '#60a5fa', label: 'Mahalanobis' },
-                                { data: detectorForecastData.copula || [], color: '#f87171', label: 'Copula' },
-                                { data: detectorForecastData.isolation_forest || [], color: '#34d399', label: 'Isolation Forest' },
-                                { data: detectorForecastData.knn || [], color: '#fbbf24', label: 'KNN' },
-                              ],
-                              'All Detectors — 7 Day Forecast',
-                              'Four independent models overlaid. Spread indicates model disagreement; tight grouping indicates consensus.',
-                            )}
-                            {allLines.length > 1 && renderForecastChart(
-                              allLines,
-                              'Combined View: TFT + Detectors',
-                              'TFT composite risk (solid) overlaid with per-detector forecasts (dashed).',
-                            )}
-                          </>
-                        ) : (() => {
+                        {/* Individual detector chart */}
+                        {(() => {
                           const vals = detectorForecastData[activeTab] || [];
                           const cfg = detTabs.find(t => t.key === activeTab);
                           if (!cfg || vals.length < 2) return (
@@ -4193,7 +4155,7 @@ export default function App() {
                         })()}
 
                         {/* Day-by-day breakdown */}
-                        {forecastData.length > 0 && (
+                        {detectorForecastData && (
                           <div className="glass-panel rounded-xl p-5">
                             <span className="text-xs font-bold text-gray-300 mb-3 block">Day-by-Day Breakdown</span>
                             <div className="overflow-x-auto">
@@ -4201,18 +4163,16 @@ export default function App() {
                                 <thead>
                                   <tr className="text-gray-500 border-b border-gray-800/60">
                                     <th className="text-left py-1.5 pr-3 font-mono">Day</th>
-                                    <th className="text-right py-1.5 px-2 font-bold text-purple-400">TFT</th>
-                                    <th className="text-right py-1.5 px-2 font-bold text-blue-400">Mahal.</th>
-                                    <th className="text-right py-1.5 px-2 font-bold text-rose-400">Copula</th>
-                                    <th className="text-right py-1.5 px-2 font-bold text-emerald-400">IF</th>
-                                    <th className="text-right py-1.5 px-2 font-bold text-amber-400">KNN</th>
+                                    <th className="text-right py-1.5 px-2 font-bold text-blue-400">Mahalanobis</th>
+                                    <th className="text-right py-1.5 px-2 font-bold text-rose-400">Gaussian Copula</th>
+                                    <th className="text-right py-1.5 px-2 font-bold text-emerald-400">Isolation Forest</th>
+                                    <th className="text-right py-1.5 px-2 font-bold text-amber-400">KNN Distance</th>
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {forecastData.map((tftVal, idx) => (
+                                  {detectorForecastData.mahalanobis?.map((_: number, idx: number) => (
                                     <tr key={idx} className="border-b border-gray-800/30 hover:bg-white/[0.02]">
-                                      <td className="py-1.5 pr-3 font-mono text-gray-400">D{idx + 1}</td>
-                                      <td className="text-right py-1.5 px-2 text-purple-300 font-bold">{Math.round(tftVal * 100)}%</td>
+                                      <td className="py-1.5 pr-3 font-mono text-gray-400">Day {idx + 1}</td>
                                       <td className="text-right py-1.5 px-2 text-blue-300">{detectorForecastData.mahalanobis?.[idx] != null ? `${Math.round(detectorForecastData.mahalanobis[idx] * 100)}%` : '—'}</td>
                                       <td className="text-right py-1.5 px-2 text-rose-300">{detectorForecastData.copula?.[idx] != null ? `${Math.round(detectorForecastData.copula[idx] * 100)}%` : '—'}</td>
                                       <td className="text-right py-1.5 px-2 text-emerald-300">{detectorForecastData.isolation_forest?.[idx] != null ? `${Math.round(detectorForecastData.isolation_forest[idx] * 100)}%` : '—'}</td>
