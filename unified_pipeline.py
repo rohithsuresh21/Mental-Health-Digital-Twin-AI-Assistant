@@ -96,9 +96,6 @@ class UnifiedJournalPipeline:
                 print(f"[Stage 5] Failed to load model: {e}")
                 self.xgb_model = None
 
-        # PCA preprocessor (unused in inference — kept for reference)
-        # pca.pkl and isotonic_new.pkl are loaded here in earlier versions but
-        # never applied during inference. Removed to save memory.
 
         # Temperature scaling
         temp_path = os.path.join(DAIC_MODEL_DIR, "temperature.json")

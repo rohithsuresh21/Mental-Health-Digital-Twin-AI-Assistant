@@ -3,7 +3,6 @@ import pandas as pd
 import json
 from datetime import timedelta
 from label_generator import generate_ordinal_label
-from studentlife_loader import merge_daily
 from daic_loader import load_daic_labels, get_daic_window
 from daic_label_generator import generate_labeled_windows
 from pathlib import Path
