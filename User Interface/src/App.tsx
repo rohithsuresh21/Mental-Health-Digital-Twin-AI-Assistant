@@ -2423,6 +2423,18 @@ export default function App() {
                   </div>
                 )}
 
+                {/* TOP ACTIONS ROW */}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="text-xs text-gray-500 font-medium">Real-time clinical analytics dashboard</div>
+                  <button
+                    onClick={() => setActiveTab('forecast')}
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 border border-purple-500/30 rounded-lg text-xs font-bold text-purple-300 hover:bg-purple-600/40 hover:text-white transition-all cursor-pointer shrink-0"
+                  >
+                    <Cloud className="h-3.5 w-3.5" />
+                    View Risk Forecast
+                  </button>
+                </div>
+
                 {/* TOP METRICS ROW */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-4 border-b border-[#20293B]/20">
                   {/* Left overall card */}
@@ -3600,26 +3612,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* NAVIGATE TO FORECAST ENGINE */}
-                <div className="border-t border-gray-800/60 pt-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
-                      <Cloud className="h-4.5 w-4.5 text-purple-400" />
-                      Risk Forecast Engine
-                    </h3>
-                    <button
-                      onClick={() => { setActiveTab('forecast'); }}
-                      className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 border border-purple-500/30 rounded-lg text-xs font-bold text-purple-300 hover:bg-purple-600/40 hover:text-white transition-all cursor-pointer"
-                    >
-                      <Cloud className="h-3.5 w-3.5" />
-                      View Risk Forecast
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-gray-500 mt-3 leading-relaxed">
-                    Predicts the next 7 days using your historical data. The TFT model forecasts a composite risk score (50% anomaly + 25% sentiment + 25% health). Individual detector forecasts use GradientBoosting trained on each detector's own 30-day history.
-                  </p>
-                </div>
-
               </div>
             );
           })()}
@@ -4185,14 +4177,14 @@ export default function App() {
                             <div className="flex items-center gap-6 sm:gap-10">
                               <div className="space-y-1">
                                 <div className="text-3xl sm:text-4xl font-extrabold text-gray-400 font-sans tracking-tight">{basePct}%</div>
-                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">Baseline</div>
+                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">Initial Score</div>
                               </div>
                               <div className="flex-1 h-px bg-gradient-to-r from-gray-600/40 via-gray-600/20 to-transparent" />
                               <div className="space-y-1">
                                 <div className="text-3xl sm:text-4xl font-extrabold text-[#eaa235] font-sans tracking-tight">
                                   {finalPct}%
                                 </div>
-                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">Calibrated Risk</div>
+                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">Estimated Final Score</div>
                               </div>
                             </div>
                           </div>
