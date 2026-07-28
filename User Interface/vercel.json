@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://floating-exports-gibson-volt.trycloudflare.com/$1"
+                         "destination": "https://cathedral-attributes-picking-dinner.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
