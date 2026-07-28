@@ -317,7 +317,8 @@ export default function App() {
     whatsDriving: false,
     techDetails: true,
     tftForecast: true,
-    forecast: true
+    forecast: true,
+    xai: true
   });
 
   const scrollToForecast = () => {
@@ -339,9 +340,11 @@ export default function App() {
   const [shapLoading, setShapLoading] = useState(false);
   const [shapError, setShapError] = useState<string | null>(null);
 
-  // Fetch SHAP explanation when Explainable AI tab is opened
+  // Fetch SHAP explanation when Explainable AI section is opened
   useEffect(() => {
-    if (activeTab !== 'explainable' || !hasRunAnalysis) return;
+    const xaiOpen = activeTab === 'analytics' && !collapsedSections.xai;
+    const xaiTabOpen = activeTab === 'explainable';
+    if ((!xaiOpen && !xaiTabOpen) || !hasRunAnalysis) return;
     // Prefer data from diagnose response
     if (diagnosticData.pipelineShapExplanation) {
       setShapData(diagnosticData.pipelineShapExplanation);
@@ -362,7 +365,7 @@ export default function App() {
       .catch(e => { if (!cancelled) setShapError(e.message || 'Failed to load explanation'); })
       .finally(() => { if (!cancelled) setShapLoading(false); });
     return () => { cancelled = true; };
-  }, [activeTab, hasRunAnalysis]);
+  }, [activeTab, hasRunAnalysis, collapsedSections.xai]);
 
   // Selected detector tab in What's Driving That Signal
   const [selectedDetector, setSelectedDetector] = useState(0);
@@ -2518,13 +2521,163 @@ export default function App() {
                     </p>
                   </div>
                   <button 
-                    onClick={() => setActiveTab('explainable')}
+                    onClick={() => {
+                      setActiveTab('analytics');
+                      setCollapsedSections(prev => ({ ...prev, xai: false }));
+                      setTimeout(() => {
+                        document.getElementById('xai-section-inline')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
+                    }}
                     className="w-full md:w-auto px-6 py-3 bg-[#43A0F5]/10 hover:bg-[#43A0F5]/25 border border-[#43A0F5]/30 hover:border-[#43A0F5]/80 text-[#43A0F5] hover:text-white rounded-lg text-sm font-bold tracking-normal flex items-center justify-center gap-2.5 transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-[0_0_15px_rgba(67,160,245,0.06)] shrink-0"
                   >
                     <Brain className="h-4.5 w-4.5 animate-pulse" />
                     Explainable Analysis using AI
                     <ArrowRight className="h-4 w-4" />
                   </button>
+                </div>
+
+                {/* XAI SECTION — INLINE IN ANALYTICS */}
+                <div className="border-t border-[#43A0F5]/20 pt-6" id="xai-section-inline">
+                  <div className="flex items-center justify-between cursor-pointer group" onClick={() => setCollapsedSections(prev => ({ ...prev, xai: !prev.xai }))}>
+                    <div className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 bg-[#43A0F5] rounded-full animate-pulse" />
+                      <span className="text-[10px] tracking-wider text-gray-400 font-bold uppercase font-sans">Explainable AI (TreeSHAP)</span>
+                    </div>
+                    <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
+                      {collapsedSections.xai ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {!collapsedSections.xai && (
+                    <div className="space-y-6 animate-in fade-in duration-300 mt-4">
+                      <p className="text-[#8E9CAE] text-xs md:text-sm leading-relaxed max-w-4xl">
+                        TreeSHAP breaks down the calibrated risk score into the features and patterns that pushed it up or down, across 2,336 signals.
+                      </p>
+
+                      {shapLoading && !shapData && (
+                        <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-12 flex items-center justify-center">
+                          <div className="text-center space-y-3">
+                            <Loader2 className="h-6 w-6 text-blue-400 animate-spin mx-auto" />
+                            <p className="text-gray-400 text-sm">Computing TreeSHAP values...</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {shapData && (() => {
+                        const baseVal = shapData.base_value ?? 0;
+                        const basePct = (baseVal * 100).toFixed(1);
+                        const finalPct = diagnosticData.anomalyBehaviourScore
+                          ? diagnosticData.anomalyBehaviourScore.toFixed(1) : '0.0';
+                        const topFeatures = shapData.top_features || [];
+                        const pushedUp = topFeatures.filter((f: any) => f.direction === 'increases_risk').slice(0, 5);
+                        const pushedDown = topFeatures.filter((f: any) => f.direction === 'reduces_risk').slice(0, 5);
+                        const maxImpact = Math.max(...topFeatures.map((f: any) => f.abs_impact || 0), 0.001);
+                        const groupImpacts = shapData.group_impacts || [];
+                        const maxGroupImpact = Math.max(...groupImpacts.map((g: any) => g.total_impact || 0), 0.001);
+                        const sentences = shapData.sentences || [];
+
+                        return (
+                          <div className="space-y-6">
+                            <div className="border border-[#20293B]/60 rounded-xl bg-[#0F131A]/60 p-6 sm:p-8">
+                              <div className="flex items-center">
+                                <div className="space-y-1">
+                                  <div className="text-3xl sm:text-4xl font-extrabold text-gray-400 font-sans tracking-tight">{basePct}%</div>
+                                  <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">starting point</div>
+                                </div>
+                                <div className="text-gray-600 px-6 sm:px-8"><ArrowRight className="h-5 w-5" /></div>
+                                <div className="space-y-1">
+                                  <div className="text-3xl sm:text-4xl font-extrabold text-[#eaa235] font-sans tracking-tight">{finalPct}%</div>
+                                  <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">final risk score</div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {pushedUp.length > 0 && (
+                              <div className="space-y-4">
+                                <div className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">PUSHED THE SCORE UP</div>
+                                <div className="space-y-3.5">
+                                  {pushedUp.map((f: any, i: number) => {
+                                    const isUp = true;
+                                    const barWidth = Math.max(5, (f.abs_impact / maxImpact) * 80);
+                                    return (
+                                      <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
+                                        <span className="text-gray-300 font-medium sm:w-2/5 truncate" title={f.description || f.concept}>{f.description || f.concept || f.full_name}</span>
+                                        <div className="flex-1 flex items-center gap-4">
+                                          <div className="flex-1 bg-[#1A202C]/60 h-2 rounded-full overflow-hidden relative">
+                                            <div className="absolute inset-y-0 border-r border-gray-600/35 z-10" style={{ left: `${basePct}%` }} />
+                                            <div className="h-full absolute rounded-full bg-[#EF4444]" style={{ left: `${basePct}%`, width: `${barWidth}%` }} />
+                                          </div>
+                                          <span className="font-mono font-bold text-[#EF4444] w-14 text-right">+{Math.abs(f.shap_value).toFixed(4)}</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {pushedDown.length > 0 && (
+                              <div className="space-y-4 pt-4 border-t border-gray-800/20">
+                                <div className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">PULLED THE SCORE DOWN</div>
+                                <div className="space-y-3.5">
+                                  {pushedDown.map((f: any, i: number) => {
+                                    const barWidth = Math.max(5, (f.abs_impact / maxImpact) * 80);
+                                    return (
+                                      <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
+                                        <span className="text-gray-300 font-medium sm:w-2/5 truncate" title={f.description || f.concept}>{f.description || f.concept || f.full_name}</span>
+                                        <div className="flex-1 flex items-center gap-4">
+                                          <div className="flex-1 bg-[#1A202C]/60 h-2 rounded-full overflow-hidden relative">
+                                            <div className="absolute inset-y-0 border-r border-gray-600/35 z-10" style={{ left: `${basePct}%` }} />
+                                            <div className="h-full absolute rounded-full bg-[#10B981]" style={{ left: `${Math.max(0, parseFloat(basePct) - barWidth)}%`, width: `${barWidth}%` }} />
+                                          </div>
+                                          <span className="font-mono font-bold text-[#10B981] w-14 text-right">-{Math.abs(f.shap_value).toFixed(4)}</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            <p className="text-[10px] text-gray-500 font-medium leading-relaxed pt-2">
+                              Bars branch from the starting point ({basePct}%). Red = higher risk; green = lower risk.
+                            </p>
+
+                            {groupImpacts.length > 0 && (
+                              <div className="space-y-4 pt-4 border-t border-gray-800/20">
+                                <div className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">FEATURE GROUP IMPACTS</div>
+                                {groupImpacts.map((g: any, i: number) => {
+                                  const pct = ((g.total_impact / maxGroupImpact) * 100).toFixed(0);
+                                  return (
+                                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
+                                      <span className="text-gray-300 font-medium sm:w-1/3">{g.group}</span>
+                                      <div className="flex-1 flex items-center gap-4">
+                                        <div className="flex-1 bg-[#1A202C]/60 h-2.5 rounded-full overflow-hidden">
+                                          <div className="h-full rounded-full bg-amber-500/80" style={{ width: `${pct}%` }} />
+                                        </div>
+                                        <span className="font-mono font-bold text-amber-400 w-14 text-right">{g.total_impact.toFixed(4)}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {sentences.length > 0 && (
+                              <div className="space-y-3 pt-4 border-t border-gray-800/20">
+                                <div className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">IN PLAIN ENGLISH</div>
+                                {sentences.map((s: string, i: number) => (
+                                  <div key={i} className="flex items-start gap-3 text-xs text-gray-300 leading-relaxed">
+                                    <div className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                                    <span>{s}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
 
                 {/* 1. MOOD AND RISK OVER TIME SECTION */}
