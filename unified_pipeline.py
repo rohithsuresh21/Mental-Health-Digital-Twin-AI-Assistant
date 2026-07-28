@@ -485,15 +485,6 @@ class UnifiedJournalPipeline:
     
     def train_anomaly_detector(self, use_latent_features: bool = False) -> None:
         try:
-            model_path     = os.path.join("calibration", "models", "stage4_detectors.pkl")
-            threshold_path = os.path.join("calibration", "models", "stage4_threshold_engine.pkl")
-
-            if os.path.exists(model_path) and os.path.exists(threshold_path):
-                from stage4_deployment import Stage4DeploymentPipeline
-                self.anomaly_detector = Stage4DeploymentPipeline(model_path, threshold_path)
-                print("Stage 4 complete: loaded pretrained DAIC-WOZ detectors")
-                return
-
             all_vectors = []
             for user_id in self.normalized_vectors:
                 vectors = self.get_batch_consistent_vectors(user_id)
@@ -504,7 +495,7 @@ class UnifiedJournalPipeline:
                 else:
                     all_vectors.extend(vectors)
             X_train = np.array(all_vectors)
-            print(f"Stage 4: no pretrained models found — training fresh on calibrated data, shape {X_train.shape}")
+            print(f"Stage 4: training detectors on calibrated data, shape {X_train.shape}")
 
             assert X_train.shape[0] > 0, "No training data available"
             assert not np.any(np.isnan(X_train)), "NaN values in training data"
@@ -527,24 +518,14 @@ class UnifiedJournalPipeline:
 
         try:
             X = np.array([feature_vec])
-
-            if hasattr(self.anomaly_detector, '_detect_anomalies'):
-                results = self.anomaly_detector._detect_anomalies(X)
-                return {
-                    "overall_risk_score": float(results["overall_risk_score"]),
-                    "is_anomaly":         results["is_anomaly"],
-                    "detector_scores":    results["detector_scores"],
-                    "timestamp":          datetime.now().isoformat()
-                }
-            else:
-                results = self.anomaly_detector.predict(X)
-                raw_is_anom = results["is_anomaly"][0]
-                return {
-                    "overall_risk_score": float(results["overall_risk_score"][0]),
-                    "is_anomaly":         any(raw_is_anom) if isinstance(raw_is_anom, (list, np.ndarray)) else bool(raw_is_anom),
-                    "detector_scores":    results["metrics_summary"][0],
-                    "timestamp":          datetime.now().isoformat()
-                }
+            results = self.anomaly_detector.predict(X)
+            raw_is_anom = results["is_anomaly"][0]
+            return {
+                "overall_risk_score": float(results["overall_risk_score"][0]),
+                "is_anomaly":         any(raw_is_anom) if isinstance(raw_is_anom, (list, np.ndarray)) else bool(raw_is_anom),
+                "detector_scores":    results["metrics_summary"][0],
+                "timestamp":          datetime.now().isoformat()
+            }
 
         except Exception as e:
             print(f"Anomaly detection error: {str(e)}")

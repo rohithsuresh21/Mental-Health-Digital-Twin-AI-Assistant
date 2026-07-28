@@ -211,29 +211,18 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
         max_epochs  = 15
         batch_size  = 8
 
-    model_dir = Path("calibration/models")
-    detectors_file = model_dir / "stage4_detectors.pkl"
-    threshold_file = model_dir / "stage4_threshold_engine.pkl"
-
     all_vecs = pipeline.get_batch_consistent_vectors(user_id)
     n_total = len(all_vecs)
 
-    if detectors_file.exists() and threshold_file.exists():
-        print(f"Stage 4: Loading pretrained calibration models from {model_dir}...")
-        from stage4_deployment import Stage4DeploymentPipeline
-        pipeline.anomaly_detector = Stage4DeploymentPipeline(
-            str(detectors_file), str(threshold_file)
-        )
-    else:
-        print("Stage 4: Pretrained models missing – training fresh with chronological split...")
-        n_train = max(10, int(n_total * 0.7))
-        train_vecs = all_vecs[:n_train]
-        X_train = np.array(train_vecs)
-        print(f"  Training on first {n_train}/{n_total} entries, scoring all {n_total}")
+    print("Stage 4: training detectors with chronological split...")
+    n_train = max(10, int(n_total * 0.7))
+    train_vecs = all_vecs[:n_train]
+    X_train = np.array(train_vecs)
+    print(f"  Training on first {n_train}/{n_total} entries, scoring all {n_total}")
 
-        from stage_4.anomaly_pipeline import MultiDetectorPipeline
-        pipeline.anomaly_detector = MultiDetectorPipeline()
-        pipeline.anomaly_detector.fit(X_train)
+    from stage_4.anomaly_pipeline import MultiDetectorPipeline
+    pipeline.anomaly_detector = MultiDetectorPipeline()
+    pipeline.anomaly_detector.fit(X_train)
 
         import pickle as _pkl
         detector_path = os.path.join(pipeline.output_dir, "anomaly_detector.pkl")
