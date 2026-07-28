@@ -1615,6 +1615,34 @@ def internal_explainer():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/explain", methods=["POST"])
+@rate_limit("diagnose")
+def api_explain():
+    """Return SHAP-based XAI explanation for a user."""
+    try:
+        body = request.get_json(force=True, silent=True) or {}
+        user_id = (body.get("user_id") or body.get("fullName", "user_demo")).strip() or "user_demo"
+
+        import pipeline_runner as _pr
+        shared = _pr._shared_pipeline
+        if shared is None:
+            return jsonify({"error": "No pipeline data. Run a diagnosis first."}), 400
+
+        explanation = shared.explain_prediction(user_id)
+        if explanation is None:
+            return jsonify({
+                "user_id": user_id,
+                "note": "No explanation available. Ensure a diagnosis has been run and the XGBoost model is loaded.",
+                "explanation": None,
+            })
+
+        return jsonify({"user_id": user_id, "explanation": explanation})
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 PORTAL_HTML = r"""<!DOCTYPE html>
 <html lang="en">
 <head>

@@ -391,7 +391,7 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     except Exception as e:
         _warn(f"Could not store pipeline: {e}")
 
-    return {
+    result = {
         "user_id":             user_id,
         "n_entries":           len(records),
         "timestamps":          [t.strftime("%Y-%m-%d") for t in timestamps],
@@ -418,3 +418,13 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         "baseline_trend":      baseline_trend,
         "context_bin_counts":  context_bin_counts,
     }
+
+    # SHAP explanation
+    try:
+        explanation = pipeline.explain_prediction(user_id)
+        if explanation:
+            result["shap_explanation"] = explanation
+    except Exception as e:
+        _warn(f"SHAP explanation failed: {e}")
+
+    return result

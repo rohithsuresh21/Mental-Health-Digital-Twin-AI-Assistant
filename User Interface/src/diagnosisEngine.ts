@@ -294,6 +294,7 @@ export function mapFlaskRunResponse(pipelineResult: any, input: Partial<Ingestio
     pipelineNEntries: pipelineResult.n_entries,
     pipelineForecast14Day: pipelineResult.tft_forecast_14day,
     pipelineDetectorForecasts: pipelineResult.detector_forecasts || undefined,
+    pipelineShapExplanation: pipelineResult.shap_explanation || null,
   };
 }
 

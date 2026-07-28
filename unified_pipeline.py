@@ -27,6 +27,16 @@ except ImportError:
     STAGE5_AVAILABLE = False
     print("XGBoost not installed. Stage 5 will be skipped.")
 
+try:
+    _xai_dir = os.path.join(os.path.dirname(__file__), "XAI")
+    sys.path.insert(0, _xai_dir)
+    from XAI import SHAPExplainer
+    from grouping import get_feature_info, GROUP_ORDER, BASE_FEATURES, STAT_DESCRIPTIONS
+    XAI_AVAILABLE = True
+except Exception as _xai_err:
+    XAI_AVAILABLE = False
+    print(f"[XAI] Not available: {_xai_err}")
+
 DAIC_MODEL_DIR = os.path.join(os.path.dirname(__file__), "Stage_5")
 
 class UnifiedJournalPipeline:
@@ -121,6 +131,70 @@ class UnifiedJournalPipeline:
                 print(f"[Stage 5] Loaded Platt calibrator (A={A:.4f}, B={B:.4f})")
             except Exception as e:
                 print(f"[Stage 5] Failed to load Platt calibrator: {e}")
+
+    def _generate_stage5_feature_names(self) -> list:
+        """Generate the 2336 feature names matching assemble_stage5_features layout."""
+        base_features = (
+            [f"sbert_{i}" for i in range(384)]
+            + [f"emotion_{e}" for e in [
+                'admiration','amusement','anger','annoyance','approval',
+                'caring','confusion','curiosity','desire','disappointment',
+                'disapproval','disgust','embarrassment','excitement','fear',
+                'gratitude','grief','joy','love','nervousness',
+                'optimism','pride','realization','relief','remorse',
+                'sadness','surprise','neutral'
+            ]]
+            + ['vader_neg','vader_neu','vader_pos','vader_compound',
+               'vader_min_compound','vader_max_compound','vader_std_compound']
+            + ['ttr','mtld']
+            + ['readability_fre','readability_fkgl','readability_ari']
+            + ['first_person_singular','first_person_plural']
+            + ['avg_sentence_length','sentence_count','word_count']
+            + ['question_ratio','exclamation_ratio','ellipsis_ratio','caps_ratio']
+            + ['hour_sin','hour_cos','days_gap']
+            + ['sleep_hours','sleep_quality','activity_level','music_mood',
+               'mask_sleep','mask_sleep_quality','mask_activity','mask_music']
+            + ['audio_speech_rate','audio_pause_ratio','audio_avg_pause',
+               'audio_pitch_mean','audio_pitch_std','audio_rms_mean','audio_rms_std',
+               'audio_emotion_angry','audio_emotion_happy',
+               'audio_emotion_neutral','audio_emotion_sad']
+            + [f'audio_mask_{i}' for i in range(7)]
+        )
+        names = []
+        for stat in ["mean", "std", "max", "min"]:
+            names.extend([f"{stat}_{f}" for f in base_features])
+        names.extend([f"delta_{f}" for f in base_features])
+        names.extend([
+            "overall_risk_score","mahalanobis","copula",
+            "isolation_forest","knn","is_anomaly"
+        ])
+        return names
+
+    def explain_prediction(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Run SHAP explanation on the latest Stage 5 feature vector for a user."""
+        if not XAI_AVAILABLE:
+            return None
+        if self.xgb_model is None:
+            return None
+        if user_id not in self.normalized_vectors:
+            return None
+
+        vectors = self.normalized_vectors.get(user_id, [])
+        anomalies = self.anomaly_scores.get(user_id, [])
+        if not vectors:
+            return None
+
+        try:
+            feature_vec = self.assemble_stage5_features(vectors, anomalies)
+            feature_names = self._generate_stage5_feature_names()
+
+            explainer = SHAPExplainer(self.xgb_model, feature_names)
+            explanation = explainer.explain(feature_vec)
+
+            return explanation
+        except Exception as e:
+            print(f"[XAI] SHAP explanation failed: {e}")
+            return None
 
     def _normalize_user_id(self, user_id: str) -> str:
         if user_id not in self._user_id_mapping:
@@ -814,6 +888,10 @@ class UnifiedJournalPipeline:
                 classification = self.predict_classification(feature_vec)
                 result["stage_5"] = classification
                 result["stage_5_features"] = feature_vec.shape
+
+                explanation = self.explain_prediction(user_id)
+                if explanation:
+                    result["stage_5_explanation"] = explanation
             
             return result
             

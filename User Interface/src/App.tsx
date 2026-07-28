@@ -334,6 +334,36 @@ export default function App() {
   const [explainWhyPredictionCollapsed, setExplainWhyPredictionCollapsed] = useState(false);
   const [explainRootCauseCollapsed, setExplainRootCauseCollapsed] = useState(false);
 
+  // SHAP explanation state
+  const [shapData, setShapData] = useState<any>(null);
+  const [shapLoading, setShapLoading] = useState(false);
+  const [shapError, setShapError] = useState<string | null>(null);
+
+  // Fetch SHAP explanation when Explainable AI tab is opened
+  useEffect(() => {
+    if (activeTab !== 'explainable' || !hasRunAnalysis) return;
+    // Prefer data from diagnose response
+    if (diagnosticData.pipelineShapExplanation) {
+      setShapData(diagnosticData.pipelineShapExplanation);
+      return;
+    }
+    let cancelled = false;
+    setShapLoading(true);
+    setShapError(null);
+    fetch('/api/explain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ user_id: userId }),
+      signal: AbortSignal.timeout(30000),
+    })
+      .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
+      .then(data => { if (!cancelled) setShapData(data.explanation || null); })
+      .catch(e => { if (!cancelled) setShapError(e.message || 'Failed to load explanation'); })
+      .finally(() => { if (!cancelled) setShapLoading(false); });
+    return () => { cancelled = true; };
+  }, [activeTab, hasRunAnalysis]);
+
   // Selected detector tab in What's Driving That Signal
   const [selectedDetector, setSelectedDetector] = useState(0);
 
@@ -4018,229 +4048,275 @@ export default function App() {
                 </button>
               </div>
 
-              {/* TOP BANNER */}
-              <div className="flex">
-                <div className="bg-[#1C1105]/50 border border-amber-500/20 text-amber-500/90 text-[10px] sm:text-xs font-sans font-bold tracking-wider px-4 py-2 rounded-lg uppercase" id="explainable-preview-banner">
-                  PREVIEW ONLY — SAMPLE DATA, NO LIVE MODEL CONNECTION
-                </div>
-              </div>
-
-              {/* WHY THIS PREDICTION (STAGE 5) */}
-              <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-6" id="why-prediction-section">
-                
-                {/* SECTION HEADER */}
-                <div 
-                  className="flex items-center justify-between cursor-pointer group"
-                  onClick={() => setExplainWhyPredictionCollapsed(!explainWhyPredictionCollapsed)}
-                >
-                  <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
-                    WHY THIS PREDICTION (STAGE 5)
-                  </h2>
-                  <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
-                    {explainWhyPredictionCollapsed ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                  </button>
-                </div>
-
-                {!explainWhyPredictionCollapsed && (
-                  <div className="space-y-6 animate-in fade-in duration-300">
-                    <p className="text-[#8E9CAE] text-xs md:text-sm leading-relaxed max-w-4xl">
-                      This breaks down the calibrated risk score into the entries and patterns that pushed it up or down, using TreeSHAP over the model's 2,336-value feature vector.
-                    </p>
-
-                    {/* SCORE VALUE DISPLAY BOX */}
-                    <div className="border border-[#20293B]/60 rounded-xl bg-[#0F131A]/60 p-6 sm:p-8">
-                      <div className="flex items-center">
-                        {/* STARTING POINT */}
-                        <div className="space-y-1">
-                          <div className="text-3xl sm:text-4xl font-extrabold text-gray-400 font-sans tracking-tight">14.6%</div>
-                          <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">starting point</div>
-                        </div>
-
-                        {/* ARROW */}
-                        <div className="text-gray-600 px-6 sm:px-8"><ArrowRight className="h-5 w-5" /></div>
-
-                        {/* FINAL RISK SCORE */}
-                        <div className="space-y-1">
-                          <div className="text-3xl sm:text-4xl font-extrabold text-[#eaa235] font-sans tracking-tight">
-                            {(() => {
-                              const scoreVal = diagnosticData.anomalyBehaviourScore || 72.8;
-                              return (scoreVal + (scoreVal * 0.0062)).toFixed(1) + "%";
-                            })()}
-                          </div>
-                          <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">final risk score</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* PUSHED THE SCORE UP */}
-                    <div className="space-y-4 pt-2">
-                      <div className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">
-                        PUSHED THE SCORE UP
-                      </div>
-
-                      <div className="space-y-3.5">
-                        {/* FEATURE 1 */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
-                          <span className="text-gray-300 font-medium sm:w-2/5">Feature relationships breaking down (copula)</span>
-                          <div className="flex-1 flex items-center gap-4">
-                            <div className="flex-1 bg-[#1A202C]/60 h-2 rounded-full overflow-hidden relative">
-                              <div className="absolute inset-y-0 left-[14.6%] border-r border-gray-600/35 z-10" />
-                              <div 
-                                className="bg-[#EF4444] h-full absolute rounded-full" 
-                                style={{ left: "14.6%", width: "45.4%" }}
-                              />
-                            </div>
-                            <span className="font-mono font-bold text-[#EF4444] w-12 text-right">+0.067</span>
-                          </div>
-                        </div>
-
-                        {/* FEATURE 2 */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
-                          <span className="text-gray-300 font-medium sm:w-2/5">Peak reading, signal #372</span>
-                          <div className="flex-1 flex items-center gap-4">
-                            <div className="flex-1 bg-[#1A202C]/60 h-2 rounded-full overflow-hidden relative">
-                              <div className="absolute inset-y-0 left-[14.6%] border-r border-gray-600/35 z-10" />
-                              <div 
-                                className="bg-[#EF4444] h-full absolute rounded-full" 
-                                style={{ left: "14.6%", width: "40.4%" }}
-                              />
-                            </div>
-                            <span className="font-mono font-bold text-[#EF4444] w-12 text-right">+0.060</span>
-                          </div>
-                        </div>
-
-                        {/* FEATURE 3 */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
-                          <span className="text-gray-300 font-medium sm:w-2/5">Peak reading, signal #336</span>
-                          <div className="flex-1 flex items-center gap-4">
-                            <div className="flex-1 bg-[#1A202C]/60 h-2 rounded-full overflow-hidden relative">
-                              <div className="absolute inset-y-0 left-[14.6%] border-r border-gray-600/35 z-10" />
-                              <div 
-                                className="bg-[#EF4444] h-full absolute rounded-full" 
-                                style={{ left: "14.6%", width: "40.4%" }}
-                              />
-                            </div>
-                            <span className="font-mono font-bold text-[#EF4444] w-12 text-right">+0.060</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* PULLED THE SCORE DOWN */}
-                    <div className="space-y-4 pt-4 border-t border-gray-800/20">
-                      <div className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">
-                        PULLED THE SCORE DOWN
-                      </div>
-
-                      <div className="space-y-3.5">
-                        {/* FEATURE 4 */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
-                          <span className="text-gray-300 font-medium sm:w-2/5">Lowest reading, signal #264</span>
-                          <div className="flex-1 flex items-center gap-4">
-                            <div className="flex-1 bg-[#1A202C]/60 h-2 rounded-full overflow-hidden relative">
-                              <div className="absolute inset-y-0 left-[14.6%] border-r border-gray-600/35 z-10" />
-                              <div 
-                                className="bg-[#10B981] h-full absolute rounded-full" 
-                                style={{ left: "4.6%", width: "10%" }}
-                              />
-                            </div>
-                            <span className="font-mono font-bold text-[#10B981] w-12 text-right">-0.069</span>
-                          </div>
-                        </div>
-
-                        {/* FEATURE 5 */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
-                          <span className="text-gray-300 font-medium sm:w-2/5">Average reading, signal #267</span>
-                          <div className="flex-1 flex items-center gap-4">
-                            <div className="flex-1 bg-[#1A202C]/60 h-2 rounded-full overflow-hidden relative">
-                              <div className="absolute inset-y-0 left-[14.6%] border-r border-gray-600/35 z-10" />
-                              <div 
-                                className="bg-[#10B981] h-full absolute rounded-full" 
-                                style={{ left: "4.6%", width: "10%" }}
-                              />
-                            </div>
-                            <span className="font-mono font-bold text-[#10B981] w-12 text-right">-0.069</span>
-                          </div>
-                        </div>
-
-                        {/* FEATURE 6 */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
-                          <span className="text-gray-300 font-medium sm:w-2/5">Lowest reading, signal #328</span>
-                          <div className="flex-1 flex items-center gap-4">
-                            <div className="flex-1 bg-[#1A202C]/60 h-2 rounded-full overflow-hidden relative">
-                              <div className="absolute inset-y-0 left-[14.6%] border-r border-gray-600/35 z-10" />
-                              <div 
-                                className="bg-[#10B981] h-full absolute rounded-full" 
-                                style={{ left: "4.9%", width: "9.7%" }}
-                              />
-                            </div>
-                            <span className="font-mono font-bold text-[#10B981] w-12 text-right">-0.067</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* SUBTEXT FOOTNOTE */}
-                    <p className="text-[10px] text-gray-500 font-medium leading-relaxed pt-2">
-                      Bars branch from the model's starting point (14.6%). Red bars extend right and pushed the score toward higher risk; green bars extend left and pulled it toward lower risk. Signal numbers refer to the underlying feature index, not a specific journal entry.
-                    </p>
-
+              {/* LIVE STATUS BANNER */}
+              {shapData ? (
+                <div className="flex">
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] sm:text-xs font-sans font-bold tracking-wider px-4 py-2 rounded-lg uppercase" id="explainable-live-banner">
+                    LIVE — TreeSHAP over {shapData.top_features?.length || 0} attributed features
                   </div>
-                )}
-              </div>
-
-              {/* ANOMALY ROOT CAUSE (STAGE 4) */}
-              <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-6" id="anomaly-root-cause-section">
-                
-                {/* SECTION HEADER */}
-                <div 
-                  className="flex items-center justify-between cursor-pointer group"
-                  onClick={() => setExplainRootCauseCollapsed(!explainRootCauseCollapsed)}
-                >
-                  <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
-                    ANOMALY ROOT CAUSE (STAGE 4)
-                  </h2>
-                  <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
-                    {explainRootCauseCollapsed ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                  </button>
                 </div>
+              ) : shapLoading ? (
+                <div className="flex">
+                  <div className="bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] sm:text-xs font-sans font-bold tracking-wider px-4 py-2 rounded-lg uppercase">
+                    Loading SHAP explanation...
+                  </div>
+                </div>
+              ) : shapError ? (
+                <div className="flex">
+                  <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] sm:text-xs font-sans font-bold tracking-wider px-4 py-2 rounded-lg uppercase">
+                    {shapError}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex">
+                  <div className="bg-[#1C1105]/50 border border-amber-500/20 text-amber-500/90 text-[10px] sm:text-xs font-sans font-bold tracking-wider px-4 py-2 rounded-lg uppercase" id="explainable-preview-banner">
+                    Run a diagnosis to generate a live SHAP explanation
+                  </div>
+                </div>
+              )}
 
-                {!explainRootCauseCollapsed && (
-                  <div className="space-y-6 animate-in fade-in duration-300">
-                    <p className="text-[#8E9CAE] text-xs md:text-sm leading-relaxed max-w-4xl">
-                      For each flagged entry, this shows which of the 466 underlying signals contributed most to its distance-from-normal score.
-                    </p>
+              {shapLoading && !shapData && (
+                <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-12 backdrop-blur-md shadow-2xl flex items-center justify-center">
+                  <div className="text-center space-y-3">
+                    <Loader2 className="h-6 w-6 text-blue-400 animate-spin mx-auto" />
+                    <p className="text-gray-400 text-sm">Computing TreeSHAP values across 2,336 features...</p>
+                    <p className="text-gray-600 text-xs">This may take a few seconds.</p>
+                  </div>
+                </div>
+              )}
 
-                    {/* FLAGS DISPLAY BOX */}
-                    <div className="border border-[#20293B]/60 rounded-xl bg-[#0F131A]/60 p-6 sm:p-8 space-y-3.5">
-                      <div className="text-white font-bold text-sm sm:text-base">
-                        Entry from 2026-07-04
+              {shapData && (() => {
+                const baseVal = shapData.base_value ?? 0;
+                const basePct = (baseVal * 100).toFixed(1);
+                const finalPct = diagnosticData.anomalyBehaviourScore
+                  ? diagnosticData.anomalyBehaviourScore.toFixed(1)
+                  : ((baseVal + diagnosticData.anomalyBehaviourScore / 100 * 0.01) * 100).toFixed(1);
+                const topFeatures = shapData.top_features || [];
+                const pushedUp = topFeatures.filter((f: any) => f.direction === 'increases_risk').slice(0, 5);
+                const pushedDown = topFeatures.filter((f: any) => f.direction === 'reduces_risk').slice(0, 5);
+                const maxImpact = Math.max(...topFeatures.map((f: any) => f.abs_impact || 0), 0.001);
+                const groupImpacts = shapData.group_impacts || [];
+                const maxGroupImpact = Math.max(...groupImpacts.map((g: any) => g.total_impact || 0), 0.001);
+                const sentences = shapData.sentences || [];
+
+                const renderFeatureBar = (f: any, idx: number) => {
+                  const isUp = f.direction === 'increases_risk';
+                  const barWidth = Math.max(5, (f.abs_impact / maxImpact) * 80);
+                  const sign = isUp ? '+' : '-';
+                  const color = isUp ? '#EF4444' : '#10B981';
+                  const barLeft = isUp ? `${basePct}%` : `${Math.max(0, parseFloat(basePct) - barWidth)}%`;
+                  return (
+                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
+                      <span className="text-gray-300 font-medium sm:w-2/5 truncate" title={f.description || f.concept}>
+                        {f.description || f.concept || f.full_name}
+                      </span>
+                      <div className="flex-1 flex items-center gap-4">
+                        <div className="flex-1 bg-[#1A202C]/60 h-2 rounded-full overflow-hidden relative">
+                          <div className="absolute inset-y-0 left-0 border-r border-gray-600/35 z-10" style={{ left: `${basePct}%` }} />
+                          <div
+                            className="h-full absolute rounded-full"
+                            style={{ left: isUp ? `${basePct}%` : `${Math.max(0, parseFloat(basePct) - barWidth)}%`, width: `${barWidth}%`, backgroundColor: color }}
+                          />
+                        </div>
+                        <span className="font-mono font-bold w-14 text-right" style={{ color }}>
+                          {sign}{Math.abs(f.shap_value).toFixed(4)}
+                        </span>
                       </div>
-                      <div className="text-gray-400 text-xs font-medium">
-                        Total distance score: 5.74 · 5 signals accounted for most of it
+                    </div>
+                  );
+                };
+
+                return (
+                  <>
+                    {/* WHY THIS PREDICTION (STAGE 5) */}
+                    <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-6" id="why-prediction-section">
+                      
+                      {/* SECTION HEADER */}
+                      <div 
+                        className="flex items-center justify-between cursor-pointer group"
+                        onClick={() => setExplainWhyPredictionCollapsed(!explainWhyPredictionCollapsed)}
+                      >
+                        <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
+                          WHY THIS PREDICTION (STAGE 5)
+                        </h2>
+                        <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
+                          {explainWhyPredictionCollapsed ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                        </button>
                       </div>
 
-                      {/* SIGNALS PILLS LIST */}
-                      <div className="flex flex-wrap gap-2.5 pt-2">
-                        {['Signal #186', 'Signal #158', 'Signal #171', 'Signal #326', 'Signal #391'].map((sig, i) => (
-                          <span 
-                            key={i} 
-                            className="px-3.5 py-1.5 bg-[#151922] border border-[#232B3B] rounded-lg text-xs font-semibold text-gray-300 font-mono tracking-tight shadow-sm"
+                      {!explainWhyPredictionCollapsed && (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                          <p className="text-[#8E9CAE] text-xs md:text-sm leading-relaxed max-w-4xl">
+                            This breaks down the calibrated risk score into the entries and patterns that pushed it up or down, using TreeSHAP over the model's 2,336-value feature vector.
+                          </p>
+
+                          {/* SCORE VALUE DISPLAY BOX */}
+                          <div className="border border-[#20293B]/60 rounded-xl bg-[#0F131A]/60 p-6 sm:p-8">
+                            <div className="flex items-center">
+                              <div className="space-y-1">
+                                <div className="text-3xl sm:text-4xl font-extrabold text-gray-400 font-sans tracking-tight">{basePct}%</div>
+                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">starting point</div>
+                              </div>
+                              <div className="text-gray-600 px-6 sm:px-8"><ArrowRight className="h-5 w-5" /></div>
+                              <div className="space-y-1">
+                                <div className="text-3xl sm:text-4xl font-extrabold text-[#eaa235] font-sans tracking-tight">
+                                  {finalPct}%
+                                </div>
+                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">final risk score</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* PUSHED THE SCORE UP */}
+                          {pushedUp.length > 0 && (
+                            <div className="space-y-4 pt-2">
+                              <div className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">
+                                PUSHED THE SCORE UP
+                              </div>
+                              <div className="space-y-3.5">
+                                {pushedUp.map((f: any, i: number) => renderFeatureBar(f, i))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* PULLED THE SCORE DOWN */}
+                          {pushedDown.length > 0 && (
+                            <div className="space-y-4 pt-4 border-t border-gray-800/20">
+                              <div className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">
+                                PULLED THE SCORE DOWN
+                              </div>
+                              <div className="space-y-3.5">
+                                {pushedDown.map((f: any, i: number) => renderFeatureBar(f, i + pushedUp.length))}
+                              </div>
+                            </div>
+                          )}
+
+                          <p className="text-[10px] text-gray-500 font-medium leading-relaxed pt-2">
+                            Bars branch from the model's starting point ({basePct}%). Red bars extend right and pushed the score toward higher risk; green bars extend left and pulled it toward lower risk.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* GROUP IMPACT BREAKDOWN */}
+                    {groupImpacts.length > 0 && (
+                      <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-6" id="group-impact-section">
+                        <div className="flex items-center justify-between cursor-pointer group"
+                          onClick={() => setExplainRootCauseCollapsed(!explainRootCauseCollapsed)}
+                        >
+                          <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
+                            FEATURE GROUP IMPACTS
+                          </h2>
+                          <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
+                            {explainRootCauseCollapsed ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                          </button>
+                        </div>
+
+                        {!explainRootCauseCollapsed && (
+                          <div className="space-y-4 animate-in fade-in duration-300">
+                            <p className="text-[#8E9CAE] text-xs md:text-sm leading-relaxed max-w-4xl">
+                              How much each feature category contributed to the prediction, aggregated from individual SHAP values.
+                            </p>
+
+                            {groupImpacts.map((g: any, i: number) => {
+                              const pct = ((g.total_impact / maxGroupImpact) * 100).toFixed(0);
+                              return (
+                                <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
+                                  <span className="text-gray-300 font-medium sm:w-1/3">{g.group}</span>
+                                  <div className="flex-1 flex items-center gap-4">
+                                    <div className="flex-1 bg-[#1A202C]/60 h-2.5 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full rounded-full bg-amber-500/80"
+                                        style={{ width: `${pct}%` }}
+                                      />
+                                    </div>
+                                    <span className="font-mono font-bold text-amber-400 w-14 text-right">{g.total_impact.toFixed(4)}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ENGLISH EXPLANATIONS */}
+                    {sentences.length > 0 && (
+                      <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-4" id="english-explanation-section">
+                        <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
+                          IN PLAIN ENGLISH
+                        </h2>
+                        <div className="space-y-3">
+                          {sentences.map((s: string, i: number) => (
+                            <div key={i} className="flex items-start gap-3 text-xs text-gray-300 leading-relaxed">
+                              <div className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                              <span>{s}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ANOMALY ROOT CAUSE (STAGE 4) — from detector scores */}
+                    {diagnosticData.pipelineDetectorScores && diagnosticData.pipelineDetectorScores.length > 0 && (() => {
+                      const lastScores = diagnosticData.pipelineDetectorScores[diagnosticData.pipelineDetectorScores.length - 1];
+                      const detectors = Object.entries(lastScores).sort((a, b) => b[1] - a[1]);
+                      const maxDet = Math.max(...detectors.map(([, v]) => v), 0.001);
+                      return (
+                        <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-6" id="anomaly-root-cause-section">
+                          <div className="flex items-center justify-between cursor-pointer group"
+                            onClick={() => setExplainRootCauseCollapsed(!explainRootCauseCollapsed)}
                           >
-                            {sig}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                            <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
+                              ANOMALY ROOT CAUSE (STAGE 4)
+                            </h2>
+                            <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
+                              {explainRootCauseCollapsed ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                            </button>
+                          </div>
 
-                    {/* SUBTEXT FOOTNOTE */}
-                    <p className="text-[10px] text-gray-500 font-medium leading-relaxed pt-1">
-                      These are the specific signals that stood out most for this entry, ranked engineering-side by contribution to the distance score. Not shown to end users directly — feeds the "moments that stood out as unusual" view.
-                    </p>
+                          {!explainRootCauseCollapsed && (
+                            <div className="space-y-6 animate-in fade-in duration-300">
+                              <p className="text-[#8E9CAE] text-xs md:text-sm leading-relaxed max-w-4xl">
+                                Which of the 4 anomaly detectors contributed most to the latest distance-from-normal score.
+                              </p>
 
-                  </div>
-                )}
-              </div>
+                              <div className="border border-[#20293B]/60 rounded-xl bg-[#0F131A]/60 p-6 sm:p-8 space-y-3.5">
+                                <div className="text-white font-bold text-sm sm:text-base">
+                                  Latest Entry
+                                </div>
+                                <div className="text-gray-400 text-xs font-medium">
+                                  {diagnosticData.pipelineTimestamps && diagnosticData.pipelineTimestamps.length > 0
+                                    ? diagnosticData.pipelineTimestamps[diagnosticData.pipelineTimestamps.length - 1]
+                                    : 'Unknown date'}
+                                  {' · '}{detectors.length} detectors scored
+                                </div>
+
+                                <div className="flex flex-wrap gap-2.5 pt-2">
+                                  {detectors.map(([name, score], i) => {
+                                    const labels: Record<string, string> = {
+                                      mahalanobis: 'Mahalanobis', copula: 'Copula',
+                                      isolation_forest: 'Isolation Forest', knn: 'KNN',
+                                    };
+                                    return (
+                                      <span key={i}
+                                        className="px-3.5 py-1.5 bg-[#151922] border border-[#232B3B] rounded-lg text-xs font-semibold font-mono tracking-tight shadow-sm"
+                                        style={{ color: score > 0.7 ? '#EF4444' : score > 0.4 ? '#F59E0B' : '#10B981' }}
+                                      >
+                                        {labels[name] || name}: {(score * 100).toFixed(1)}%
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </>
+                );
+              })()}
 
             </div>
           )}

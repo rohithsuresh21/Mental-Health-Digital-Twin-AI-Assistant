@@ -64,6 +64,15 @@ export interface DiagnosticData {
     isolation_forest?: number[];
     knn?: number[];
   };
+  pipelineShapExplanation?: {
+    base_value: number;
+    top_features: { full_name: string; stat: string; concept: string; group: string; description: string; shap_value: number; abs_impact: number; direction: string; feature_value: number; }[];
+    top_concepts: { concept: string; total_impact: number; }[];
+    group_impacts: { group: string; total_impact: number; }[];
+    group_features: Record<string, any[]>;
+    sentences: string[];
+    explanation_type: string;
+  } | null;
 }
 
 export interface IngestionInput {
