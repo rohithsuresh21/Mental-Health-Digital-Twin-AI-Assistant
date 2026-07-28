@@ -96,7 +96,7 @@ class UnifiedJournalPipeline:
         # Model — prefer new file, fall back to old
         model_path = os.path.join(DAIC_MODEL_DIR, "model (1).json")
         if not os.path.exists(model_path):
-            model_path = os.path.join(DAIC_MODEL_DIR, "model_new.json")
+            model_path = os.path.join(DAIC_MODEL_DIR, "model.json")
         if os.path.exists(model_path):
             try:
                 self.xgb_model = xgb.XGBClassifier()
@@ -121,7 +121,7 @@ class UnifiedJournalPipeline:
         # Platt calibrator — prefer new file, fall back to old
         platt_path = os.path.join(DAIC_MODEL_DIR, "platt (1).pkl")
         if not os.path.exists(platt_path):
-            platt_path = os.path.join(DAIC_MODEL_DIR, "platt_new.pkl")
+            platt_path = os.path.join(DAIC_MODEL_DIR, "platt.pkl")
         if os.path.exists(platt_path):
             try:
                 with open(platt_path, "rb") as f:
