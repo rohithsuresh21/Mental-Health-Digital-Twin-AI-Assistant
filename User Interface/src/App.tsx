@@ -4095,32 +4095,37 @@ export default function App() {
                 const pushedUp = topFeatures.filter((f: any) => f.direction === 'increases_risk').slice(0, 5);
                 const pushedDown = topFeatures.filter((f: any) => f.direction === 'reduces_risk').slice(0, 5);
                 const maxImpact = Math.max(...topFeatures.map((f: any) => f.abs_impact || 0), 0.001);
-                const groupImpacts = shapData.group_impacts || [];
-                const maxGroupImpact = Math.max(...groupImpacts.map((g: any) => g.total_impact || 0), 0.001);
+                const groupImpacts = (shapData.group_impacts || []).filter((g: any) => Math.abs(g.total_impact) > 0.0001);
+                const maxGroupImpact = Math.max(...groupImpacts.map((g: any) => Math.abs(g.total_impact)), 0.001);
                 const sentences = shapData.sentences || [];
 
                 const renderFeatureBar = (f: any, idx: number) => {
                   const isUp = f.direction === 'increases_risk';
-                  const barWidth = Math.max(5, (f.abs_impact / maxImpact) * 80);
+                  const barPct = Math.max(8, (f.abs_impact / maxImpact) * 100);
                   const sign = isUp ? '+' : '-';
                   const color = isUp ? '#EF4444' : '#10B981';
-                  const barLeft = isUp ? `${basePct}%` : `${Math.max(0, parseFloat(basePct) - barWidth)}%`;
+                  const glowColor = isUp ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)';
                   return (
-                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
-                      <span className="text-gray-300 font-medium sm:w-2/5 truncate" title={f.description || f.concept}>
-                        {f.description || f.concept || f.full_name}
-                      </span>
-                      <div className="flex-1 flex items-center gap-4">
-                        <div className="flex-1 bg-[#1A202C]/60 h-2 rounded-full overflow-hidden relative">
-                          <div className="absolute inset-y-0 left-0 border-r border-gray-600/35 z-10" style={{ left: `${basePct}%` }} />
-                          <div
-                            className="h-full absolute rounded-full"
-                            style={{ left: isUp ? `${basePct}%` : `${Math.max(0, parseFloat(basePct) - barWidth)}%`, width: `${barWidth}%`, backgroundColor: color }}
-                          />
-                        </div>
-                        <span className="font-mono font-bold w-14 text-right" style={{ color }}>
+                    <div key={idx} className="group/bar py-2.5">
+                      <div className="flex items-center justify-between gap-3 mb-1.5">
+                        <span className="text-gray-300 text-xs font-medium truncate" title={f.description || f.concept}>
+                          {f.description || f.concept || f.full_name}
+                        </span>
+                        <span className="font-mono text-xs font-bold shrink-0" style={{ color }}>
                           {sign}{Math.abs(f.shap_value).toFixed(4)}
                         </span>
+                      </div>
+                      <div className="relative h-2 bg-[#141922] rounded-full overflow-hidden">
+                        <div
+                          className="absolute inset-y-0 rounded-full transition-all duration-500"
+                          style={{
+                            left: isUp ? '50%' : `${50 - barPct / 2}%`,
+                            width: `${barPct / 2}%`,
+                            backgroundColor: color,
+                            boxShadow: `0 0 8px ${glowColor}`,
+                          }}
+                        />
+                        <div className="absolute inset-y-0 left-1/2 w-px bg-gray-600/40" />
                       </div>
                     </div>
                   );
@@ -4137,7 +4142,7 @@ export default function App() {
                         onClick={() => setExplainWhyPredictionCollapsed(!explainWhyPredictionCollapsed)}
                       >
                         <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
-                          WHY THIS PREDICTION (STAGE 5)
+                          Risk Score Decomposition
                         </h2>
                         <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
                           {explainWhyPredictionCollapsed ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
@@ -4147,65 +4152,67 @@ export default function App() {
                       {!explainWhyPredictionCollapsed && (
                         <div className="space-y-6 animate-in fade-in duration-300">
                           <p className="text-[#8E9CAE] text-xs md:text-sm leading-relaxed max-w-4xl">
-                            This breaks down the calibrated risk score into the entries and patterns that pushed it up or down, using TreeSHAP over the model's 2,336-value feature vector.
+                            How the model arrived at this risk score — each contributing signal is traced back to specific behavioral, emotional, and linguistic patterns.
                           </p>
 
                           {/* SCORE VALUE DISPLAY BOX */}
                           <div className="border border-[#20293B]/60 rounded-xl bg-[#0F131A]/60 p-6 sm:p-8">
-                            <div className="flex items-center">
+                            <div className="flex items-center gap-6 sm:gap-10">
                               <div className="space-y-1">
                                 <div className="text-3xl sm:text-4xl font-extrabold text-gray-400 font-sans tracking-tight">{basePct}%</div>
-                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">starting point</div>
+                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">Baseline</div>
                               </div>
-                              <div className="text-gray-600 px-6 sm:px-8"><ArrowRight className="h-5 w-5" /></div>
+                              <div className="flex-1 h-px bg-gradient-to-r from-gray-600/40 via-gray-600/20 to-transparent" />
                               <div className="space-y-1">
                                 <div className="text-3xl sm:text-4xl font-extrabold text-[#eaa235] font-sans tracking-tight">
                                   {finalPct}%
                                 </div>
-                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">final risk score</div>
+                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">Calibrated Risk</div>
                               </div>
                             </div>
                           </div>
 
-                          {/* PUSHED THE SCORE UP */}
+                          {/* Risk Elevating Factors */}
                           {pushedUp.length > 0 && (
                             <div className="space-y-4 pt-2">
-                              <div className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">
-                                PUSHED THE SCORE UP
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
+                                <span className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">Risk Elevating Factors</span>
                               </div>
-                              <div className="space-y-3.5">
+                              <div className="space-y-1">
                                 {pushedUp.map((f: any, i: number) => renderFeatureBar(f, i))}
                               </div>
                             </div>
                           )}
 
-                          {/* PULLED THE SCORE DOWN */}
+                          {/* Protective Factors */}
                           {pushedDown.length > 0 && (
                             <div className="space-y-4 pt-4 border-t border-gray-800/20">
-                              <div className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">
-                                PULLED THE SCORE DOWN
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+                                <span className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">Protective Factors</span>
                               </div>
-                              <div className="space-y-3.5">
+                              <div className="space-y-1">
                                 {pushedDown.map((f: any, i: number) => renderFeatureBar(f, i + pushedUp.length))}
                               </div>
                             </div>
                           )}
 
                           <p className="text-[10px] text-gray-500 font-medium leading-relaxed pt-2">
-                            Bars branch from the model's starting point ({basePct}%). Red bars extend right and pushed the score toward higher risk; green bars extend left and pulled it toward lower risk.
+                            Bars extend from the center baseline. Red signals elevate risk; green signals are protective. Length reflects relative influence on the final score.
                           </p>
                         </div>
                       )}
                     </div>
 
-                    {/* GROUP IMPACT BREAKDOWN */}
+                    {/* BEHAVIORAL SIGNAL DOMAINS */}
                     {groupImpacts.length > 0 && (
                       <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-6" id="group-impact-section">
                         <div className="flex items-center justify-between cursor-pointer group"
                           onClick={() => setExplainRootCauseCollapsed(!explainRootCauseCollapsed)}
                         >
                           <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
-                            FEATURE GROUP IMPACTS
+                            Behavioral Signal Domains
                           </h2>
                           <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
                             {explainRootCauseCollapsed ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
@@ -4215,105 +4222,55 @@ export default function App() {
                         {!explainRootCauseCollapsed && (
                           <div className="space-y-4 animate-in fade-in duration-300">
                             <p className="text-[#8E9CAE] text-xs md:text-sm leading-relaxed max-w-4xl">
-                              How much each feature category contributed to the prediction, aggregated from individual SHAP values.
+                              Aggregate contribution by behavioral domain — showing which aspects of the patient's profile carry the most diagnostic weight.
                             </p>
 
-                            {groupImpacts.map((g: any, i: number) => {
-                              const pct = ((g.total_impact / maxGroupImpact) * 100).toFixed(0);
-                              return (
-                                <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 text-xs">
-                                  <span className="text-gray-300 font-medium sm:w-1/3">{g.group}</span>
-                                  <div className="flex-1 flex items-center gap-4">
-                                    <div className="flex-1 bg-[#1A202C]/60 h-2.5 rounded-full overflow-hidden">
+                            <div className="grid gap-3">
+                              {groupImpacts.map((g: any, i: number) => {
+                                const absImpact = Math.abs(g.total_impact);
+                                const barPct = Math.max(4, (absImpact / maxGroupImpact) * 100);
+                                const isPositive = g.total_impact > 0;
+                                const barColor = isPositive ? 'bg-[#EF4444]/70' : 'bg-[#10B981]/70';
+                                const textColor = isPositive ? 'text-[#EF4444]' : 'text-[#10B981]';
+                                return (
+                                  <div key={i} className="bg-[#0F131A]/50 border border-[#1A202C]/60 rounded-xl px-4 py-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-gray-300 text-xs font-semibold">{g.group}</span>
+                                      <span className={`font-mono text-xs font-bold ${textColor}`}>
+                                        {isPositive ? '+' : ''}{g.total_impact.toFixed(4)}
+                                      </span>
+                                    </div>
+                                    <div className="relative h-1.5 bg-[#141922] rounded-full overflow-hidden">
                                       <div
-                                        className="h-full rounded-full bg-amber-500/80"
-                                        style={{ width: `${pct}%` }}
+                                        className={`absolute inset-y-0 left-0 rounded-full ${barColor}`}
+                                        style={{ width: `${barPct}%` }}
                                       />
                                     </div>
-                                    <span className="font-mono font-bold text-amber-400 w-14 text-right">{g.total_impact.toFixed(4)}</span>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
                       </div>
                     )}
 
-                    {/* ENGLISH EXPLANATIONS */}
+                    {/* CLINICAL INTERPRETATION */}
                     {sentences.length > 0 && (
                       <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-4" id="english-explanation-section">
                         <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
-                          IN PLAIN ENGLISH
+                          Clinical Interpretation
                         </h2>
                         <div className="space-y-3">
                           {sentences.map((s: string, i: number) => (
-                            <div key={i} className="flex items-start gap-3 text-xs text-gray-300 leading-relaxed">
-                              <div className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                            <div key={i} className="flex items-start gap-3 text-xs text-gray-300 leading-relaxed bg-[#0F131A]/40 border border-[#1A202C]/40 rounded-lg px-4 py-3">
+                              <div className="mt-0.5 w-1 h-1 rounded-full bg-[#43A0F5] shrink-0" />
                               <span>{s}</span>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
-
-                    {/* ANOMALY ROOT CAUSE (STAGE 4) — from detector scores */}
-                    {diagnosticData.pipelineDetectorScores && diagnosticData.pipelineDetectorScores.length > 0 && (() => {
-                      const lastScores = diagnosticData.pipelineDetectorScores[diagnosticData.pipelineDetectorScores.length - 1];
-                      const detectors = Object.entries(lastScores).sort((a, b) => b[1] - a[1]);
-                      const maxDet = Math.max(...detectors.map(([, v]) => v), 0.001);
-                      return (
-                        <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-6" id="anomaly-root-cause-section">
-                          <div className="flex items-center justify-between cursor-pointer group"
-                            onClick={() => setExplainRootCauseCollapsed(!explainRootCauseCollapsed)}
-                          >
-                            <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
-                              ANOMALY ROOT CAUSE (STAGE 4)
-                            </h2>
-                            <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
-                              {explainRootCauseCollapsed ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                            </button>
-                          </div>
-
-                          {!explainRootCauseCollapsed && (
-                            <div className="space-y-6 animate-in fade-in duration-300">
-                              <p className="text-[#8E9CAE] text-xs md:text-sm leading-relaxed max-w-4xl">
-                                Which of the 4 anomaly detectors contributed most to the latest distance-from-normal score.
-                              </p>
-
-                              <div className="border border-[#20293B]/60 rounded-xl bg-[#0F131A]/60 p-6 sm:p-8 space-y-3.5">
-                                <div className="text-white font-bold text-sm sm:text-base">
-                                  Latest Entry
-                                </div>
-                                <div className="text-gray-400 text-xs font-medium">
-                                  {diagnosticData.pipelineTimestamps && diagnosticData.pipelineTimestamps.length > 0
-                                    ? diagnosticData.pipelineTimestamps[diagnosticData.pipelineTimestamps.length - 1]
-                                    : 'Unknown date'}
-                                  {' · '}{detectors.length} detectors scored
-                                </div>
-
-                                <div className="flex flex-wrap gap-2.5 pt-2">
-                                  {detectors.map(([name, score], i) => {
-                                    const labels: Record<string, string> = {
-                                      mahalanobis: 'Mahalanobis', copula: 'Copula',
-                                      isolation_forest: 'Isolation Forest', knn: 'KNN',
-                                    };
-                                    return (
-                                      <span key={i}
-                                        className="px-3.5 py-1.5 bg-[#151922] border border-[#232B3B] rounded-lg text-xs font-semibold font-mono tracking-tight shadow-sm"
-                                        style={{ color: score > 0.7 ? '#EF4444' : score > 0.4 ? '#F59E0B' : '#10B981' }}
-                                      >
-                                        {labels[name] || name}: {(score * 100).toFixed(1)}%
-                                      </span>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
                   </>
                 );
               })()}
