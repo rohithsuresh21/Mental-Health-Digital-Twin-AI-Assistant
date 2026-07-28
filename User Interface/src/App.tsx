@@ -2211,7 +2211,7 @@ export default function App() {
             const forecastData: number[] = pipeline?.pipelineForecast14Day || [];
 
             const lowerCusumVals = pipeline?.pipelineCusumLower || [
-              0.1, 0.2, 0.0, 0.15, 0.3, 0.1, 0.05, 0.18, 0.12, 0.25, 0.35, 0.1, 0.22, 0.14, 0.08, 0.22, 0.35, 0.12, 0.05, 0.18, 0.31, 0.52, 0.61, 0.78, 1.05, 1.12, 1.35, 1.62, 1.84, 2.15, 2.32, 2.18, 1.34, 0.82, 0.22, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+              0.0, 0.0, 0.05, 0.0, 0.0, 0.08, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.15, 0.32, 0.28, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.42, 0.85, 1.12, 1.05, 0.72, 0.35, 0.12, 0.0
             ];
 
             const upperCusumVals = pipeline?.pipelineCusumUpper || [
@@ -2423,18 +2423,6 @@ export default function App() {
                   </div>
                 )}
 
-                {/* TOP ACTIONS ROW */}
-                <div className="flex items-center justify-between gap-4">
-                  <div className="text-xs text-gray-500 font-medium">Real-time clinical analytics dashboard</div>
-                  <button
-                    onClick={() => setActiveTab('forecast')}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 border border-purple-500/30 rounded-lg text-xs font-bold text-purple-300 hover:bg-purple-600/40 hover:text-white transition-all cursor-pointer shrink-0"
-                  >
-                    <Cloud className="h-3.5 w-3.5" />
-                    View Risk Forecast
-                  </button>
-                </div>
-
                 {/* TOP METRICS ROW */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-4 border-b border-[#20293B]/20">
                   {/* Left overall card */}
@@ -2487,37 +2475,20 @@ export default function App() {
                 </div>
 
                 {/* Scale description and gradient bar */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="text-[11px] tracking-wide text-gray-400 font-semibold uppercase">
                     What the scores on this page mean, from 0 (calmest) to 1 (most concerning)
                   </div>
-                  {/* 7-Segment Spectrum Bar */}
-                  {(() => {
-                    const segments = [
-                      { color: 'bg-emerald-500', title: 'Excellent' },
-                      { color: 'bg-teal-500', title: 'Healthy' },
-                      { color: 'bg-sky-500', title: 'Stable' },
-                      { color: 'bg-amber-500', title: 'Slight concern' },
-                      { color: 'bg-orange-500', title: 'Moderate' },
-                      { color: 'bg-rose-500', title: 'High' },
-                      { color: 'bg-red-700', title: 'Critical' },
-                    ];
-                    const activeIndex = Math.min(6, Math.max(0, Math.floor((scoreVal / 100) * 7)));
-                    return (
-                      <>
-                        <div className="grid grid-cols-7 gap-[2px] h-3 rounded-full overflow-hidden w-full">
-                          {segments.map((seg, i) => (
-                            <div key={i} className={`${seg.color} ${i === activeIndex ? 'opacity-100' : 'opacity-30'} transition-opacity duration-500`} title={seg.title} />
-                          ))}
-                        </div>
-                        <div className="grid grid-cols-7 text-center text-[10px] text-gray-500 font-medium">
-                          {segments.map((seg, i) => (
-                            <div key={i} className={i === activeIndex ? 'text-gray-300 font-bold' : ''}>{seg.title}</div>
-                          ))}
-                        </div>
-                      </>
-                    );
-                  })()}
+                  <div className="relative h-4 w-full rounded-full overflow-hidden" style={{ background: 'linear-gradient(to right, #10b981, #14b8a6, #0ea5e9, #f59e0b, #f97316, #f43f5e, #991b1b)' }}>
+                    <div className="absolute inset-0 transition-all duration-500" style={{ left: `${Math.min(100, Math.max(0, scoreVal))}%`, transform: 'translateX(-50%)' }}>
+                      <div className="h-4 w-2 bg-white rounded-full shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-[10px] text-gray-500 font-medium">
+                    <span>0 · Calmest</span>
+                    <span>0.5 · Moderate</span>
+                    <span>1 · Most concerning</span>
+                  </div>
                 </div>
 
                 {/* EXPLAINABLE AI NAVIGATION CALLOUT CARD */}
@@ -2539,6 +2510,29 @@ export default function App() {
                   >
                     <Brain className="h-4.5 w-4.5 animate-pulse" />
                     Explainable Analysis using AI
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* RISK FORECAST NAVIGATION CALLOUT CARD */}
+                <div className="border border-[#20293B]/40 rounded-xl bg-[#121620]/25 p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-2xl hover:border-purple-500/30 transition-all duration-300">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 bg-purple-400 rounded-full animate-pulse" />
+                      <span className="text-[10px] tracking-wider text-gray-400 font-bold uppercase font-sans">
+                        Risk Forecast Engine (TFT + GradientBoosting)
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#8E9CAE] leading-relaxed max-w-2xl">
+                      Predicts the next 7 days using your historical data. The TFT model forecasts a composite risk score (50% anomaly + 25% sentiment + 25% health). Individual detector forecasts use GradientBoosting trained on each detector's own 30-day history.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setActiveTab('forecast')}
+                    className="w-full md:w-auto px-6 py-3 bg-purple-500/10 hover:bg-purple-500/25 border border-purple-500/30 hover:border-purple-500/80 text-purple-300 hover:text-white rounded-lg text-sm font-bold tracking-normal flex items-center justify-center gap-2.5 transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-[0_0_15px_rgba(168,85,247,0.06)] shrink-0"
+                  >
+                    <Cloud className="h-4.5 w-4.5" />
+                    Forecast Analysis using AI
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
