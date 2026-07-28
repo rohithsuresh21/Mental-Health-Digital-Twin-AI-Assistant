@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://admissions-ceramic-ethics-extras.trycloudflare.com/$1"
+                         "destination": "https://explicit-machines-soviet-marketplace.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
