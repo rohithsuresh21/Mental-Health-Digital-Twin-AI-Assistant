@@ -1,39 +1,4 @@
 
-# ── aliases: pipeline feature name → BASE_FEATURES key ────────────────────────
-# The pipeline uses slightly different names for some features.
-# This mapping ensures get_feature_info() can look them up correctly.
-
-FEATURE_NAME_ALIASES = {
-    # VADER sentiment (pipeline uses vader_ prefix)
-    "vader_compound":    "compound",
-    "vader_neg":         "negative",
-    "vader_pos":         "positive",
-    "vader_neu":         "neutral",
-
-    # Lexical
-    "ttr":               "type_token_ratio",
-
-    # Readability
-    "readability_fre":   "flesch_reading_ease",
-    "readability_fkgl":  "flesch_kincaid_grade",
-    "readability_ari":   "automated_readability_index",
-
-    # Pronouns
-    "first_person_singular": "first_person_ratio",
-    "first_person_plural":   "first_person_count",
-
-    # Length
-    "avg_sentence_length": "average_sentence_length",
-
-    # Punctuation
-    "caps_ratio":        "capitalization_ratio",
-
-    # Temporal
-    "hour_sin":          "hour_of_day",
-    "hour_cos":          "day_of_week",
-    "days_gap":          "days_since_previous_entry",
-}
-
 BASE_FEATURES = {
 
     # ── GoEmotions (28 emotions) ──────────────────────────────────────────
@@ -66,43 +31,43 @@ BASE_FEATURES = {
     "emotion_surprise":      {"group": "Emotional State", "concept": "Surprise",        "show": True},
     "emotion_neutral":       {"group": "Emotional State", "concept": "Emotional Flatness", "show": True},
 
-    # ── VADER sentiment ───────────────────────────────────────────────────
-    "compound":                  {"group": "Sentiment", "concept": "Overall Sentiment",          "show": True},
-    "positive":                  {"group": "Sentiment", "concept": "Positive Tone",              "show": True},
-    "negative":                  {"group": "Sentiment", "concept": "Negative Tone",              "show": True},
-    "neutral":                   {"group": "Sentiment", "concept": "Neutral Tone",               "show": False},
-    "compound_abs":              {"group": "Sentiment", "concept": "Emotional Intensity",        "show": True},
-    "positive_negative_ratio":   {"group": "Sentiment", "concept": "Positive vs Negative Balance","show": True},
-    "sentiment_magnitude":       {"group": "Sentiment", "concept": "Sentiment Strength",         "show": True},
+    # ── VADER sentiment (pipeline names) ──────────────────────────────────
+    "vader_compound":        {"group": "Sentiment", "concept": "Overall Sentiment",          "show": True},
+    "vader_pos":             {"group": "Sentiment", "concept": "Positive Tone",              "show": True},
+    "vader_neg":             {"group": "Sentiment", "concept": "Negative Tone",              "show": True},
+    "vader_neu":             {"group": "Sentiment", "concept": "Neutral Tone",               "show": False},
+    "vader_min_compound":    {"group": "Sentiment", "concept": "Lowest Sentiment",           "show": True},
+    "vader_max_compound":    {"group": "Sentiment", "concept": "Highest Sentiment",          "show": True},
+    "vader_std_compound":    {"group": "Sentiment", "concept": "Sentiment Variability",      "show": True},
 
-    # ── lexical diversity ─────────────────────────────────────────────────
-    "type_token_ratio":          {"group": "Writing Style", "concept": "Vocabulary Richness (TTR)",    "show": True},
-    "unique_word_ratio":         {"group": "Writing Style", "concept": "Vocabulary Uniqueness",        "show": True},
+    # ── lexical diversity (pipeline names) ────────────────────────────────
+    "ttr":                   {"group": "Writing Style", "concept": "Vocabulary Richness (TTR)",    "show": True},
+    "mtld":                  {"group": "Writing Style", "concept": "Lexical Diversity (MTLD)",     "show": True},
 
-    # ── readability ───────────────────────────────────────────────────────
-    "flesch_reading_ease":       {"group": "Writing Style", "concept": "Reading Ease",                 "show": True},
-    "flesch_kincaid_grade":      {"group": "Writing Style", "concept": "Writing Complexity (Grade)",   "show": True},
-    "automated_readability_index":{"group":"Writing Style", "concept": "Readability (ARI)",            "show": False},
+    # ── readability (pipeline names) ──────────────────────────────────────
+    "readability_fre":       {"group": "Writing Style", "concept": "Reading Ease",                 "show": True},
+    "readability_fkgl":      {"group": "Writing Style", "concept": "Writing Complexity (Grade)",   "show": True},
+    "readability_ari":       {"group": "Writing Style", "concept": "Readability (ARI)",            "show": False},
 
-    # ── pronoun usage ─────────────────────────────────────────────────────
-    "first_person_ratio":        {"group": "Cognitive Patterns", "concept": "Self-Focus (I/me/my)",    "show": True},
-    "first_person_count":        {"group": "Cognitive Patterns", "concept": "Self-Reference Count",    "show": False},
+    # ── pronoun usage (pipeline names) ────────────────────────────────────
+    "first_person_singular": {"group": "Cognitive Patterns", "concept": "Self-Focus (I/me/my)",    "show": True},
+    "first_person_plural":   {"group": "Cognitive Patterns", "concept": "Self-Reference Count",    "show": False},
 
-    # ── length features ───────────────────────────────────────────────────
-    "word_count":                {"group": "Writing Style", "concept": "Entry Length",                 "show": True},
-    "sentence_count":            {"group": "Writing Style", "concept": "Number of Sentences",          "show": False},
-    "average_sentence_length":   {"group": "Writing Style", "concept": "Sentence Length",              "show": True},
+    # ── length features (pipeline names) ──────────────────────────────────
+    "word_count":            {"group": "Writing Style", "concept": "Entry Length",                 "show": True},
+    "sentence_count":        {"group": "Writing Style", "concept": "Number of Sentences",          "show": False},
+    "avg_sentence_length":   {"group": "Writing Style", "concept": "Sentence Length",              "show": True},
 
-    # ── punctuation patterns ──────────────────────────────────────────────
-    "question_ratio":            {"group": "Cognitive Patterns", "concept": "Question Usage (? marks)",    "show": True},
-    "exclamation_ratio":         {"group": "Cognitive Patterns", "concept": "Emotional Arousal (! marks)","show": True},
-    "ellipsis_ratio":            {"group": "Cognitive Patterns", "concept": "Ellipsis Usage (...)", "show": True},
-    "capitalization_ratio":      {"group": "Cognitive Patterns", "concept": "Emphasis (CAPS)",         "show": False},
+    # ── punctuation patterns (pipeline names) ─────────────────────────────
+    "question_ratio":        {"group": "Cognitive Patterns", "concept": "Question Usage (? marks)",    "show": True},
+    "exclamation_ratio":     {"group": "Cognitive Patterns", "concept": "Emotional Arousal (! marks)","show": True},
+    "ellipsis_ratio":        {"group": "Cognitive Patterns", "concept": "Ellipsis Usage (...)", "show": True},
+    "caps_ratio":            {"group": "Cognitive Patterns", "concept": "Emphasis (CAPS)",         "show": False},
 
-    # ── temporal metadata ─────────────────────────────────────────────────
-    "hour_of_day":               {"group": "Behavioural Patterns", "concept": "Time of Writing",       "show": True},
-    "day_of_week":               {"group": "Behavioural Patterns", "concept": "Day of Week",           "show": False},
-    "days_since_previous_entry": {"group": "Behavioural Patterns", "concept": "Gap Since Last Entry",  "show": True},
+    # ── temporal metadata (pipeline names) ─────────────────────────────────
+    "hour_sin":              {"group": "Behavioural Patterns", "concept": "Time of Writing",       "show": True},
+    "hour_cos":              {"group": "Behavioural Patterns", "concept": "Day of Week",           "show": False},
+    "days_gap":              {"group": "Behavioural Patterns", "concept": "Gap Since Last Entry",  "show": True},
 }
 
 # ── statistic descriptions ────────────────────────────────────────────────────
@@ -120,12 +85,12 @@ STAT_DESCRIPTIONS = {
 ALWAYS_EXCLUDE = {
     # health features — not in DAIC-WOZ training data
     "sleep_hours", "sleep_quality", "activity_level", "music_mood",
-    # audio/acoustic — not in DAIC-WOZ training data  
-    "speech_rate", "pause_ratio", "avg_pause_length",
-    "pitch_mean", "pitch_std", "rms_mean", "rms_std",
-    "wav2vec2_angry", "wav2vec2_happy", "wav2vec2_neutral", "wav2vec2_sad",
+    "mask_sleep", "mask_sleep_quality", "mask_activity", "mask_music",
+    # audio/acoustic — not in DAIC-WOZ training data
+    "audio_speech_rate", "audio_pause_ratio", "audio_avg_pause",
+    "audio_pitch_mean", "audio_pitch_std", "audio_rms_mean", "audio_rms_std",
+    "audio_emotion_angry", "audio_emotion_happy", "audio_emotion_neutral", "audio_emotion_sad",
     # masks — binary flags, not meaningful to display
-    "health_mask_sleep", "health_mask_quality", "health_mask_activity", "health_mask_music",
     "audio_mask",
 }
 
@@ -141,7 +106,7 @@ GROUP_ORDER = [
 def parse_feature_name(full_name: str) -> tuple[str, str] | tuple[None, None]:
     """
     Parses 'mean_emotion_sadness' → ('mean', 'emotion_sadness')
-    Parses 'max_vader_compound'   → ('max',  'compound')
+    Parses 'max_vader_compound'   → ('max',  'vader_compound')
     Returns (None, None) if not parseable.
     """
     stats = {"mean", "std", "min", "max", "delta"}
@@ -167,9 +132,8 @@ def get_feature_info(full_name: str) -> dict | None:
         if excluded in base:
             return None
 
-    # look up base feature (with alias fallback)
-    resolved_base = FEATURE_NAME_ALIASES.get(base, base)
-    info = BASE_FEATURES.get(resolved_base)
+    # look up base feature
+    info = BASE_FEATURES.get(base)
     if info is None:
         return None
 
