@@ -1,4 +1,39 @@
 
+# ── aliases: pipeline feature name → BASE_FEATURES key ────────────────────────
+# The pipeline uses slightly different names for some features.
+# This mapping ensures get_feature_info() can look them up correctly.
+
+FEATURE_NAME_ALIASES = {
+    # VADER sentiment (pipeline uses vader_ prefix)
+    "vader_compound":    "compound",
+    "vader_neg":         "negative",
+    "vader_pos":         "positive",
+    "vader_neu":         "neutral",
+
+    # Lexical
+    "ttr":               "type_token_ratio",
+
+    # Readability
+    "readability_fre":   "flesch_reading_ease",
+    "readability_fkgl":  "flesch_kincaid_grade",
+    "readability_ari":   "automated_readability_index",
+
+    # Pronouns
+    "first_person_singular": "first_person_ratio",
+    "first_person_plural":   "first_person_count",
+
+    # Length
+    "avg_sentence_length": "average_sentence_length",
+
+    # Punctuation
+    "caps_ratio":        "capitalization_ratio",
+
+    # Temporal
+    "hour_sin":          "hour_of_day",
+    "hour_cos":          "day_of_week",
+    "days_gap":          "days_since_previous_entry",
+}
+
 BASE_FEATURES = {
 
     # ── GoEmotions (28 emotions) ──────────────────────────────────────────
@@ -132,8 +167,9 @@ def get_feature_info(full_name: str) -> dict | None:
         if excluded in base:
             return None
 
-    # look up base feature
-    info = BASE_FEATURES.get(base)
+    # look up base feature (with alias fallback)
+    resolved_base = FEATURE_NAME_ALIASES.get(base, base)
+    info = BASE_FEATURES.get(resolved_base)
     if info is None:
         return None
 
