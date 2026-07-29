@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://third-perl-tears-eden.trycloudflare.com/$1"
+                         "destination": "https://discover-purse-checking-sample.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
