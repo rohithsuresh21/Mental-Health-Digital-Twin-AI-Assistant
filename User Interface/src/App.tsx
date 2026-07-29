@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Activity, 
   Bell, 
@@ -30,7 +31,16 @@ import {
   TrendingUp,
   TrendingDown,
   Cloud,
-  Zap
+  Zap,
+  Info,
+  Radar,
+  Network,
+  ScatterChart,
+  BarChart3,
+  Sparkles,
+  Target,
+  Eye,
+  Gauge
 } from 'lucide-react';
 import { IngestionInput, DiagnosticData } from './types';
 import { defaultDiagnosticData } from './defaultData';
@@ -356,6 +366,7 @@ export default function App() {
 
   // Selected detector tab in What's Driving That Signal
   const [selectedDetector, setSelectedDetector] = useState(0);
+  const [detectorInfoKey, setDetectorInfoKey] = useState<string | null>(null);
 
   // Global hover state for longitudinal charts
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
@@ -1090,9 +1101,9 @@ export default function App() {
     const n = points.length;
     const lastIdx = n - 1;
 
-    const yTicks = [0, 25, 50, 75, 100];
+    const yTicks = [0, 50, 100];
 
-    const maxXLabels = 5;
+    const maxXLabels = 6;
     const xLabelIndices: number[] = [];
     if (n <= maxXLabels) {
       for (let i = 0; i < n; i++) xLabelIndices.push(i);
@@ -1137,6 +1148,8 @@ export default function App() {
       setDetectorHoveredIndex(null);
     };
 
+    const lineColor = Math.max(...points) > 60 ? '#f97316' : Math.max(...points) > 30 ? '#f59e0b' : '#4fc3f7';
+
     return (
       <div className="space-y-2 relative">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto cursor-crosshair" preserveAspectRatio="xMidYMid meet"
@@ -1145,25 +1158,16 @@ export default function App() {
         >
           <defs>
             <linearGradient id={`fill-${filterId}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-              <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+              <stop offset="0%" stopColor={lineColor} stopOpacity="0.08" />
+              <stop offset="100%" stopColor={lineColor} stopOpacity="0.0" />
             </linearGradient>
-            <filter id={filterId} x="-10%" y="-10%" width="120%" height="130%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur1" />
-              <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur2" />
-              <feMerge>
-                <feMergeNode in="blur2" />
-                <feMergeNode in="blur1" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
           </defs>
           {yTicks.map(t => {
             const y = getY(t);
             return (
               <g key={t}>
-                <line x1={pad.left} y1={y} x2={pad.left + plotW} y2={y} stroke="#1E293B" strokeWidth="0.5" strokeDasharray="2 3" />
-                <text x={pad.left - 5} y={y + 2.5} fill="#475569" fontSize="8" textAnchor="end" fontFamily="monospace">{t}</text>
+                <line x1={pad.left} y1={y} x2={pad.left + plotW} y2={y} stroke="#ffffff10" strokeWidth="0.5" strokeDasharray="3 3" />
+                <text x={pad.left - 5} y={y + 2.5} fill="#6b7280" fontSize="8" textAnchor="end" fontFamily="monospace">{t}%</text>
               </g>
             );
           })}
@@ -1172,48 +1176,32 @@ export default function App() {
             const dateLabel = dates[i] ? dates[i].slice(5).replace('-', '/') : '';
             return (
               <g key={i}>
-                <line x1={x} y1={pad.top} x2={x} y2={pad.top + plotH} stroke="#1E293B" strokeWidth="0.5" strokeDasharray="1 3" />
-                <text x={x} y={height - 5} fill="#475569" fontSize="7" textAnchor="middle" fontFamily="monospace">{dateLabel}</text>
+                <text x={x} y={height - 5} fill="#6b7280" fontSize="7" textAnchor="middle" fontFamily="monospace">{dateLabel}</text>
               </g>
             );
           })}
           <path d={fillPath} fill={`url(#fill-${filterId})`} />
-          <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" filter={`url(#${filterId})`} />
-          <path d={linePath} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          {pointsArr.map((p, i) => (
-            n <= 60 && <circle key={i} cx={p.x} cy={p.y} r={i === lastIdx ? 3 : 1.5} fill={i === lastIdx ? color : `${color}80`} stroke="#0D1117" strokeWidth={i === lastIdx ? 1.5 : 0.5} />
-          ))}
-          <circle cx={lastP.x} cy={lastP.y} r="5" fill="none" stroke={color} strokeWidth="1.5" opacity="0.5">
-            <animate attributeName="r" values="3;6;3" dur="2s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.6;0.1;0.6" dur="2s" repeatCount="indefinite" />
-          </circle>
+          <path d={linePath} fill="none" stroke={lineColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.6" />
+          <path d={linePath} fill="none" stroke={lineColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           {detectorHoveredIndex !== null && (
             <g>
-              <line x1={getX(detectorHoveredIndex)} y1={pad.top} x2={getX(detectorHoveredIndex)} y2={pad.top + plotH} stroke={color} strokeWidth="1" strokeDasharray="2 2" opacity="0.6" />
-              <circle cx={getX(detectorHoveredIndex)} cy={getY(points[detectorHoveredIndex])} r="4" fill={color} stroke="#0D1117" strokeWidth="1.5" />
+              <line x1={getX(detectorHoveredIndex)} y1={pad.top} x2={getX(detectorHoveredIndex)} y2={pad.top + plotH} stroke={lineColor} strokeWidth="1" strokeDasharray="2 2" opacity="0.4" />
+              <circle cx={getX(detectorHoveredIndex)} cy={getY(points[detectorHoveredIndex])} r="3" fill={lineColor} stroke="#0d1117" strokeWidth="1.5" />
+              {(() => {
+                const hv = points[detectorHoveredIndex];
+                const hLabel = hv >= 60 ? 'Elevated' : hv >= 30 ? 'Moderate' : 'Stable';
+                const hColor = hv >= 60 ? '#f97316' : hv >= 30 ? '#f59e0b' : '#4fc3f7';
+                return (
+                  <g>
+                    <rect x={getX(detectorHoveredIndex) + 8} y={getY(hv) - 12} width="52" height="20" rx="4" fill="#1e2a3a" opacity="0.95" />
+                    <text x={getX(detectorHoveredIndex) + 12} y={getY(hv) - 1} fill="#e5e7eb" fontSize="8" fontFamily="monospace" fontWeight="bold">{Math.round(hv)}%</text>
+                    <text x={getX(detectorHoveredIndex) + 30} y={getY(hv) - 1} fill={hColor} fontSize="7" fontFamily="sans-serif">{hLabel}</text>
+                  </g>
+                );
+              })()}
             </g>
           )}
         </svg>
-        {detectorHoveredIndex !== null && (
-          <div
-            className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 px-2.5 py-1.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
-            style={{
-              left: `${Math.min(85, Math.max(5, detectorMouseXPct))}%`,
-              top: "-8px"
-            }}
-          >
-            <div className="text-gray-400 text-[9px]">{dates[detectorHoveredIndex]}</div>
-            <div className="text-white font-bold">{Math.round(points[detectorHoveredIndex])}%</div>
-          </div>
-        )}
-        <div className="flex items-center justify-between text-[10px]">
-          <div className="flex items-center gap-3">
-            <span className="text-gray-600 font-sans">Peak <span className="text-gray-300 font-bold font-mono">{Math.round(Math.max(...points))}%</span></span>
-            <span className="text-gray-600 font-sans">Mean <span className="text-gray-300 font-bold font-mono">{Math.round(points.reduce((a, b) => a + b, 0) / points.length)}%</span></span>
-            <span className="text-gray-600 font-sans">Low <span className="text-gray-300 font-bold font-mono">{Math.round(Math.min(...points))}%</span></span>
-          </div>
-          <span className="text-gray-600">{dates[0]?.slice(5).replace('-', '/') || ''} &ndash; {dates[lastIdx]?.slice(5).replace('-', '/') || ''}</span>
-        </div>
       </div>
     );
   };
@@ -2475,19 +2463,18 @@ export default function App() {
                 </div>
 
                 {/* Scale description and gradient bar */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="text-[11px] tracking-wide text-gray-400 font-semibold uppercase">
-                    What the scores on this page mean, from 0 (calmest) to 1 (most concerning)
+                    Score Scale
                   </div>
-                  <div className="relative h-4 w-full rounded-full overflow-hidden" style={{ background: 'linear-gradient(to right, #10b981, #14b8a6, #0ea5e9, #f59e0b, #f97316, #f43f5e, #991b1b)' }}>
-                    <div className="absolute inset-0 transition-all duration-500" style={{ left: `${Math.min(100, Math.max(0, scoreVal))}%`, transform: 'translateX(-50%)' }}>
-                      <div className="h-4 w-2 bg-white rounded-full shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+                  <div className="relative pt-3">
+                    <div className="relative h-3 w-full rounded-full overflow-hidden" style={{ background: 'linear-gradient(to right, #10b981, #14b8a6, #0ea5e9, #f59e0b, #f97316, #f43f5e, #991b1b)' }}>
+                      <div className="absolute inset-0 transition-all duration-500" style={{ left: `${Math.min(100, Math.max(0, scoreVal))}%`, transform: 'translateX(-50%)', top: '-10px' }}>
+                        <svg width="10" height="8" viewBox="0 0 10 8" className="drop-shadow-[0_0_4px_rgba(255,255,255,0.6)]">
+                          <polygon points="0,0 10,0 5,8" fill="white" />
+                        </svg>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex justify-between text-[10px] text-gray-500 font-medium">
-                    <span>0 · Calmest</span>
-                    <span>0.5 · Moderate</span>
-                    <span>1 · Most concerning</span>
                   </div>
                 </div>
 
@@ -2628,205 +2615,191 @@ export default function App() {
                         </button>
                       </div>
 
-                      {/* ANOMALY RISK CHART */}
-                      <div className="glass-panel rounded-xl p-5">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-gray-300">Unusual behavioral patterns</span>
-                          <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
-                            <span className="inline-block w-4 h-2 bg-red-500/25 border border-red-500 rounded-sm" />
-                            <span>Anomaly Risk</span>
+                      {/* ANOMALY RISK CHART — REDESIGNED */}
+                      <div className="rounded-xl bg-[#111827] border border-white/[0.06] overflow-hidden">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-5 pt-4 pb-3">
+                          <div>
+                            <h3 className="text-base font-semibold text-white">Unusual Behavioral Patterns</h3>
+                            <p className="text-[11px] text-gray-500 mt-0.5">Deviation score per journal entry over time</p>
                           </div>
-                        </div>
-                        <p className="text-[10px] text-gray-500 mb-3">Y-axis: 0% typical · 50% moderately unusual · 100% highly unusual</p>
-
-                        <div className="relative h-60 w-full" onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
-                          {/* SVG Anomaly Risk Chart */}
-                          <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible">
-                            {/* Risk Zone Bands — High (0.7–1.0), Moderate (0.4–0.7), Low (0.0–0.4) */}
-                            <rect x="35" y={15 + (1.0 - 1.0) * 185} width="450" height={(1.0 - 0.7) * 185} fill="#EF4444" opacity="0.06" rx="2" />
-                            <rect x="35" y={15 + (1.0 - 0.7) * 185} width="450" height={(0.7 - 0.4) * 185} fill="#F59E0B" opacity="0.06" rx="2" />
-                            <rect x="35" y={15 + (1.0 - 0.4) * 185} width="450" height={(0.4 - 0.0) * 185} fill="#10B981" opacity="0.06" rx="2" />
-                            {/* Zone labels */}
-                            <text x="487" y={15 + (1.0 - 0.85) * 185 + 3} fill="#EF4444" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">High</text>
-                            <text x="487" y={15 + (1.0 - 0.55) * 185 + 3} fill="#F59E0B" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Moderate</text>
-                            <text x="487" y={15 + (1.0 - 0.2) * 185 + 3} fill="#10B981" fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">Low</text>
-                            {/* Grid Lines & Labels */}
-                            {[0, 0.2, 0.4, 0.6, 0.8, 1.0].map((val, idx) => {
-                              const y = 15 + (1.0 - val) * 185;
-                              return (
-                                <g key={idx}>
-                                  <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray={val === 0 ? "none" : "3 3"} />
-                                  <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{(val * 100).toFixed(0)}%</text>
-                                </g>
-                              );
-                            })}
-
-                            {/* X Axis Date Labels (viewport-aware) */}
-                            {vpXLabels.map((ptIndex) => {
-                              const x = 35 + ((ptIndex - vpStart) / vpLastIdx) * 450;
-                              return (
-                                <g key={ptIndex}>
-                                  <line x1={x} y1="15" x2={x} y2="200" stroke="#1B2030" strokeWidth="0.5" strokeDasharray="2 2" />
-                                  <text 
-                                    x={x} 
-                                    y="218" 
-                                    fill="#64748b" 
-                                    fontSize="8" 
-                                    textAnchor="middle" 
-                                    fontFamily="monospace"
-                                  >
-                                    {chartDates[ptIndex]}
-                                  </text>
-                                </g>
-                              );
-                            })}
-
-                            {/* Anomaly Risk Line Path (viewport-sliced) */}
-                            <path 
-                              d={(() => {
-                                const sliced = anomalyRiskData.slice(vpStart, vpEnd + 1);
-                                let pathStr = "";
-                                sliced.forEach((val, idx) => {
-                                  const x = 35 + (idx / vpLastIdx) * 450;
-                                  const y = 15 + (1.0 - val) * 185;
-                                  pathStr += (idx === 0 ? "M" : "L") + ` ${x} ${y}`;
-                                });
-                                return pathStr;
-                              })()}
-                              fill="none"
-                              stroke="#ef4444"
-                              strokeWidth="2"
-                              className="drop-shadow-[0_0_3px_rgba(239,68,68,0.3)]"
-                            />
-
-                            {/* Peak/Valley anchor diamonds (viewport-sliced) */}
-                            {(() => {
-                              const sliced = anomalyRiskData.slice(vpStart, vpEnd + 1);
-                              const extrema: { idx: number; type: 'peak' | 'valley' }[] = [];
-                              for (let i = 1; i < sliced.length - 1; i++) {
-                                if (sliced[i] > sliced[i-1] && sliced[i] > sliced[i+1]) extrema.push({ idx: vpStart + i, type: 'peak' });
-                                if (sliced[i] < sliced[i-1] && sliced[i] < sliced[i+1]) extrema.push({ idx: vpStart + i, type: 'valley' });
-                              }
-                              return extrema.map(({ idx, type }) => {
-                                const x = 35 + ((idx - vpStart) / vpLastIdx) * 450;
-                                const y = 15 + (1.0 - anomalyRiskData[idx]) * 185;
-                                return (
-                                  <polygon
-                                    key={idx}
-                                    points={`${x},${y-5} ${x+4},${y} ${x},${y+5} ${x-4},${y}`}
-                                    fill={type === 'peak' ? '#EF4444' : '#10B981'}
-                                    stroke="#0b0d13"
-                                    strokeWidth="1"
-                                    opacity="0.65"
-                                    className="cursor-pointer hover:opacity-100 transition-opacity"
-                                    onClick={() => setHoveredPointIndex(idx)}
-                                  />
-                                );
-                              });
-                            })()}
-
-                            {/* Global Hover Crosshair & Indicators (viewport-aware) */}
-                            {hoveredPointIndex !== null && hoveredPointIndex >= vpStart && hoveredPointIndex <= vpEnd && (
-                              <g>
-                                <line 
-                                  x1={35 + ((hoveredPointIndex - vpStart) / vpLastIdx) * 450} 
-                                  y1="15" 
-                                  x2={35 + ((hoveredPointIndex - vpStart) / vpLastIdx) * 450} 
-                                  y2="200" 
-                                  stroke="#ef4444" 
-                                  strokeWidth="1.5" 
-                                  strokeDasharray="3 3" 
-                                />
-                                <circle 
-                                  cx={35 + ((hoveredPointIndex - vpStart) / vpLastIdx) * 450} 
-                                  cy={15 + (1.0 - anomalyRiskData[hoveredPointIndex]) * 185} 
-                                  r="5" 
-                                  fill="#ef4444" 
-                                  stroke="#0b0d13" 
-                                  strokeWidth="1.5" 
-                                />
-                              </g>
-                            )}
-                          </svg>
-
-                          {/* Interactive Tooltip Overlay (viewport-aware) */}
-                          {hoveredPointIndex !== null && hoveredPointIndex >= vpStart && hoveredPointIndex <= vpEnd && (() => {
-                            const val = anomalyRiskData[hoveredPointIndex] ?? 0;
-                            let status = 'Typical';
-                            let statusColor = 'text-emerald-400';
-                            if (val >= 0.7) { status = 'Highly unusual'; statusColor = 'text-rose-400'; }
-                            else if (val >= 0.4) { status = 'Moderately unusual'; statusColor = 'text-amber-400'; }
+                          {(() => {
+                            const latest = anomalyRiskData[anomalyRiskData.length - 1] ?? 0;
+                            const sevColor = latest >= 0.7 ? '#f43f5e' : latest >= 0.4 ? '#f97316' : '#10b981';
+                            const sevLabel = latest >= 0.7 ? 'High' : latest >= 0.4 ? 'Moderate' : 'Low';
                             return (
-                              <div 
-                                className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 p-2.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
-                                style={{ 
-                                  left: `${Math.min(80, Math.max(2, chartMouseXPct))}%`,
-                                  top: "20px"
-                                }}
-                              >
-                                <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex]}</div>
-                                <div>Deviation: <span className="text-rose-400 font-bold">{(val * 100).toFixed(0)}%</span></div>
-                                <div>Status: <span className={`font-bold ${statusColor}`}>{status}</span></div>
+                              <div className="flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: sevColor, boxShadow: `0 0 6px ${sevColor}` }} />
+                                <span className="text-xs font-medium" style={{ color: sevColor }}>Anomaly Risk: {sevLabel}</span>
                               </div>
                             );
                           })()}
                         </div>
 
-                        <p className="text-[10px] text-gray-500 leading-relaxed mt-4">
-                          Each point is one journal entry, in order by date (X-axis). The Y-axis is how unusual that entry looked compared to your own typical pattern, from 0% (completely typical) to 100% (very unusual).
-                        </p>
+                        <div className="relative h-60 w-full px-4" onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
+                          <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible">
+                            {/* Grid Lines — only 3: 0%, 50%, 100% */}
+                            {[0, 0.5, 1.0].map((val) => {
+                              const y = 15 + (1.0 - val) * 185;
+                              return (
+                                <g key={val}>
+                                  <line x1="35" y1={y} x2="485" y2={y} stroke="#ffffff10" strokeWidth="0.5" strokeDasharray="3 3" />
+                                  <text x="25" y={y + 3} fill="#6b7280" fontSize="8" textAnchor="end" fontFamily="monospace">{(val * 100).toFixed(0)}%</text>
+                                </g>
+                              );
+                            })}
 
+                            {/* X Axis Date Labels (viewport-aware, up to 6) */}
+                            {(() => {
+                              const maxLabels = 6;
+                              const indices = vpXLabels.length <= maxLabels ? vpXLabels : 
+                                vpXLabels.filter((_, i) => i % Math.ceil(vpXLabels.length / maxLabels) === 0);
+                              return indices.map((ptIndex) => {
+                                const x = 35 + ((ptIndex - vpStart) / vpLastIdx) * 450;
+                                return (
+                                  <text key={ptIndex} x={x} y="218" fill="#6b7280" fontSize="8" textAnchor="middle" fontFamily="monospace">
+                                    {chartDates[ptIndex]}
+                                  </text>
+                                );
+                              });
+                            })()}
+
+                            {/* Area fill gradient */}
+                            <defs>
+                              <linearGradient id="anomalyFill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#4fc3f7" stopOpacity="0.08" />
+                                <stop offset="100%" stopColor="#4fc3f7" stopOpacity="0.0" />
+                              </linearGradient>
+                            </defs>
+
+                            {/* Anomaly Risk Line Path — cubic bezier with stroke-dasharray animation */}
+                            {(() => {
+                              const sliced = anomalyRiskData.slice(vpStart, vpEnd + 1);
+                              const n = sliced.length;
+                              const lastI = Math.max(1, n - 1);
+                              let lineD = '';
+                              sliced.forEach((val, idx) => {
+                                const x = 35 + (idx / lastI) * 450;
+                                const y = 15 + (1.0 - val) * 185;
+                                if (idx === 0) lineD += `M ${x} ${y}`;
+                                else {
+                                  const prevX = 35 + ((idx - 1) / lastI) * 450;
+                                  const prevY = 15 + (1.0 - sliced[idx - 1]) * 185;
+                                  const cpx1 = prevX + (x - prevX) / 3;
+                                  const cpx2 = prevX + (x - prevX) * 2 / 3;
+                                  lineD += ` C ${cpx1} ${prevY} ${cpx2} ${y} ${x} ${y}`;
+                                }
+                              });
+                              const lastPt = sliced[n - 1] ?? 0;
+                              const lastX = 35 + ((n - 1) / lastI) * 450;
+                              const lastY = 15 + (1.0 - lastPt) * 185;
+                              const fillD = lineD + ` L ${lastX} 200 L 35 200 Z`;
+                              const lineColor = lastPt >= 0.7 ? '#f97316' : lastPt >= 0.4 ? '#f59e0b' : '#4fc3f7';
+                              return (
+                                <g>
+                                  <path d={fillD} fill="url(#anomalyFill)" />
+                                  <path d={lineD} fill="none" stroke={lineColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.6"
+                                    strokeDasharray="2000" strokeDashoffset="2000"
+                                  >
+                                    <animate attributeName="stroke-dashoffset" from="2000" to="0" dur="1.2s" fill="freeze" />
+                                  </path>
+                                  <path d={lineD} fill="none" stroke={lineColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                                    strokeDasharray="2000" strokeDashoffset="2000"
+                                  >
+                                    <animate attributeName="stroke-dashoffset" from="2000" to="0" dur="1.2s" fill="freeze" />
+                                  </path>
+                                </g>
+                              );
+                            })()}
+
+                            {/* Data points on hover only */}
+                            {hoveredPointIndex !== null && hoveredPointIndex >= vpStart && hoveredPointIndex <= vpEnd && (
+                              <g>
+                                <line x1={35 + ((hoveredPointIndex - vpStart) / vpLastIdx) * 450} y1="15" x2={35 + ((hoveredPointIndex - vpStart) / vpLastIdx) * 450} y2="200" stroke="#ffffff20" strokeWidth="0.5" strokeDasharray="2 2" />
+                                <circle cx={35 + ((hoveredPointIndex - vpStart) / vpLastIdx) * 450} cy={15 + (1.0 - anomalyRiskData[hoveredPointIndex]) * 185} r="3" fill={anomalyRiskData[hoveredPointIndex] >= 0.7 ? '#f97316' : anomalyRiskData[hoveredPointIndex] >= 0.4 ? '#f59e0b' : '#4fc3f7'} stroke="#0d1117" strokeWidth="1.5" />
+                              </g>
+                            )}
+                          </svg>
+
+                          {/* Hover Tooltip overlay */}
+                          {hoveredPointIndex !== null && hoveredPointIndex >= vpStart && hoveredPointIndex <= vpEnd && (() => {
+                            const val = anomalyRiskData[hoveredPointIndex] ?? 0;
+                            const hStatus = val >= 0.7 ? 'Highly Unusual' : val >= 0.4 ? 'Moderate' : 'Typical';
+                            const hColor = val >= 0.7 ? '#f97316' : val >= 0.4 ? '#f59e0b' : '#4fc3f7';
+                            return (
+                              <div className="absolute pointer-events-none z-20 shadow-xl" style={{ left: `${Math.min(80, Math.max(2, chartMouseXPct))}%`, top: '8px' }}>
+                                <div className="bg-[#1e2a3a] rounded-lg px-3 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+                                  <div className="text-[10px] font-mono text-gray-400">{chartDates[hoveredPointIndex]}</div>
+                                  <div className="text-sm font-bold font-mono text-white">{Math.round(val * 100)}<span className="text-xs text-gray-500 font-normal">%</span></div>
+                                  <div className="text-[10px] font-semibold" style={{ color: hColor }}>{hStatus}</div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+
+                        {/* Bottom unified stats row */}
                         {(() => {
                           if (anomalyRiskData.length === 0) return null;
                           const sorted = [...anomalyRiskData].sort((a, b) => a - b);
                           const maxVal = sorted[sorted.length - 1];
-                          const maxIdx = anomalyRiskData.indexOf(maxVal);
+                          const recent = anomalyRiskData.slice(-5);
+                          const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+                          const baseline = sorted.slice(0, Math.floor(sorted.length * 0.5));
+                          const baselineMax = Math.max(...baseline);
+                          const peakElevated = maxVal >= 0.7;
+                          const avgElevated = recentAvg >= 0.4;
+                          return (
+                            <div className="flex items-stretch border-t border-white/[0.06] px-5 py-3">
+                              <div className="flex-1 text-center">
+                                <div className="text-[9px] text-gray-500 uppercase tracking-wider">Peak Unusualness</div>
+                                <div className={`text-lg font-bold ${peakElevated ? 'text-[#f97316]' : 'text-white'}`}>{Math.round(maxVal * 100)}<span className="text-xs text-gray-500 font-normal">%</span></div>
+                                <div className="text-[9px] text-gray-600">{peakElevated ? 'Above normal' : 'Within range'}</div>
+                              </div>
+                              <div className="w-px bg-white/[0.06]" />
+                              <div className="flex-1 text-center">
+                                <div className="text-[9px] text-gray-500 uppercase tracking-wider">Recent Average</div>
+                                <div className={`text-lg font-bold ${avgElevated ? 'text-[#f97316]' : 'text-white'}`}>{Math.round(recentAvg * 100)}<span className="text-xs text-gray-500 font-normal">%</span></div>
+                                <div className="text-[9px] text-gray-600">{avgElevated ? 'Moderate concern' : 'Stable trend'}</div>
+                              </div>
+                              <div className="w-px bg-white/[0.06]" />
+                              <div className="flex-1 text-center">
+                                <div className="text-[9px] text-gray-500 uppercase tracking-wider">Baseline Range</div>
+                                <div className="text-lg font-bold text-white">0 – {Math.round(baselineMax * 100)}<span className="text-xs text-gray-500 font-normal">%</span></div>
+                                <div className="text-[9px] text-gray-600">First {baseline.length} entries</div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Interpretation bar — redesigned */}
+                        {(() => {
+                          if (anomalyRiskData.length === 0) return null;
+                          const sorted = [...anomalyRiskData].sort((a, b) => a - b);
                           const recent = anomalyRiskData.slice(-5);
                           const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
                           const baseline = sorted.slice(0, Math.floor(sorted.length * 0.5));
                           const baselineAvg = baseline.reduce((a, b) => a + b, 0) / baseline.length;
-                          const baselineMax = Math.max(...baseline);
-
-                          function statusFor(val: number): string {
-                            if (val >= 0.7) return 'highly unusual';
-                            if (val >= 0.4) return 'moderately unusual';
-                            return 'within normal range';
-                          }
-                          function statusColor(val: number): string {
-                            if (val >= 0.7) return 'text-rose-400';
-                            if (val >= 0.4) return 'text-amber-400';
-                            return 'text-emerald-400';
-                          }
-
-                          const recentStatus = statusFor(recentAvg);
+                          const recentStatus = recentAvg >= 0.7 ? 'highly unusual' : recentAvg >= 0.4 ? 'moderately unusual' : 'within normal range';
                           const trend = recentAvg > baselineAvg * 1.2 ? 'elevated compared to early entries' : recentAvg < baselineAvg * 0.8 ? 'lower than early entries' : 'consistent with early entries';
-                          const trendColor = recentAvg > baselineAvg * 1.2 ? 'text-amber-400' : recentAvg < baselineAvg * 0.8 ? 'text-emerald-400' : 'text-gray-400';
-
+                          const isElevated = recentAvg >= 0.4;
+                          const sevIcon = isElevated ? AlertTriangle : recentAvg >= 0.7 ? AlertTriangle : Info;
+                          const SevIcon = sevIcon;
+                          const sevBorderColor = isElevated ? 'border-l-amber-500' : 'border-l-emerald-500';
+                          const sevTextColor = isElevated ? 'text-amber-400' : 'text-emerald-400';
+                          const sevIconColor = isElevated ? '#f97316' : '#10b981';
                           return (
-                            <>
-                              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                                  <div className="text-[10px] text-gray-500 mb-0.5">Peak unusualness</div>
-                                  <div className="text-sm font-bold text-rose-400">{Math.round(maxVal * 100)} / 100</div>
-                                  <div className="text-[9px] text-gray-500">{chartDates[maxIdx]}</div>
-                                </div>
-                                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                                  <div className="text-[10px] text-gray-500 mb-0.5">Recent average</div>
-                                  <div className={`text-sm font-bold ${statusColor(recentAvg)}`}>{Math.round(recentAvg * 100)} / 100</div>
-                                  <div className="text-[9px] text-gray-500">last {recent.length} entries</div>
-                                </div>
-                                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                                  <div className="text-[10px] text-gray-500 mb-0.5">Baseline range</div>
-                                  <div className="text-sm font-bold text-gray-300">0 – {Math.round(baselineMax * 100)}</div>
-                                  <div className="text-[9px] text-gray-500">first {baseline.length} entries</div>
-                                </div>
-                              </div>
-                              <div className="mt-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                                <p className="text-[11px] text-gray-400 leading-relaxed">
-                                  <span className="font-bold text-gray-300">Interpretation:</span> Recent entries are <span className={`font-semibold ${statusColor(recentAvg)}`}>{recentStatus}</span>. The overall pattern is <span className={`font-semibold ${trendColor}`}>{trend}</span> — the recent average is {Math.round(recentAvg * 100)} / 100 versus {Math.round(baselineAvg * 100)} / 100 in the first half.
-                                </p>
-                              </div>
-                            </>
+                            <div className={`mx-5 mb-4 pl-4 border-l-4 ${sevBorderColor} bg-[#111827] rounded-r-lg py-3 pr-4`}>
+                              <p className="text-[11px] text-gray-400 leading-relaxed flex items-start gap-2">
+                                <SevIcon className="h-4 w-4 shrink-0 mt-0.5" style={{ color: sevIconColor }} />
+                                <span>
+                                  <span className="font-bold text-gray-200">Interpretation:</span> Recent entries are{' '}
+                                  <span className={`font-semibold ${sevTextColor}`}>{recentStatus}</span>. The overall pattern is{' '}
+                                  <span className={`font-semibold ${trend === 'elevated compared to early entries' ? 'text-amber-400' : trend === 'lower than early entries' ? 'text-emerald-400' : 'text-gray-400'}`}>{trend}</span> — the recent average is{' '}
+                                  {Math.round(recentAvg * 100)} / 100 versus {Math.round(baselineAvg * 100)} / 100 in the first half.
+                                </span>
+                              </p>
+                            </div>
                           );
                         })()}
                       </div>
@@ -3340,17 +3313,29 @@ export default function App() {
                                 const lab = detLabels[key];
                                 const isActive = selectedDetector === i;
                                 return (
-                                  <button
-                                    key={key}
-                                    onClick={() => setSelectedDetector(i)}
-                                    className={`flex-shrink-0 text-xs font-bold px-3 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                                      isActive
-                                        ? 'bg-white/[0.06] border-[#3B82F6] text-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.7)]'
-                                        : 'bg-white/[0.02] border-white/[0.06] text-gray-400 hover:bg-white/[0.04] hover:text-gray-300'
-                                    }`}
-                                  >
-                                    {lab.name}
-                                  </button>
+                                  <div key={key} className="flex items-center gap-0.5">
+                                    <button
+                                      onClick={() => setSelectedDetector(i)}
+                                      className={`flex-shrink-0 text-xs font-bold px-3 py-2.5 rounded-lg border transition-all cursor-pointer ${
+                                        isActive
+                                          ? 'bg-white/[0.06] border-[#3B82F6] text-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.7)]'
+                                          : 'bg-white/[0.02] border-white/[0.06] text-gray-400 hover:bg-white/[0.04] hover:text-gray-300'
+                                      }`}
+                                    >
+                                      {lab.name}
+                                    </button>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setDetectorInfoKey(detectorInfoKey === key ? null : key); }}
+                                      className={`flex-shrink-0 p-1.5 rounded-lg border transition-all cursor-pointer ${
+                                        detectorInfoKey === key
+                                          ? 'bg-[#43A0F5]/10 border-[#43A0F5]/40 text-[#43A0F5]'
+                                          : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-white/[0.06]'
+                                      }`}
+                                      title={`Learn about ${lab.name}`}
+                                    >
+                                      <Info className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
                                 );
                               })}
                             </div>
@@ -3362,15 +3347,23 @@ export default function App() {
                                   <h4 className="text-sm font-bold text-white">{info.name}</h4>
                                   <span className="text-[10px] font-sans text-gray-500">{info.model}</span>
                                 </div>
-                                <span className={`text-xs font-mono font-bold border rounded px-2.5 py-0.5 ${style}`}>
-                                  {badge}
-                                </span>
+                                {(() => {
+                                  const lvPct = Math.round(latestVal * 100);
+                                  const lvColor = lvPct >= 80 ? '#f43f5e' : lvPct >= 60 ? '#f97316' : lvPct >= 40 ? '#eab308' : '#10b981';
+                                  const lvLabel = lvPct >= 80 ? 'High' : lvPct >= 60 ? 'Elevated' : lvPct >= 40 ? 'Moderate' : 'Stable';
+                                  return (
+                                    <div className="flex items-center gap-2">
+                                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: lvColor, boxShadow: `0 0 6px ${lvColor}` }} />
+                                      <span className="text-xs font-semibold" style={{ color: lvColor }}>Anomaly Risk: {lvLabel}</span>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                               <p className="text-xs text-gray-400 leading-relaxed">{info.desc}</p>
                               <div className="space-y-1.5">
                                 <div className="flex justify-between items-center text-[9px] font-sans text-gray-500 uppercase">
                                   <span>Score Timeline</span>
-                                  <span className="font-mono">LATEST: {badge.split(' · ')[1]}</span>
+                                  <span className="font-mono">LATEST: {Math.round(latestVal * 100)}</span>
                                 </div>
                                 {/* Time mode toggles + Zoom controls */}
                                 <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -3421,6 +3414,34 @@ export default function App() {
                                 <div className="glass-inner rounded-lg p-3">
                                   {renderDetectorChart(dVpSlice, info.color, dVpSliceDates, info.name)}
                                 </div>
+                                {sparkline.length > 0 && (() => {
+                                  const peakVal = Math.round(Math.max(...sparkline));
+                                  const avgVal = Math.round(sparkline.reduce((a, b) => a + b, 0) / sparkline.length);
+                                  const minVal = Math.round(Math.min(...sparkline));
+                                  const peakElevated = peakVal >= 60;
+                                  const avgElevated = avgVal >= 40;
+                                  return (
+                                    <div className="flex items-stretch border-t border-white/[0.04] pt-3">
+                                      <div className="flex-1 text-center">
+                                        <div className="text-[9px] text-gray-500 uppercase tracking-wider">Peak Unusualness</div>
+                                        <div className={`text-lg font-bold ${peakElevated ? 'text-[#f97316]' : 'text-white'}`}>{peakVal}<span className="text-xs text-gray-500 font-normal">%</span></div>
+                                        <div className="text-[9px] text-gray-600">{peakElevated ? 'Above normal range' : 'Within normal range'}</div>
+                                      </div>
+                                      <div className="w-px bg-white/[0.06]" />
+                                      <div className="flex-1 text-center">
+                                        <div className="text-[9px] text-gray-500 uppercase tracking-wider">Recent Average</div>
+                                        <div className={`text-lg font-bold ${avgElevated ? 'text-[#f97316]' : 'text-white'}`}>{avgVal}<span className="text-xs text-gray-500 font-normal">%</span></div>
+                                        <div className="text-[9px] text-gray-600">{avgElevated ? 'Moderate concern' : 'Stable pattern'}</div>
+                                      </div>
+                                      <div className="w-px bg-white/[0.06]" />
+                                      <div className="flex-1 text-center">
+                                        <div className="text-[9px] text-gray-500 uppercase tracking-wider">Lowest Recorded</div>
+                                        <div className="text-lg font-bold text-white">{minVal}<span className="text-xs text-gray-500 font-normal">%</span></div>
+                                        <div className="text-[9px] text-gray-600">Baseline floor</div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                                 {sparkline.length > 0 && Math.max(...sparkline) === 100 && Math.min(...sparkline) >= 95 && (
                                   <p className="text-[10px] text-amber-500/70 leading-relaxed">
                                     This detector consistently scores near 100% — may indicate overfitting to this data.
@@ -3605,6 +3626,128 @@ export default function App() {
                     ))}
                   </div>
                 </div>
+
+                {/* DETECTOR INFO SIDE PANEL */}
+                <AnimatePresence>
+                  {detectorInfoKey && (() => {
+                    const detScores = pipeline?.pipelineDetectorScores;
+                    const lastScores: Record<string, number> = detScores && detScores.length > 0 ? detScores[detScores.length - 1] : {};
+                    const detFullInfo: Record<string, { name: string; icon: React.ElementType; model: string; longDesc: string; bullet1: string; bullet2: string; bullet3: string }> = {
+                      mahalanobis: {
+                        name: 'Mahalanobis Distance', icon: Radar, model: 'Pattern Deviation',
+                        longDesc: 'Mahalanobis Distance measures how far today\'s behavioral patterns are from your established personal baseline. A higher score means your behavior today is statistically unusual for you specifically.',
+                        bullet1: 'Helps detect when your overall behavioral profile shifts away from what\'s normal for you.',
+                        bullet2: 'Raises flags early when patterns start drifting, even if each individual metric seems fine.',
+                        bullet3: 'Useful for catching slow, creeping changes that might otherwise go unnoticed.',
+                      },
+                      copula: {
+                        name: 'Gaussian Copula', icon: ScatterChart, model: 'Behavioral Shift',
+                        longDesc: 'The Copula model detects when multiple behaviors shift together in unexpected ways — for example, sleeping less while becoming more withdrawn. It models the dependency structure between all your tracked features.',
+                        bullet1: 'Catches unusual co-occurrences — changes that happen together more often than expected.',
+                        bullet2: 'Identifies when the relationship between your sleep, activity, and mood patterns breaks down.',
+                        bullet3: 'Useful for detecting complex behavioral shifts that single-metric detectors might miss.',
+                      },
+                      isolation_forest: {
+                        name: 'Isolation Forest', icon: Zap, model: 'Outlier Spike',
+                        longDesc: 'Isolation Forest identifies individual days where your behavior looks very different from the rest. It works by randomly isolating data points — the easier a day is to isolate, the more unusual it is.',
+                        bullet1: 'Excellent at catching sudden, sharp deviations in your daily patterns.',
+                        bullet2: 'Flags individual days that stand out — like a single bad night or a sudden mood shift.',
+                        bullet3: 'Works well alongside trend-based detectors to distinguish spikes from gradual drifts.',
+                      },
+                      knn: {
+                        name: 'K-Nearest Neighbors', icon: Network, model: 'Cluster Drift',
+                        longDesc: 'KNN measures how far your recent patterns are from your K most similar historical entries. If your recent behavior doesn\'t resemble any of your past normal days, the score rises.',
+                        bullet1: 'Detects when your current state has no close match in your personal history.',
+                        bullet2: 'Gradually rises as you move away from your established behavioral clusters.',
+                        bullet3: 'Helps distinguish between familiar variation and genuinely new behavioral territory.',
+                      },
+                    };
+                    const k = detectorInfoKey;
+                    const d = detFullInfo[k];
+                    if (!d) return null;
+                    const Icon = d.icon;
+                    const score = lastScores[k] ?? 0.5;
+                    const pct = Math.round(score * 100);
+                    const sevLabel = pct >= 80 ? 'HIGH' : pct >= 60 ? 'ELEVATED' : pct >= 40 ? 'MODERATE' : 'LOW';
+                    const sevColor = pct >= 80 ? 'text-rose-400' : pct >= 60 ? 'text-amber-400' : pct >= 40 ? 'text-yellow-400' : 'text-emerald-400';
+                    const sevDot = pct >= 80 ? 'bg-rose-500' : pct >= 60 ? 'bg-amber-500' : pct >= 40 ? 'bg-yellow-500' : 'bg-emerald-500';
+                    const detHistory = detScores?.map(s => (s[k] ?? 0) * 100) || [];
+                    const miniSpark = detHistory.slice(-14);
+                    const miniMax = Math.max(...miniSpark, 1);
+                    return (
+                      <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setDetectorInfoKey(null)}>
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                        <motion.div
+                          initial={{ x: '100%' }}
+                          animate={{ x: 0 }}
+                          exit={{ x: '100%' }}
+                          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                          className="relative w-full max-w-md bg-[#0d1117] border-l border-[#1e2a3a] shadow-2xl overflow-y-auto"
+                        >
+                          <div className="p-6 space-y-6">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-[#1e2a3a] border border-white/[0.06]">
+                                  <Icon className="h-5 w-5 text-[#4fc3f7]" />
+                                </div>
+                                <div>
+                                  <h3 className="text-sm font-bold text-white">{d.name}</h3>
+                                  <span className="text-[10px] text-gray-500">{d.model}</span>
+                                </div>
+                              </div>
+                              <button onClick={() => setDetectorInfoKey(null)} className="p-1.5 rounded-lg hover:bg-white/[0.06] text-gray-400 hover:text-white transition-all cursor-pointer">
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-3 bg-[#1e2a3a]/50 rounded-xl p-4 border border-white/[0.04]">
+                              <span className={`h-2.5 w-2.5 rounded-full ${sevDot} shadow-[0_0_8px_currentColor]`} />
+                              <div>
+                                <span className={`text-lg font-bold ${sevColor}`}>{pct}</span>
+                                <span className={`text-lg font-bold ${sevColor} ml-1`}>/ 100</span>
+                                <span className={`ml-2 text-xs font-bold ${sevColor}`}>{sevLabel}</span>
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-gray-300 leading-relaxed">{d.longDesc}</p>
+                              {pct >= 40 && pct < 80 && (
+                                <p className="text-xs text-amber-400/80 mt-2">Your pattern deviation is moderate. Behavioral and emotional patterns are the primary contributors today.</p>
+                              )}
+                              {pct >= 80 && (
+                                <p className="text-xs text-rose-400/80 mt-2">Significant deviation detected. Multiple behavioral signals are consistently outside your normal range.</p>
+                              )}
+                              {pct < 40 && (
+                                <p className="text-xs text-emerald-400/80 mt-2">Your patterns are close to your baseline. No significant deviation detected.</p>
+                              )}
+                            </div>
+
+                            <div>
+                              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">14-Day Trend</span>
+                              <div className="mt-2 flex items-end gap-0.5 h-12">
+                                {miniSpark.map((v, i) => (
+                                  <div key={i} className="flex-1 flex flex-col justify-end">
+                                    <div className="w-full rounded-t-sm transition-all duration-300" style={{ height: `${(v / miniMax) * 100}%`, backgroundColor: pct >= 60 ? '#f97316' : '#4fc3f7', opacity: 0.3 + (v / miniMax) * 0.7 }} />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-2 bg-[#1e2a3a]/30 rounded-xl p-4 border border-white/[0.04]">
+                              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-[#b39ddb]" /> What this means for you</span>
+                              <ul className="space-y-1.5">
+                                <li className="text-[11px] text-gray-400 flex gap-2"><span className="text-[#4fc3f7] mt-0.5">•</span>{d.bullet1}</li>
+                                <li className="text-[11px] text-gray-400 flex gap-2"><span className="text-[#4fc3f7] mt-0.5">•</span>{d.bullet2}</li>
+                                <li className="text-[11px] text-gray-400 flex gap-2"><span className="text-[#4fc3f7] mt-0.5">•</span>{d.bullet3}</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </motion.div>
+                      </div>
+                    );
+                  })()}
+                </AnimatePresence>
 
               </div>
             );

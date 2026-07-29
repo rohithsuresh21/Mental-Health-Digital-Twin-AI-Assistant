@@ -69,7 +69,7 @@ Write-Host "  Updated to: $tunnelUrl" -ForegroundColor Gray
 # ── Step 4: Deploy to Vercel ──
 Write-Host "[4/5] Deploying to Vercel..." -ForegroundColor Yellow
 Set-Location $ROOT
-$deployOutput = npx vercel --prod --yes 2>&1
+$deployOutput = & "$ROOT\node_modules\.bin\vercel.cmd" --prod --yes 2>&1
 $deployOutput | ForEach-Object {
     $line = $_.ToString()
     if ($line -match "Ready") { Write-Host "  Deployed!" -ForegroundColor Green }
