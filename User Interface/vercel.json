@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://tunes-coins-orders-posts.trycloudflare.com/$1"
+                         "destination": "https://third-perl-tears-eden.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
