@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://explicit-machines-soviet-marketplace.trycloudflare.com/$1"
+                         "destination": "https://tunes-coins-orders-posts.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
