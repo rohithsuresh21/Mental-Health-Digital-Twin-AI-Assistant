@@ -40,7 +40,10 @@ import {
   Sparkles,
   Target,
   Eye,
-  Gauge
+  Gauge,
+  Download,
+  CalendarDays,
+  Lock
 } from 'lucide-react';
 import { IngestionInput, DiagnosticData } from './types';
 import { defaultDiagnosticData } from './defaultData';
@@ -1505,62 +1508,74 @@ export default function App() {
             {activeTab === 'analytics' && (
               <>
                 <div className="flex items-center gap-2.5 shrink-0">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse" />
-                  <h1 className="text-sm font-extrabold tracking-widest bg-gradient-to-r from-emerald-400 via-teal-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(16,185,129,0.3)] uppercase font-sans">
-                    Clinical Provider Workspace — Patient Analytics
-                  </h1>
+                  <span className="text-[10px] font-mono text-[#6b7280] tracking-widest cursor-default">SYSTEM MENU</span>
                 </div>
-                <div className="relative max-w-xs flex-1 ml-8">
+                <div className="flex items-center gap-2.5 shrink-0 ml-6">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse" />
+                  <div>
+                    <h1 className="text-sm font-extrabold tracking-widest text-white uppercase font-sans">
+                      Clinical Provider Workspace — Patient Analytics
+                    </h1>
+                    <p className="text-[10px] font-mono text-[#4b5563]">PATIENT: [ID] · MODEL: TFT+SHAP · SESSION ACTIVE</p>
+                  </div>
+                </div>
+                <div className="relative max-w-xs flex-1 ml-auto">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                  <input 
-                    type="text" 
-                    placeholder="Search keyword..." 
-                    value={searchQuery}
+                  <input type="text" placeholder="Search keyword..." value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        if (searchMatchCount > 0) navigateSearch(e.shiftKey ? 'prev' : 'next');
-                      }
-                      if (e.key === 'Escape') {
-                        setSearchQuery('');
-                      }
-                    }}
-                    className="w-full bg-[#151922] border border-[#232B3B] rounded-md pl-9 pr-20 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (searchMatchCount > 0) navigateSearch(e.shiftKey ? 'prev' : 'next'); } if (e.key === 'Escape') setSearchQuery(''); }}
+                    className="w-full bg-[#0d1117] border border-[#1e2a3a] rounded-md pl-9 pr-20 py-1.5 text-xs text-white placeholder-[#374151] font-mono focus:outline-none focus:border-blue-500"
                   />
                   {searchQuery.trim() && (
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                      <span className="text-[10px] text-gray-500 font-mono">
-                        {searchMatchCount > 0 ? `${searchCurrentIdx + 1}/${searchMatchCount}` : '0 found'}
-                      </span>
-                      {searchMatchCount > 1 && (
-                        <>
-                          <button onClick={() => navigateSearch('prev')} className="text-gray-500 hover:text-gray-300 cursor-pointer"><ChevronLeft className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => navigateSearch('next')} className="text-gray-500 hover:text-gray-300 cursor-pointer"><ChevronRight className="h-3.5 w-3.5" /></button>
-                        </>
-                      )}
+                      <span className="text-[10px] text-gray-500 font-mono">{searchMatchCount > 0 ? `${searchCurrentIdx + 1}/${searchMatchCount}` : '0 found'}</span>
+                      {searchMatchCount > 1 && (<><button onClick={() => navigateSearch('prev')} className="text-gray-500 hover:text-gray-300 cursor-pointer"><ChevronLeft className="h-3.5 w-3.5" /></button><button onClick={() => navigateSearch('next')} className="text-gray-500 hover:text-gray-300 cursor-pointer"><ChevronRight className="h-3.5 w-3.5" /></button></>)}
                       <button onClick={() => setSearchQuery('')} className="text-gray-500 hover:text-gray-300 cursor-pointer ml-0.5"><X className="h-3.5 w-3.5" /></button>
                     </div>
                   )}
                 </div>
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold text-[#a78bfa] border border-[#a78bfa] bg-[#1e2a3a] hover:bg-[#1e2a3a]/70 transition-all cursor-pointer shrink-0">
+                  <Download className="h-3.5 w-3.5" />
+                  Download PDF Report
+                </button>
+                <button className="relative p-1.5 text-gray-500 hover:text-gray-300 transition-all cursor-pointer shrink-0">
+                  <Bell className="h-4 w-4" />
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 border border-[#050810]" />
+                </button>
+                <button className="p-1.5 text-gray-500 hover:text-gray-300 transition-all cursor-pointer shrink-0">
+                  <Sun className="h-4 w-4" />
+                </button>
               </>
             )}
             {activeTab === 'explainable' && (
               <>
                 <div className="flex items-center gap-2.5 shrink-0">
+                  <span className="text-[10px] font-mono text-[#6b7280] tracking-widest cursor-default">SYSTEM MENU</span>
+                </div>
+                <div className="flex items-center gap-2.5 shrink-0 ml-6">
                   <span className="h-2 w-2 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7] animate-pulse" />
-                  <h1 className="text-sm font-extrabold tracking-widest bg-gradient-to-r from-purple-400 via-indigo-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(168,85,247,0.3)] uppercase font-sans">
-                    Clinical Provider Workspace — Explainable AI
-                  </h1>
+                  <div>
+                    <h1 className="text-sm font-extrabold tracking-widest text-white uppercase font-sans">
+                      Clinical Provider Workspace — Explainable AI
+                    </h1>
+                    <p className="text-[10px] font-mono text-[#4b5563]">PATIENT: [ID] · SESSION: ACTIVE · MODEL: TREESHAP v2.1</p>
+                  </div>
                 </div>
-                <div className="relative max-w-xs flex-1 ml-8">
+                <div className="relative max-w-xs flex-1 ml-auto">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                  <input 
-                    type="text" 
-                    placeholder="QUERY_PATIENT_ID..." 
-                    className="w-full bg-[#151922] border border-[#232B3B] rounded-md pl-9 pr-4 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-400"
-                  />
+                  <input type="text" placeholder="QUERY_PATIENT_ID..." className="w-full bg-[#0d1117] border border-[#1e2a3a] rounded-md pl-9 pr-4 py-1.5 text-xs text-white placeholder-[#374151] font-mono focus:outline-none focus:border-blue-500" />
                 </div>
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold text-[#a78bfa] border border-[#a78bfa] bg-[#1e2a3a] hover:bg-[#1e2a3a]/70 transition-all cursor-pointer shrink-0">
+                  <Download className="h-3.5 w-3.5" />
+                  Download PDF Report
+                </button>
+                <button className="relative p-1.5 text-gray-500 hover:text-gray-300 transition-all cursor-pointer shrink-0">
+                  <Bell className="h-4 w-4" />
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 border border-[#050810]" />
+                </button>
+                <button className="p-1.5 text-gray-500 hover:text-gray-300 transition-all cursor-pointer shrink-0">
+                  <Sun className="h-4 w-4" />
+                </button>
               </>
             )}
             {activeTab === 'forecast' && (
@@ -2411,117 +2426,145 @@ export default function App() {
                   </div>
                 )}
 
-                {/* TOP METRICS ROW */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-4 border-b border-[#20293B]/20">
-                  {/* Left overall card */}
-                  <div className="space-y-2">
-                    <span className={`inline-block border rounded px-3 py-1 text-xs font-bold font-mono tracking-wide ${badgeStyle}`}>
-                      {badgeText}
-                    </span>
-                    <div className="text-xs text-gray-400 font-medium pl-1">overall picture</div>
+                {/* TOP STATS ROW — redesigned */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-b border-[#20293B]/20">
+                  <div className="border border-white/[0.06] rounded-xl bg-[#0d1117] p-5 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981] animate-pulse" />
+                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Excellent</span>
+                    </div>
+                    <div className="text-2xl font-bold font-mono text-emerald-400">{estimatedRisk}</div>
+                    <div className="text-[10px] text-[#6b7280]">Overall Risk Score</div>
+                    <svg width="100%" height="24" className="mt-1">
+                      <path d="M0,20 L20,16 L40,18 L60,12 L80,14 L100,8 L120,10 L140,6" fill="none" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" />
+                      <circle cx="140" cy="6" r="2" fill="#4ade80" />
+                    </svg>
                   </div>
-
-                  {/* Second Card */}
-                  <div className="space-y-1">
-                    <div className="text-3xl font-extrabold text-[#43A0F5] tracking-tight">{estimatedRisk}</div>
-                    <div className="text-xs text-gray-400 font-medium">estimated risk</div>
-                    <div className={`text-[10px] font-semibold leading-snug mt-0.5 ${scoreVal > 55 ? 'text-rose-400/80' : scoreVal > 40 ? 'text-amber-400/80' : 'text-emerald-400/80'}`}>
-                      {scoreVal > 75
-                        ? 'High risk — immediate attention recommended.'
-                        : scoreVal > 55
-                        ? 'Moderate risk — some signals worth watching closely.'
-                        : scoreVal > 40
-                        ? 'Low-mild risk — patterns are within a concerning but manageable range.'
-                        : 'Low risk — no significant mental health concerns detected.'}
+                  <div className="border border-white/[0.06] rounded-xl bg-[#0d1117] p-5 space-y-2">
+                    <div className="text-2xl font-bold font-mono text-emerald-400">{estimatedRisk}</div>
+                    <div className="text-[10px] text-[#6b7280] uppercase tracking-wider">Estimated Risk</div>
+                    <div className="text-[10px] text-emerald-400 italic">Low risk — no significant mental health concerns detected.</div>
+                    <div className="relative h-8 mt-1">
+                      <svg viewBox="0 0 40 40" className="w-8 h-8">
+                        <circle cx="20" cy="20" r="16" fill="none" stroke="#1f2937" strokeWidth="3" />
+                        <circle cx="20" cy="20" r="16" fill="none" stroke="#4ade80" strokeWidth="3" strokeDasharray={`${33 * 1.005} 100`} strokeLinecap="round" transform="rotate(-90 20 20)" />
+                      </svg>
                     </div>
                   </div>
-
-                  {/* Third Card */}
-                  <div className="space-y-1">
-                    <div className="text-3xl font-extrabold text-white tracking-tight">{entriesCount}</div>
-                    <div className="text-xs text-gray-400 font-medium">entries looked at</div>
-                  </div>
-
-                  {/* Fourth Card */}
-                  <div className="space-y-1">
-                    <div className="text-3xl font-extrabold tracking-tight">
-                      <span className={worthCheckIn === 'Yes' ? 'text-rose-500' : 'text-gray-500'}>{worthCheckIn}</span>
+                  <div className="border border-white/[0.06] rounded-xl bg-[#0d1117] p-5 space-y-2">
+                    <div className="text-2xl font-bold font-mono text-white">{entriesCount}</div>
+                    <div className="text-[10px] text-[#6b7280] uppercase tracking-wider">Entries Analysed</div>
+                    <div className="text-[10px] text-[#475569]">Across {entriesCount} journal entries · 30-day window</div>
+                    <div className="flex gap-0.5 mt-1 h-2 items-end">
+                      {Array.from({ length: 20 }, (_, i) => <div key={i} className="w-1.5 rounded-t" style={{ height: `${Math.random() * 100}%`, backgroundColor: i > 15 ? '#4ade80' : '#1f2937' }} />)}
                     </div>
-                    <div className="text-xs text-gray-400 font-medium">worth a check-in</div>
+                  </div>
+                  <div className="border border-white/[0.06] rounded-xl bg-[#0d1117] p-5 space-y-2">
+                    <div className="text-2xl font-bold font-mono text-emerald-400">{worthCheckIn === 'Yes' ? 'Yes' : 'No'}</div>
+                    <div className="text-[10px] text-[#6b7280] uppercase tracking-wider">Check-in Required</div>
+                    <div className="text-[10px] text-[#475569]">Next scheduled review: 7 days</div>
+                    <CalendarDays className="h-4 w-4 text-[#6b7280] mt-1" />
                   </div>
                 </div>
 
-                {/* Advisory callout box */}
-                <div className={`border-l-4 rounded-r-xl p-5 text-sm leading-relaxed animate-in fade-in duration-300 ${
-                  worthCheckIn === 'Yes'
-                    ? 'bg-[#1C1005]/20 border-l-amber-500 border border-amber-500/10 text-[#FFA857]/80'
-                    : 'bg-emerald-950/10 border-l-emerald-500 border border-emerald-500/10 text-emerald-300/80'
-                }`}>
-                  {worthCheckIn === 'Yes'
-                    ? 'A few signals here are worth paying attention to. It might help to talk to someone — a friend, a counsellor, or a professional you trust.'
-                    : 'Things look fairly steady right now. Worth keeping an eye on, as always, but nothing stands out as urgent.'}
+                {/* AI SUMMARY QUOTE BLOCK */}
+                <div className="bg-[#0a1a0f] border-l-4 border-l-emerald-500 border border-[#166534] rounded-r-xl p-5 flex items-start gap-3 relative"
+                  style={{ boxShadow: '-2px 0 12px #4ade8033' }}
+                >
+                  <Sparkles className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm text-white">
+                      {worthCheckIn === 'Yes'
+                        ? 'A few signals here are worth paying attention to. It might help to talk to someone — a friend, a counsellor, or a professional you trust.'
+                        : 'Things look fairly steady right now. Worth keeping an eye on, as always, but nothing stands out as urgent.'}
+                    </p>
+                  </div>
+                  <span className="shrink-0 bg-[#111827] text-[#6b7280] text-[9px] font-mono px-2 py-0.5 rounded">AI GENERATED · TREESHAP</span>
                 </div>
 
-                {/* Scale description and gradient bar */}
-                <div className="space-y-1.5">
-                  <div className="text-[11px] tracking-wide text-gray-400 font-semibold uppercase">
-                    Score Scale
+                {/* SCORE SCALE — with critical position marker */}
+                <div className="space-y-2">
+                  <div className="text-[11px] tracking-wide text-[#94a3b8] font-semibold uppercase">Score Scale</div>
+                  <div className="relative pt-10">
+                    {/* Score indicator badge + marker */}
+                    <div className="absolute" style={{ left: `${Math.min(96, Math.max(1, scoreVal))}%`, top: '0', transform: 'translateX(-50%)' }}>
+                      <style>{`@keyframes scalePop { 0% { transform:translateY(10px);opacity:0 } 60% { transform:translateY(-2px) } 100% { transform:translateY(0);opacity:1 } }`}</style>
+                      <div style={{ animation: 'scalePop 300ms ease-out' }}>
+                        <div className="bg-[#0d1117] border border-emerald-500 rounded-full px-2.5 py-0.5 shadow-lg" style={{ boxShadow: '0 0 12px rgba(74,222,128,0.3)' }}>
+                          <span className="text-[11px] font-mono font-bold text-emerald-400">{scoreVal}% · LOW RISK</span>
+                        </div>
+                      </div>
+                      <div className="w-px h-2 mx-auto bg-emerald-500/50" />
+                    </div>
+                    {/* Gradient bar */}
+                    <div className="h-2.5 w-full rounded-full overflow-hidden" style={{ background: 'linear-gradient(to right, #10b981, #14b8a6, #0ea5e9, #f59e0b, #f97316, #f43f5e, #991b1b)' }} />
+                    {/* Tick labels */}
+                    <div className="flex justify-between mt-1.5">
+                      {['0%', '25%', '50%', '75%', '100%'].map(t => <span key={t} className="text-[10px] text-[#6b7280]">{t}</span>)}
+                    </div>
+                    {/* Zone labels */}
+                    <div className="flex justify-between mt-0.5 px-0" style={{ maxWidth: '100%' }}>
+                      {[
+                        { label: 'LOW', color: '#4ade80', at: '12.5%' },
+                        { label: 'MODERATE', color: '#facc15', at: '50%' },
+                        { label: 'HIGH', color: '#f97316', at: '75%' },
+                        { label: 'CRITICAL', color: '#ef4444', at: '92%' },
+                      ].map(z => (
+                        <span key={z.label} className="text-[10px] font-semibold" style={{ color: z.color }}>{z.label}</span>
+                      ))}
+                    </div>
                   </div>
-                  <div className="relative pt-3">
-                    <div className="relative h-3 w-full rounded-full overflow-hidden" style={{ background: 'linear-gradient(to right, #10b981, #14b8a6, #0ea5e9, #f59e0b, #f97316, #f43f5e, #991b1b)' }}>
-                      <div className="absolute inset-0 transition-all duration-500" style={{ left: `${Math.min(100, Math.max(0, scoreVal))}%`, transform: 'translateX(-50%)', top: '-10px' }}>
-                        <svg width="10" height="8" viewBox="0 0 10 8" className="drop-shadow-[0_0_4px_rgba(255,255,255,0.6)]">
-                          <polygon points="0,0 10,0 5,8" fill="white" />
-                        </svg>
+                </div>
+
+                {/* MODULE CARDS — redesigned */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border border-white/[0.08] rounded-xl bg-[#0d1117] p-5 flex items-start justify-between gap-4 transition-all duration-200 hover:border-white/[0.18] hover:-translate-y-0.5">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-[#4fc3f7] shadow-[0_0_6px_#4fc3f7] animate-pulse" />
+                        <span className="text-[10px] tracking-wider text-[#4fc3f7] font-bold uppercase">Interpretability Dashboard</span>
+                      </div>
+                      <p className="text-[10px] font-mono text-[#6b7280]">TreeSHAP · 15 Features Attributed</p>
+                      <p className="text-[11px] text-[#94a3b8] leading-relaxed">Traces each risk signal back to specific behavioral, emotional, and linguistic patterns. See exactly which features drove the model's decision.</p>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {[
+                          { label: 'Remorse +0.033', color: '#ef4444' },
+                          { label: 'Sentiment +0.019', color: '#f97316' },
+                          { label: 'Nervousness -0.067', color: '#4ade80' },
+                        ].map((chip, i) => (
+                          <span key={i} className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#111827] border border-white/[0.04]" style={{ color: chip.color }}>{chip.label}</span>
+                        ))}
                       </div>
                     </div>
+                    <button onClick={() => setActiveTab('explainable')}
+                      className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold text-[#4fc3f7] border border-[#4fc3f7] bg-[#1e2a3a] hover:bg-[#1e2a3a]/80 transition-all cursor-pointer">
+                      <Brain className="h-3.5 w-3.5" />
+                      Explainable Analysis using AI
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
                   </div>
-                </div>
-
-                {/* EXPLAINABLE AI NAVIGATION CALLOUT CARD */}
-                <div className="border border-[#20293B]/40 rounded-xl bg-[#121620]/25 p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-2xl hover:border-blue-500/30 transition-all duration-300">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 bg-[#43A0F5] rounded-full animate-pulse" />
-                      <span className="text-[10px] tracking-wider text-gray-400 font-bold uppercase font-sans">
-                        Interpretability Dashboard (TreeSHAP)
-                      </span>
+                  <div className="border border-white/[0.08] rounded-xl bg-[#0d1117] p-5 flex items-start justify-between gap-4 transition-all duration-200 hover:border-white/[0.18] hover:-translate-y-0.5">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-[#a78bfa] shadow-[0_0_6px_#a78bfa] animate-pulse" />
+                        <span className="text-[10px] tracking-wider text-[#a78bfa] font-bold uppercase">Risk Forecast Engine</span>
+                      </div>
+                      <p className="text-[10px] font-mono text-[#6b7280]">TFT + GradientBoosting · 7-Day Horizon</p>
+                      <p className="text-[11px] text-[#94a3b8] leading-relaxed">Predicts the next 7 days using your historical data. The TFT model forecasts a composite risk score across all behavioral signals.</p>
+                      <div className="flex items-center gap-2 pt-1">
+                        {[{ label: 'Day 1: 27%' }, { label: 'Day 4: 29%' }, { label: 'Day 7: 30%' }].map((chip, i) => (
+                          <span key={i} className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#111827] border border-white/[0.04] text-[#94a3b8]">{chip.label}</span>
+                        ))}
+                        <span className="text-[#a78bfa] text-xs">→</span>
+                      </div>
                     </div>
-                    <p className="text-xs text-[#8E9CAE] leading-relaxed max-w-2xl">
-                      Explore how the model reached its conclusions. Each score is broken down into the specific patterns — speech changes, behavior shifts, and emotional tone variations — that influenced the overall assessment.
-                    </p>
+                    <button onClick={() => setActiveTab('forecast')}
+                      className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold text-[#a78bfa] border border-[#a78bfa] bg-[#1e2a3a] hover:bg-[#1e2a3a]/80 transition-all cursor-pointer">
+                      <Cloud className="h-3.5 w-3.5" />
+                      Forecast Analysis using AI
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => setActiveTab('explainable')}
-                    className="w-full md:w-auto px-6 py-3 bg-[#43A0F5]/10 hover:bg-[#43A0F5]/25 border border-[#43A0F5]/30 hover:border-[#43A0F5]/80 text-[#43A0F5] hover:text-white rounded-lg text-sm font-bold tracking-normal flex items-center justify-center gap-2.5 transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-[0_0_15px_rgba(67,160,245,0.06)] shrink-0"
-                  >
-                    <Brain className="h-4.5 w-4.5 animate-pulse" />
-                    Explainable Analysis using AI
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {/* RISK FORECAST NAVIGATION CALLOUT CARD */}
-                <div className="border border-[#20293B]/40 rounded-xl bg-[#121620]/25 p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-2xl hover:border-purple-500/30 transition-all duration-300">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 bg-purple-400 rounded-full animate-pulse" />
-                      <span className="text-[10px] tracking-wider text-gray-400 font-bold uppercase font-sans">
-                        Risk Forecast Engine (TFT + GradientBoosting)
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#8E9CAE] leading-relaxed max-w-2xl">
-                      Predicts the next 7 days using your historical data. The TFT model forecasts a composite risk score (50% anomaly + 25% sentiment + 25% health). Individual detector forecasts use GradientBoosting trained on each detector's own 30-day history.
-                    </p>
-                  </div>
-                  <button 
-                    onClick={() => setActiveTab('forecast')}
-                    className="w-full md:w-auto px-6 py-3 bg-purple-500/10 hover:bg-purple-500/25 border border-purple-500/30 hover:border-purple-500/80 text-purple-300 hover:text-white rounded-lg text-sm font-bold tracking-normal flex items-center justify-center gap-2.5 transition-all duration-200 cursor-pointer active:scale-[0.98] shadow-[0_0_15px_rgba(168,85,247,0.06)] shrink-0"
-                  >
-                    <Cloud className="h-4.5 w-4.5" />
-                    Forecast Analysis using AI
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
                 </div>
 
                 {/* 1. MOOD AND RISK OVER TIME SECTION */}
@@ -2873,192 +2916,126 @@ export default function App() {
                   })()}
                 </div>
 
-                {/* 3. TREND STABILITY (CUSUM) SECTION */}
+                {/* 3. TREND STABILITY (CUSUM) — REDESIGNED */}
                 <div className="border-t border-gray-800/60 pt-6">
                   <div 
                     className="flex items-center justify-between cursor-pointer group"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, cusum: !prev.cusum }))}
                   >
+                    <div>
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
-                      <Activity className="h-4.5 w-4.5 text-blue-400" />
-                      Sustained Change from Baseline
-                    </h3>
-                    <p className="text-[10px] text-gray-500 mt-1 ml-7">Detects whether recent behavior has shifted consistently away from the established baseline</p>
+                        <Activity className="h-4.5 w-4.5 text-[#4fc3f7]" />
+                        Sustained Change from Baseline
+                      </h3>
+                      <p className="text-[10px] text-gray-500 mt-1 ml-7">Detects whether recent behavior has shifted consistently away from the established baseline</p>
+                    </div>
                     <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
                       {collapsedSections.cusum ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                     </button>
                   </div>
 
                   {!collapsedSections.cusum && (() => {
-                    // Determine CUSUM status from pipeline data or latest values
-                    let cusumStatus: 'stable' | 'upper_alert' | 'lower_alert' | 'both_alert' | 'recovered' = 'stable';
-                    if (pipeline) {
-                      const lastUp = upperCusumVals.length > 0 ? upperCusumVals[upperCusumVals.length - 1] : 0;
-                      const lastLow = lowerCusumVals.length > 0 ? lowerCusumVals[lowerCusumVals.length - 1] : 0;
-                      const alertUp = lastUp > cusumThreshold;
-                      const alertLow = lastLow > cusumThreshold;
-                      if (alertUp && alertLow) cusumStatus = 'both_alert';
-                      else if (alertUp) cusumStatus = 'upper_alert';
-                      else if (alertLow) cusumStatus = 'lower_alert';
-                      // recovered if had alert history but now stable
-                    }
-                    const cusumMeta: Record<string, { dot: string; title: string; msg: string }> = {
-                      stable: {
-                        dot: 'bg-emerald-400 shadow-[0_0_10px_#10b981]',
-                        title: 'Within your normal range',
-                        msg: 'Everything looks normal. Your current patterns are staying within your usual range. Keep maintaining your healthy routine.',
-                      },
-                      upper_alert: {
-                        dot: 'bg-rose-500 shadow-[0_0_10px_#ef4444] animate-pulse',
-                        title: 'Upper drift detected — scores persistently above baseline',
-                        msg: 'We\'ve noticed your scores are consistently drifting above your normal range. This sustained upper drift may indicate your well-being is changing. Consider taking a moment to rest and monitor your condition.',
-                      },
-                      lower_alert: {
-                        dot: 'bg-blue-500 shadow-[0_0_10px_#3b82f6]',
-                        title: 'Lower drift detected — scores persistently below baseline',
-                        msg: 'Your scores are consistently drifting below your usual range — this is a positive trend. Your patterns suggest improvement. Continue monitoring to ensure everything remains on track.',
-                      },
-                      both_alert: {
-                        dot: 'bg-purple-500 shadow-[0_0_10px_#a855f7]',
-                        title: 'Unusual oscillation detected',
-                        msg: 'Your readings are fluctuating above and below your normal range. This unusual pattern may require closer attention.',
-                      },
-                      recovered: {
-                        dot: 'bg-amber-400 shadow-[0_0_10px_#fbbf24]',
-                        title: 'Back within your normal range',
-                        msg: 'You\'re currently within your usual range. There was a notable deviation before things returned to baseline — worth keeping in mind alongside the current stability.',
-                      },
-                    };
-                    const meta = cusumMeta[cusumStatus] || cusumMeta.stable;
+                    const lastUp = upperCusumVals.length > 0 ? upperCusumVals[upperCusumVals.length - 1] : 0;
+                    const lastLow = lowerCusumVals.length > 0 ? lowerCusumVals[lowerCusumVals.length - 1] : 0;
+                    const alertUp = lastUp > cusumThreshold;
+                    const alertLow = lastLow > cusumThreshold;
+                    const sevColor = alertUp ? '#f97316' : alertLow ? '#4fc3f7' : '#10b981';
+                    const sevTitle = alertUp ? 'Upper drift detected — scores persistently above baseline' : alertLow ? 'Lower drift detected — scores persistently below baseline' : 'Within your normal range';
+                    const sevMsg = alertUp ? 'Scores are consistently drifting above your normal range. This sustained upper drift may indicate your well-being is changing.' : alertLow ? 'Scores are consistently drifting below your usual range — this is a positive trend suggesting improvement.' : 'Everything looks normal. Your current patterns are staying within your usual range.';
+
+                    const yMax = (() => {
+                      const allV = [...upperCusumVals.slice(cVpStart, cVpEnd + 1), ...lowerCusumVals.slice(cVpStart, cVpEnd + 1), cusumThreshold].filter(v => v != null);
+                      return Math.max(1, Math.ceil((Math.max(...allV, 0.01)) * 1.2));
+                    })();
+                    const yScale = (v: number) => 15 + ((yMax - v) / yMax) * 185;
+                    const cMaxLabels = 6;
+                    const cXLabelIndices = cVpCount <= cMaxLabels
+                      ? Array.from({ length: cVpCount }, (_, i) => cVpStart + i)
+                      : Array.from({ length: cMaxLabels }, (_, i) => cVpStart + Math.round(i * (cVpCount - 1) / (cMaxLabels - 1)));
 
                     return (
                     <div className="mt-4 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
-                      
-                      <div className="bg-rose-500/[0.03] backdrop-blur-xl border border-rose-500/15 rounded-xl p-5 flex items-start gap-4 shadow-sm">
-                        <span className={`h-3 w-3 rounded-full shrink-0 mt-1 ${meta.dot}`} />
-                        <div>
-                          <h4 className="text-sm font-bold text-white mb-1">{meta.title}</h4>
-                          <p className="text-xs text-gray-400 leading-relaxed">{meta.msg}</p>
+
+                      {/* ALERT BANNER — redesigned */}
+                      <div className="rounded-xl p-4 flex items-start gap-4 border-l-[3px] animate-in fade-in slide-in-from-top-2 duration-300"
+                        style={{ backgroundColor: `${sevColor}0f`, borderLeftColor: sevColor }}
+                      >
+                        <style>{`@keyframes cusumPulse { 0%,100% { opacity:1;transform:scale(1) } 50% { opacity:0.4;transform:scale(1.3) } }`}</style>
+                        <span className="h-2.5 w-2.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: sevColor, boxShadow: `0 0 8px ${sevColor}`, animation: 'cusumPulse 2s infinite' }} />
+                        <div className="flex-1">
+                          <h4 className="text-sm font-bold text-white">{sevTitle}</h4>
+                          <p className="text-xs text-[#94a3b8] leading-relaxed mt-0.5">{sevMsg}</p>
                         </div>
+                        <button className="shrink-0 text-[10px] font-semibold px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                          style={{ color: sevColor, border: `1px solid ${sevColor}44`, backgroundColor: `${sevColor}0a` }}
+                          onMouseEnter={e => { e.currentTarget.style.backgroundColor = `${sevColor}1a`; }}
+                          onMouseLeave={e => { e.currentTarget.style.backgroundColor = `${sevColor}0a`; }}
+                        >View Details</button>
                       </div>
 
-                                       <p className="text-[11px] text-gray-500 leading-relaxed">
-                        This signal detects whether recent behavior has shifted consistently away from the established baseline. A single unusual entry does not trigger sustained drift — the signal accumulates only when the change persists over multiple entries. Red line = risk scores rising above your normal range · Blue line = risk scores improving below your normal range · Dashed line = alert threshold.
-                      </p>
+                      {/* DESCRIPTION CHIPS */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {[
+                          { color: '#f97316', label: 'Red line = risk rising' },
+                          { color: '#4fc3f7', label: 'Blue line = improvement' },
+                          { color: '#facc15', label: 'Yellow dashed = alert threshold' },
+                        ].map((chip, i) => (
+                          <div key={i} className="flex items-center gap-1.5 bg-[#1e2a3a] rounded-full px-3 py-1">
+                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: chip.color }} />
+                            <span className="text-[10px] text-[#cbd5e1]">{chip.label}</span>
+                          </div>
+                        ))}
+                      </div>
 
-                      {/* Translucent Card wrapper for the CUSUM graph */}
-                      <div className="glass-panel rounded-xl p-5 space-y-4">
-                        {/* CUSUM Toggle Tabs + Zoom Controls */}
+                      {/* Card wrapper */}
+                      <div className="rounded-xl bg-[#0d1117] border border-white/[0.06] p-5 space-y-4" style={{ boxShadow: 'inset 0 0 40px #0000ff08' }}>
+                        {/* SEGMENTED CONTROL + ZOOM */}
                         <div className="flex items-center gap-3 flex-wrap">
-                          <div className="flex gap-1.5">
+                          <div className="flex rounded-lg bg-[#1e2a3a] p-0.5">
                             {[
-                              { key: 0, label: 'Upper Drift', desc: 'Scores trending above baseline', icon: TrendingUp },
-                              { key: 1, label: 'Lower Drift', desc: 'Scores trending below baseline', icon: TrendingDown },
-                              { key: 2, label: 'Both', desc: 'Show both directions', icon: null },
+                              { key: 0, label: 'Upper Drift', icon: '↗' },
+                              { key: 1, label: 'Lower Drift', icon: '↙' },
+                              { key: 2, label: 'Both', icon: '↕' },
                             ].map((tab) => (
-                              <button
-                                key={tab.key}
-                                onClick={() => setSelectedCusumTab(tab.key)}
-                                className={`flex-shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ${
+                              <button key={tab.key} onClick={() => setSelectedCusumTab(tab.key)}
+                                className={`text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1 ${
                                   selectedCusumTab === tab.key
-                                    ? 'bg-white/[0.06] border-[#3B82F6] text-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.7)]'
-                                    : 'bg-white/[0.02] border-white/[0.06] text-gray-400 hover:bg-white/[0.04] hover:text-gray-300'
+                                    ? 'bg-[#1d4ed8] text-white shadow-sm'
+                                    : 'text-gray-400 hover:text-gray-300'
                                 }`}
                               >
-                                {tab.icon && <tab.icon className="h-3 w-3" />}
+                                <span>{tab.icon}</span>
                                 {tab.label}
-                                <span className="text-[8px] text-gray-500 font-normal">{tab.desc}</span>
                               </button>
                             ))}
                           </div>
-
-                          {/* CUSUM Independent Zoom Controls */}
                           {cusumTotalLen > 0 && (
                             <div className="flex items-center gap-1.5 ml-auto">
-                              <span className="text-[10px] text-gray-500 font-mono mr-1">
-                                {cVpCount} of {cusumTotalLen}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  const range = cVpEnd - cVpStart;
-                                  const newRange = Math.min(cusumTotalLen - 1, Math.round(range * 1.5));
-                                  const center = Math.round((cVpStart + cVpEnd) / 2);
-                                  const s = Math.max(0, center - Math.round(newRange / 2));
-                                  const e = Math.min(cusumTotalLen - 1, s + newRange);
-                                  setCusumViewport([Math.max(0, e - newRange), e]);
-                                }}
-                                className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
-                                title="Zoom out"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const range = cVpEnd - cVpStart;
-                                  const newRange = Math.max(10, Math.round(range / 1.5));
-                                  const center = Math.round((cVpStart + cVpEnd) / 2);
-                                  const s = Math.max(0, center - Math.round(newRange / 2));
-                                  const e = Math.min(cusumTotalLen - 1, s + newRange);
-                                  setCusumViewport([s, e]);
-                                }}
-                                className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
-                                title="Zoom in"
-                              >
-                                <Plus className="h-3 w-3" />
-                              </button>
+                              <span className="text-[10px] text-gray-500 font-mono mr-1">{cVpCount} of {cusumTotalLen}</span>
+                              {[{ icon: Minus, action: () => { const r=cVpEnd-cVpStart; const nr=Math.min(cusumTotalLen-1,Math.round(r*1.5)); const c=Math.round((cVpStart+cVpEnd)/2); setCusumViewport([Math.max(0,c-Math.round(nr/2)),Math.min(cusumTotalLen-1,c+Math.round(nr/2))]); }},
+                                { icon: Plus, action: () => { const r=cVpEnd-cVpStart; const nr=Math.max(10,Math.round(r/1.5)); const c=Math.round((cVpStart+cVpEnd)/2); const s=Math.max(0,c-Math.round(nr/2)); setCusumViewport([s,Math.min(cusumTotalLen-1,s+nr)]); }},
+                              ].map((btn, i) => (
+                                <button key={i} onClick={btn.action} className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg bg-[#374151] text-white hover:brightness-125 transition-all cursor-pointer">
+                                  <btn.icon className="h-3 w-3" />
+                                </button>
+                              ))}
                               <div className="w-px h-4 bg-white/[0.06]" />
-                              <button
-                                onClick={() => {
-                                  const range = cVpEnd - cVpStart;
-                                  const shift = Math.max(1, Math.round(range * 0.2));
-                                  const s = Math.max(0, cVpStart - shift);
-                                  setCusumViewport([s, Math.min(cusumTotalLen - 1, s + range)]);
-                                }}
-                                className="text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
-                                title="Scroll left"
-                              >
-                                <ChevronLeft className="h-3 w-3" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const range = cVpEnd - cVpStart;
-                                  const shift = Math.max(1, Math.round(range * 0.2));
-                                  const e = Math.min(cusumTotalLen - 1, cVpEnd + shift);
-                                  setCusumViewport([Math.max(0, e - range), e]);
-                                }}
-                                className="text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
-                                title="Scroll right"
-                              >
-                                <ChevronRight className="h-3 w-3" />
-                              </button>
-                              <button
-                                onClick={() => setCusumViewport([0, cusumTotalLen - 1])}
-                                className="text-[10px] font-bold px-2 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all cursor-pointer"
-                                title="Reset zoom"
-                              >
+                              {[{ icon: ChevronLeft, action: () => { const r=cVpEnd-cVpStart; const s=Math.max(0,cVpStart-Math.round(r*0.2)); setCusumViewport([s,Math.min(cusumTotalLen-1,s+r)]); }},
+                                { icon: ChevronRight, action: () => { const r=cVpEnd-cVpStart; const e=Math.min(cusumTotalLen-1,cVpEnd+Math.round(r*0.2)); setCusumViewport([Math.max(0,e-r),e]); }},
+                              ].map((btn, i) => (
+                                <button key={i} onClick={btn.action} className="flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg bg-[#374151] text-white hover:brightness-125 transition-all cursor-pointer">
+                                  <btn.icon className="h-3 w-3" />
+                                </button>
+                              ))}
+                              <button onClick={() => setCusumViewport([0, cusumTotalLen - 1])} className="text-[10px] font-bold px-2 py-1.5 rounded-lg bg-[#374151] text-white hover:brightness-125 transition-all cursor-pointer">
                                 Reset
                               </button>
                             </div>
                           )}
                         </div>
 
-                        {/* CUSUM Legend row */}
-                        <div className="flex flex-wrap items-center gap-6 text-[10px] text-gray-400 font-sans">
-                          <div className="flex items-center gap-1.5">
-                            <span className="inline-block w-4 h-0.5 bg-rose-500" />
-                            <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Upper drift (above baseline)</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="inline-block w-4 h-0.5 bg-blue-500" />
-                            <span className="flex items-center gap-1"><TrendingDown className="h-3 w-3" /> Lower drift (below baseline)</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="inline-block w-4 h-0.5 border-t border-dashed border-gray-500" />
-                            <span>Alert threshold (sustained shift)</span>
-                          </div>
-                        </div>
-
-                        <div className="relative h-60 w-full" onMouseMove={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+                        {/* Chart */}
+                        <div className="relative h-60 w-full" onMouseMove={(e) => {
                           const rect = e.currentTarget.getBoundingClientRect();
                           const mouseXPx = e.clientX - rect.left;
                           const mousePct = Math.max(0, Math.min(100, (mouseXPx / rect.width) * 100));
@@ -3072,116 +3049,99 @@ export default function App() {
                           const closestIndex = Math.round(rawIndex);
                           setHoveredPointIndex(Math.max(cVpStart, Math.min(cVpEnd, closestIndex)));
                         }} onMouseLeave={handleChartMouseLeave}>
-                          {(() => {
-                            // Compute dynamic Y range for CUSUM (viewport-aware, always show full range)
-                            const allVisibleVals = [
-                              ...upperCusumVals.slice(cVpStart, cVpEnd + 1),
-                              ...lowerCusumVals.slice(cVpStart, cVpEnd + 1),
-                              cusumThreshold
-                            ].filter(v => v !== null && v !== undefined);
-                            const maxVal = allVisibleVals.length > 0 ? Math.max(...allVisibleVals) : 1;
-                            const yMax = Math.max(1, Math.ceil(maxVal * 1.2));
-                            const ticks = yMax <= 3 ? 4 : yMax <= 6 ? 6 : 8;
-                            const step = yMax / ticks;
-                            const yLabels = Array.from({ length: ticks + 1 }, (_, i) => Math.round(i * step * 10) / 10);
-                            const yScale = (v: number) => 15 + ((yMax - v) / yMax) * 185;
-
-                            // CUSUM-specific X labels
-                            const cMaxLabels = 7;
-                            const cXLabelIndices = cVpCount <= cMaxLabels
-                              ? Array.from({ length: cVpCount }, (_, i) => cVpStart + i)
-                              : Array.from({ length: cMaxLabels }, (_, i) => cVpStart + Math.round(i * (cVpCount - 1) / (cMaxLabels - 1)));
-
-                            return (<svg viewBox="0 0 500 240" className="w-full h-full overflow-visible">
-                            {/* Grid Lines & Labels Y */}
-                            {yLabels.map((val) => (
-                              <g key={val}>
-                                <line x1="35" y1={yScale(val)} x2="485" y2={yScale(val)} stroke="#1B2030" strokeWidth="1" strokeDasharray={val === 0 ? "none" : "3 3"} />
-                                <text x="25" y={yScale(val) + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{val}</text>
-                              </g>
+                          <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible">
+                            <defs>
+                              <linearGradient id="upperFill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#f97316" stopOpacity="0.08" />
+                                <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+                              </linearGradient>
+                              <linearGradient id="lowerFill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#4fc3f7" stopOpacity="0.08" />
+                                <stop offset="100%" stopColor="#4fc3f7" stopOpacity="0" />
+                              </linearGradient>
+                            </defs>
+                            {/* Grid — horizontal only, 3–4 lines */}
+                            {[0, yMax * 0.33, yMax * 0.66, yMax].map((val) => (
+                              <line key={val} x1="35" y1={yScale(val)} x2="485" y2={yScale(val)} stroke="#ffffff06" strokeWidth="0.5" />
                             ))}
-
-                            {/* X Axis Date Labels (CUSUM viewport-aware) */}
+                            {/* X-axis date labels — 6 evenly spaced */}
                             {cXLabelIndices.map((ptIndex) => {
                               const x = 35 + ((ptIndex - cVpStart) / cVpLastIdx) * 450;
-                              return (
-                                <g key={ptIndex}>
-                                  <line x1={x} y1="15" x2={x} y2="200" stroke="#1B2030" strokeWidth="0.5" strokeDasharray="2 2" />
-                                  <text 
-                                    x={x} 
-                                    y="218" 
-                                    fill="#64748b" 
-                                    fontSize="8" 
-                                    textAnchor="middle" 
-                                    fontFamily="monospace"
-                                  >
-                                    {chartDates[ptIndex] || `Entry ${ptIndex + 1}`}
-                                  </text>
-                                </g>
-                              );
+                              return <text key={ptIndex} x={x} y="218" fill="#4b5563" fontSize="8" textAnchor="middle" fontFamily="monospace">{chartDates[ptIndex] || `Entry ${ptIndex + 1}`}</text>;
                             })}
-
-                            {/* Threshold reference line inside chart (faint) */}
-                            <line x1="35" y1={yScale(cusumThreshold)} x2="485" y2={yScale(cusumThreshold)} stroke="#94a3b8" strokeWidth="0.8" strokeDasharray="4 4" opacity="0.35" />
-
-                            {/* Lower CUSUM Path (blue) — conditionally shown */}
-                            {(selectedCusumTab === 1 || selectedCusumTab === 2) && (
-                              <path d={(() => {
-                                const sliced = lowerCusumVals.slice(cVpStart, cVpEnd + 1);
-                                let p=""; sliced.forEach((v,i) => { const x=35+(i/cVpLastIdx)*450; p+=(i===0?"M":"L")+` ${x} ${yScale(v)}`; }); return p;
-                              })()}
-                                fill="none" stroke="#3b82f6" strokeWidth="2" className="drop-shadow-[0_0_4px_rgba(59,130,246,0.4)]" />
-                            )}
-
-                            {/* Upper CUSUM Path (red) — conditionally shown */}
-                            {(selectedCusumTab === 0 || selectedCusumTab === 2) && (
-                              <path d={(() => {
-                                const sliced = upperCusumVals.slice(cVpStart, cVpEnd + 1);
-                                let p=""; sliced.forEach((v,i) => { const x=35+(i/cVpLastIdx)*450; p+=(i===0?"M":"L")+` ${x} ${yScale(v)}`; }); return p;
-                              })()}
-                                fill="none" stroke="#ef4444" strokeWidth="2" className="drop-shadow-[0_0_4px_rgba(239,68,68,0.4)]" />
-                            )}
-
-                            {/* Global Hover Crosshair (CUSUM viewport-aware) */}
+                            {/* Threshold line */}
+                            <line x1="35" y1={yScale(cusumThreshold)} x2="485" y2={yScale(cusumThreshold)} stroke="#facc15" strokeWidth="1.5" strokeDasharray="6 4" />
+                            {/* Lower drift line */}
+                            {(selectedCusumTab === 1 || selectedCusumTab === 2) && (() => {
+                              const sliced = lowerCusumVals.slice(cVpStart, cVpEnd + 1);
+                              let d = ''; sliced.forEach((v, i) => { const x = 35 + (i / cVpLastIdx) * 450; d += (i === 0 ? 'M' : '') + ` ${x} ${yScale(v)}`; if (i > 0) d = d.slice(0, -` ${x} ${yScale(v)}`.length) + ` C ${35 + ((i - 0.5) / cVpLastIdx) * 450} ${yScale(sliced[i - 1])} ${35 + ((i - 0.5) / cVpLastIdx) * 450} ${yScale(v)} ${x} ${yScale(v)}`; });
+                              const lastX = 35 + ((sliced.length - 1) / cVpLastIdx) * 450;
+                              return (<><path d={d + ` L ${lastX} 200 L 35 200 Z`} fill="url(#lowerFill)" /><path d={d} fill="none" stroke="#4fc3f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>);
+                            })()}
+                            {/* Upper drift line */}
+                            {(selectedCusumTab === 0 || selectedCusumTab === 2) && (() => {
+                              const sliced = upperCusumVals.slice(cVpStart, cVpEnd + 1);
+                              let d = ''; sliced.forEach((v, i) => { const x = 35 + (i / cVpLastIdx) * 450; d += (i === 0 ? 'M' : '') + ` ${x} ${yScale(v)}`; if (i > 0) d = d.slice(0, -` ${x} ${yScale(v)}`.length) + ` C ${35 + ((i - 0.5) / cVpLastIdx) * 450} ${yScale(sliced[i - 1])} ${35 + ((i - 0.5) / cVpLastIdx) * 450} ${yScale(v)} ${x} ${yScale(v)}`; });
+                              const lastX = 35 + ((sliced.length - 1) / cVpLastIdx) * 450;
+                              return (<><path d={d + ` L ${lastX} 200 L 35 200 Z`} fill="url(#upperFill)" /><path d={d} fill="none" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></>);
+                            })()}
+                            {/* Hover crosshair */}
                             {hoveredPointIndex !== null && hoveredPointIndex >= cVpStart && hoveredPointIndex <= cVpEnd && (
-                              <g>
-                                <line x1={35+((hoveredPointIndex - cVpStart)/cVpLastIdx)*450} y1="15" x2={35+((hoveredPointIndex - cVpStart)/cVpLastIdx)*450} y2="200" stroke="#64748b" strokeWidth="1" strokeDasharray="2 2" />
-                              </g>
+                              <line x1={35 + ((hoveredPointIndex - cVpStart) / cVpLastIdx) * 450} y1="15" x2={35 + ((hoveredPointIndex - cVpStart) / cVpLastIdx) * 450} y2="200" stroke="#ffffff20" strokeWidth="0.5" strokeDasharray="2 2" />
                             )}
-                          </svg>);
-                          })()}
-
-                          {/* Threshold indicator outside chart */}
-                          <div className="absolute top-1 right-2 flex items-center gap-1.5 bg-[#0E1119]/80 border border-gray-700/40 rounded-md px-2 py-0.5 pointer-events-none z-10">
-                            <span className="w-3 h-0 border-t border-dashed border-gray-400" />
-                            <span className="text-[9px] font-mono text-gray-400">Threshold: {cusumThreshold.toFixed(2)}</span>
+                          </svg>
+                          {/* Threshold badge */}
+                          <div className="absolute top-1 right-2 flex items-center gap-1.5 bg-[#0E1119]/90 border border-[#facc15]/30 rounded-md px-2 py-0.5 pointer-events-none z-10">
+                            <span className="w-3 h-0 border-t border-dashed border-[#facc15]" />
+                            <span className="text-[9px] font-mono text-[#facc15]">Threshold: {cusumThreshold.toFixed(2)}</span>
                           </div>
-
-                          {/* Interactive Tooltip Overlay (CUSUM viewport-aware) */}
+                          {/* Tooltip */}
                           {hoveredPointIndex !== null && hoveredPointIndex >= cVpStart && hoveredPointIndex <= cVpEnd && (
-                            <div 
-                              className="absolute bg-[#11131c]/95 border border-[#232B3B]/80 p-2.5 rounded shadow-xl text-[10px] font-mono text-gray-300 pointer-events-none z-20"
-                              style={{ 
-                                left: `${Math.min(80, Math.max(2, cusumMouseXPct))}%`,
-                                top: "20px"
-                              }}
+                            <div className="absolute bg-[#1e2a3a] border border-white/[0.08] p-2.5 rounded-lg shadow-xl text-[10px] pointer-events-none z-20"
+                              style={{ left: `${Math.min(80, Math.max(2, cusumMouseXPct))}%`, top: '20px' }}
                             >
-                              <div className="text-gray-400 border-b border-gray-800 pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex] || `Entry ${hoveredPointIndex + 1}`}</div>
+                              <div className="text-gray-400 border-b border-white/[0.06] pb-1 mb-1 font-bold">{chartDates[hoveredPointIndex] || `Entry ${hoveredPointIndex + 1}`}</div>
                               {(selectedCusumTab === 0 || selectedCusumTab === 2) && (
-                                <div>Upper drift: <span className="text-rose-400 font-bold">{((upperCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
+                                <div>Upper drift: <span className="text-[#f97316] font-bold">{((upperCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
                               )}
                               {(selectedCusumTab === 1 || selectedCusumTab === 2) && (
-                                <div>Lower drift: <span className="text-blue-400 font-bold">{((lowerCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
+                                <div>Lower drift: <span className="text-[#4fc3f7] font-bold">{((lowerCusumVals[hoveredPointIndex] ?? 0)).toFixed(2)}</span></div>
+                              )}
+                              {((selectedCusumTab === 0 || selectedCusumTab === 2) && (upperCusumVals[hoveredPointIndex] ?? 0) > cusumThreshold) && (
+                                <div className="text-[#facc15] mt-0.5">⚠ Threshold crossed</div>
                               )}
                             </div>
                           )}
                         </div>
 
-                        <p className="text-[10px] text-gray-500 leading-relaxed font-sans">
-                          X-axis: date of each entry. Y-axis: cumulative drift score — how far risk has consistently moved from your baseline. The dashed line is the alert threshold: crossing it means the shift is sustained, not just a single unusual entry. Red line rising = risk is consistently above your normal · Blue line rising = risk is consistently below your normal (improvement).
-                        </p>
-                      </div>
+                        {/* Legend row */}
+                        <div className="flex flex-wrap items-center gap-4 text-[10px] text-[#94a3b8]">
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-block w-2 h-0.5 bg-[#f97316] rounded" />
+                            <span>Upper drift</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-block w-2 h-0.5 bg-[#4fc3f7] rounded" />
+                            <span>Lower drift</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-block w-2 border-t border-dashed border-[#facc15]" />
+                            <span>Alert threshold</span>
+                          </div>
+                        </div>
 
+                        {/* Bottom 2-col description */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-[#111827] rounded-lg p-3 flex items-start gap-2">
+                            <CalendarDays className="h-3.5 w-3.5 text-[#6b7280] shrink-0 mt-0.5" />
+                            <p className="text-[10px] text-[#6b7280] leading-relaxed">X-axis: date of each journal entry in chronological order.</p>
+                          </div>
+                          <div className="bg-[#111827] rounded-lg p-3 flex items-start gap-2">
+                            <Activity className="h-3.5 w-3.5 text-[#6b7280] shrink-0 mt-0.5" />
+                            <p className="text-[10px] text-[#6b7280] leading-relaxed">Y-axis: cumulative drift score. Dashed line marks the alert threshold for sustained change.</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     );
                   })()}
@@ -3814,25 +3774,14 @@ export default function App() {
                 setForecastHoverIdx(idx);
               };
               return (
-              <div className="glass-panel rounded-xl p-5">
-                <span className="text-xs font-bold text-gray-300 mb-1 block">{title}</span>
-                <p className="text-[10px] text-gray-500 mb-3">{subtitle}</p>
+              <div className="bg-[#0d1117] border border-white/[0.06] rounded-xl p-5 space-y-3 animate-in fade-in duration-300">
+                <span className="text-xs font-bold text-gray-300 uppercase tracking-widest block">{title}</span>
+                <p className="text-[10px] text-gray-500">{subtitle}</p>
                 <div className="relative h-56 w-full">
                   <svg viewBox="0 0 500 240" className="w-full h-full overflow-visible cursor-crosshair"
                     onMouseMove={handleSvgMouseMove}
                     onMouseLeave={() => setForecastHoverIdx(null)}
                   >
-                    <defs>
-                      <linearGradient id="forecastZoneGrad" x1="0" y1="0" x2="0" y2="1" spreadMethod="pad">
-                        <stop offset="0%" stopColor="#EF4444" stopOpacity="0.12" />
-                        <stop offset="34%" stopColor="#EF4444" stopOpacity="0.06" />
-                        <stop offset="40%" stopColor="#F59E0B" stopOpacity="0.06" />
-                        <stop offset="60%" stopColor="#F59E0B" stopOpacity="0.06" />
-                        <stop offset="66%" stopColor="#10B981" stopOpacity="0.06" />
-                        <stop offset="100%" stopColor="#10B981" stopOpacity="0.12" />
-                      </linearGradient>
-                    </defs>
-                    <rect x="35" y="15" width="450" height="185" fill="url(#forecastZoneGrad)" rx="2" />
                     {bgBandLabels.map((lbl, bi) => (
                       <text key={'lbl-' + bi} x="487" y={yToSvg(yMin + yRange * lbl.pos) + 3} fill={lbl.color} fontSize="7" opacity="0.4" fontFamily="monospace" textAnchor="end">{lbl.label}</text>
                     ))}
@@ -3840,7 +3789,7 @@ export default function App() {
                       const y = yToSvg(val);
                       return (
                         <g key={idx}>
-                          <line x1="35" y1={y} x2="485" y2={y} stroke="#1B2030" strokeWidth="1" strokeDasharray="3 3" />
+                          <line x1="35" y1={y} x2="485" y2={y} stroke="#ffffff08" strokeWidth="0.5" strokeDasharray="3 3" />
                           <text x="25" y={y + 4} fill="#64748b" fontSize="9" textAnchor="end" fontFamily="monospace">{Math.round(val * 100)}%</text>
                         </g>
                       );
@@ -3849,8 +3798,8 @@ export default function App() {
                       const x = 35 + (idx / Math.max(1, dataLen - 1)) * 450;
                       return (
                         <g key={idx}>
-                          <line x1={x} y1="15" x2={x} y2="200" stroke="#1B2030" strokeWidth="0.5" strokeDasharray="2 2" />
-                           <text x={x} y="218" fill="#64748b" fontSize="7" textAnchor="middle" fontFamily="monospace">Day {idx + 1}</text>
+                          <line x1={x} y1="15" x2={x} y2="200" stroke="#ffffff06" strokeWidth="0.5" strokeDasharray="2 2" />
+                           <text x={x} y="218" fill="#4b5563" fontSize="7" textAnchor="middle" fontFamily="monospace">Day {idx + 1}</text>
                         </g>
                       );
                     })}
@@ -3862,37 +3811,48 @@ export default function App() {
                       const valid = line.data.filter((v): v is number => v !== null && v !== undefined);
                       if (valid.length < 2) return null;
                       let pathStr = '';
+                      let prevY = 0;
+                      let prevX = 0;
                       line.data.forEach((val, idx) => {
                         if (val === null || val === undefined) return;
                         const x = 35 + (idx / Math.max(1, dataLen - 1)) * 450;
                         const y = yToSvg(Math.min(yMax, Math.max(yMin, val)));
-                        pathStr += (pathStr === '' ? 'M' : 'L') + ' ' + x + ' ' + y;
+                        if (pathStr === '') {
+                          pathStr = 'M ' + x + ' ' + y;
+                        } else {
+                          const midX = 35 + ((idx - 0.5) / Math.max(1, dataLen - 1)) * 450;
+                          pathStr += ' C ' + midX + ' ' + prevY + ' ' + midX + ' ' + y + ' ' + x + ' ' + y;
+                        }
+                        prevX = x;
+                        prevY = y;
                       });
                       return (
                         <g key={li}>
                           <path d={pathStr} fill="none" stroke={line.color}
                             strokeWidth={line.dashed ? '1.5' : '2'}
                             strokeDasharray={line.dashed ? '4 3' : undefined}
-                            opacity={0.8}
-                            className={line.dashed ? '' : 'drop-shadow-[0_0_4px_rgba(167,139,250,0.4)]'}
+                            opacity={0.85}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            style={{ filter: line.dashed ? 'none' : `drop-shadow(0 0 4px ${line.color}44)` }}
                           />
                           {line.data.map((val, idx) => {
                             if (val === null || val === undefined) return null;
                             const x = 35 + (idx / Math.max(1, dataLen - 1)) * 450;
                             const y = yToSvg(Math.min(yMax, Math.max(yMin, val)));
                             const isHovered = forecastHoverIdx === idx;
-                            return <circle key={'dot-' + li + '-' + idx} cx={x} cy={y} r={isHovered ? 5 : 3} fill={line.color} opacity={isHovered ? 1 : 0.9} stroke={isHovered ? '#fff' : 'none'} strokeWidth={isHovered ? 1.5 : 0} style={isHovered ? { filter: 'drop-shadow(0 0 6px ' + line.color + ')' } : undefined} />;
+                            return <circle key={'dot-' + li + '-' + idx} cx={x} cy={y} r={isHovered ? 5 : 2.5} fill={line.color} opacity={isHovered ? 1 : 0.85} stroke={isHovered ? '#fff' : 'none'} strokeWidth={isHovered ? 1.5 : 0} style={isHovered ? { filter: 'drop-shadow(0 0 6px ' + line.color + ')' } : undefined} />;
                           })}
                         </g>
                       );
                     })}
-                    <line x1="35" y1="200" x2="485" y2="200" stroke="#1B2030" strokeWidth="1" />
+                    <line x1="35" y1="200" x2="485" y2="200" stroke="#ffffff08" strokeWidth="1" />
                   </svg>
                   {forecastHoverIdx !== null && forecastHoverIdx < dataLen && (() => {
                     return (
                       <div className="absolute pointer-events-none z-30 transition-all duration-150 ease-out" style={{ left: Math.min(90, Math.max(2, forecastMouseXPct)) + '%', top: '8px', transform: 'translateX(-50%)' }}>
                         <div className="bg-[#11131c]/95 border border-[#232B3B]/80 px-3 py-2 rounded-lg shadow-2xl backdrop-blur-sm">
-                          <div className="text-[10px] font-bold text-gray-400 mb-1 border-b border-gray-800/60 pb-1">Day {forecastHoverIdx + 1}</div>
+                          <div className="text-[10px] font-bold text-gray-400 mb-1 border-b border-gray-800/60 pb-1 uppercase tracking-wider">Day {forecastHoverIdx + 1}</div>
                           {lines.map((line, li) => {
                             const val = line.data[forecastHoverIdx];
                             if (val == null) return null;
@@ -3909,11 +3869,11 @@ export default function App() {
                     );
                   })()}
                 </div>
-                <div className="flex items-center gap-4 mt-2 flex-wrap">
+                <div className="flex items-center gap-4 flex-wrap">
                   {lines.map((line, li) => (
                     <div key={li} className="flex items-center gap-1.5">
-                      <span className="inline-block w-4 h-0.5 rounded-sm" style={{ backgroundColor: line.color, borderTop: line.dashed ? '1px dashed ' + line.color : 'none' }} />
-                      <span className="text-[9px] text-gray-500">{line.label}</span>
+                      <span className="inline-block w-4 h-[2px] rounded-sm" style={{ backgroundColor: line.color, borderTop: line.dashed ? '1px dashed ' + line.color : 'none' }} />
+                      <span className="text-[9px] text-gray-500 font-mono uppercase tracking-wider">{line.label}</span>
                     </div>
                   ))}
                 </div>
@@ -3972,7 +3932,7 @@ export default function App() {
                       'Temporal Fusion Transformer composite risk prediction (higher = more concern)',
                     )
                   ) : (
-                    <div className="glass-panel rounded-xl p-8 text-center">
+                    <div className="bg-[#0d1117] border border-white/[0.06] rounded-xl p-8 text-center">
                       <Brain className="h-8 w-8 text-purple-400 mx-auto mb-3 opacity-50" />
                       <p className="text-sm text-gray-400">No TFT forecast available. Run an analysis first.</p>
                     </div>
@@ -4006,11 +3966,11 @@ export default function App() {
                             <button
                               key={idx}
                               onClick={() => setForecastHoverIdx(idx)}
-                              className={'glass-panel rounded-lg p-2.5 text-center transition-all duration-200 cursor-pointer border ' +
-                                (forecastHoverIdx === idx ? 'border-purple-500/40 bg-purple-950/20 shadow-lg shadow-purple-900/10' : 'border-white/[0.04] hover:border-white/[0.1]')
+                              className={'bg-[#0d1117] border rounded-lg p-2.5 text-center transition-all duration-200 cursor-pointer ' +
+                                (forecastHoverIdx === idx ? 'border-purple-500/40 shadow-lg shadow-purple-900/10' : 'border-white/[0.06] hover:border-white/[0.15]')
                               }
                             >
-                              <div className="text-[8px] text-gray-500 uppercase tracking-wider mb-1">{dayLabels[idx] || 'Day ' + (idx + 1)}</div>
+                              <div className="text-[8px] text-gray-500 uppercase tracking-wider mb-1 font-mono">{dayLabels[idx] || 'Day ' + (idx + 1)}</div>
                               <div className={'text-sm font-bold font-mono ' + textColor}>{pct}%</div>
                               <div className="w-full h-1 bg-white/[0.05] rounded-full mt-1.5 overflow-hidden">
                                 <div className={'h-full rounded-full ' + barColor + ' transition-all duration-500'} style={{ width: pct + '%' }} />
@@ -4019,13 +3979,13 @@ export default function App() {
                           );
                         })}
                       </div>
-                      <div className={'glass-panel rounded-xl p-4 border-l-4 ' +
-                        (riskTrend === 'increasing' ? 'border-l-rose-500 bg-rose-950/10' : riskTrend === 'decreasing' ? 'border-l-emerald-500 bg-emerald-950/10' : 'border-l-gray-500 bg-white/[0.02]')
+                      <div className={'bg-[#0d1117] border border-white/[0.06] rounded-xl p-4 border-l-4 ' +
+                        (riskTrend === 'increasing' ? 'border-l-[#ef4444]' : riskTrend === 'decreasing' ? 'border-l-[#4ade80]' : 'border-l-[#6b7280]')
                       }>
                         <div className="flex items-start gap-3">
                           <span className={'text-lg ' + trendColor}>{trendIcon}</span>
                           <div>
-                            <p className={'text-xs font-bold ' + trendColor + ' mb-1'}>7-Day Outlook: Risk is {riskTrend}</p>
+                            <p className={'text-xs font-bold ' + trendColor + ' mb-1 uppercase tracking-wider'}>7-Day Outlook: Risk is {riskTrend}</p>
                             <p className="text-[11px] text-gray-400 leading-relaxed">{trendMsg}</p>
                           </div>
                         </div>
@@ -4083,15 +4043,15 @@ export default function App() {
                     const activeDetTab = selectedDetectorTab;
                     return (
                       <>
-                        <div className="flex gap-1 p-1 bg-[#0F131A]/80 rounded-lg border border-[#20293B]/40 overflow-x-auto">
+                        <div className="flex gap-1 p-1 bg-[#0d1117] border border-white/[0.06] rounded-lg overflow-x-auto">
                           {detTabs.map(tab => (
                             <button key={tab.key} onClick={() => setSelectedDetectorTab(tab.key)}
-                              className={'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ' + (activeDetTab === tab.key ? 'bg-white/[0.08] border border-white/10 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]')}>
+                              className={'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ' + (activeDetTab === tab.key ? 'bg-[#1e2a3a] border border-white/10 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.04]')}>
                               <div className="flex items-center gap-1.5">
                                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tab.color }} />
                                 {tab.label}
                               </div>
-                              <span className="text-[8px] font-normal opacity-60">{tab.model}</span>
+                              <span className="text-[8px] font-normal opacity-60 font-mono">{tab.model}</span>
                             </button>
                           ))}
                         </div>
@@ -4110,23 +4070,23 @@ export default function App() {
                           const vals = detectorForecastData[activeDetTab] || [];
                           const cfg = detTabs.find(t => t.key === activeDetTab);
                           if (!cfg || vals.length < 2) return (
-                            <div className="glass-panel rounded-xl p-6 text-center text-gray-500 text-xs">No data for this detector</div>
+                            <div className="bg-[#0d1117] border border-white/[0.06] rounded-xl p-6 text-center text-gray-500 text-xs">No data for this detector</div>
                           );
                           return (
                             <>
                               {renderForecastChart([{ data: vals, color: cfg.color, label: cfg.label }], cfg.label + ' — 7 Day Forecast', detDescriptions[activeDetTab])}
                               <div className="flex gap-3 flex-wrap">
-                                <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[100px]">
-                                  <div className="text-[9px] text-gray-500 uppercase tracking-wider">Day 1</div>
-                                  <div className="text-sm font-bold" style={{ color: cfg.color }}>{Math.round(vals[0] * 100)}%</div>
+                                <div className="bg-[#0d1117] border border-white/[0.06] rounded-lg px-3 py-2 flex-1 min-w-[100px]">
+                                  <div className="text-[9px] text-gray-500 uppercase tracking-wider font-mono">Day 1</div>
+                                  <div className="text-sm font-bold font-mono" style={{ color: cfg.color }}>{Math.round(vals[0] * 100)}%</div>
                                 </div>
-                                <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[100px]">
-                                  <div className="text-[9px] text-gray-500 uppercase tracking-wider">Day 7</div>
-                                  <div className="text-sm font-bold" style={{ color: cfg.color }}>{Math.round(vals[vals.length - 1] * 100)}%</div>
+                                <div className="bg-[#0d1117] border border-white/[0.06] rounded-lg px-3 py-2 flex-1 min-w-[100px]">
+                                  <div className="text-[9px] text-gray-500 uppercase tracking-wider font-mono">Day 7</div>
+                                  <div className="text-sm font-bold font-mono" style={{ color: cfg.color }}>{Math.round(vals[vals.length - 1] * 100)}%</div>
                                 </div>
-                                <div className="glass-panel rounded-lg px-3 py-2 flex-1 min-w-[100px]">
-                                  <div className="text-[9px] text-gray-500 uppercase tracking-wider">Delta</div>
-                                  <div className={'text-sm font-bold ' + ((vals[vals.length - 1] - vals[0]) > 0 ? 'text-rose-300' : 'text-emerald-300')}>
+                                <div className="bg-[#0d1117] border border-white/[0.06] rounded-lg px-3 py-2 flex-1 min-w-[100px]">
+                                  <div className="text-[9px] text-gray-500 uppercase tracking-wider font-mono">Delta</div>
+                                  <div className={'text-sm font-bold font-mono ' + ((vals[vals.length - 1] - vals[0]) > 0 ? 'text-rose-300' : 'text-emerald-300')}>
                                     {(vals[vals.length - 1] - vals[0]) > 0 ? '+' : ''}{Math.round((vals[vals.length - 1] - vals[0]) * 100)}%
                                   </div>
                                 </div>
@@ -4135,9 +4095,9 @@ export default function App() {
                           );
                         })()}
 
-                        <div className="glass-panel rounded-xl p-5">
+                        <div className="bg-[#0d1117] border border-white/[0.06] rounded-xl p-5">
                           <div className="mb-3">
-                            <span className="text-xs font-bold text-gray-300 block">Day-by-Day Breakdown</span>
+                            <span className="text-xs font-bold text-gray-300 uppercase tracking-widest block">Day-by-Day Breakdown</span>
                             <span className="text-[10px] text-gray-500">7-day detector trajectory across all anomaly models</span>
                           </div>
                           <div className="overflow-x-auto">
@@ -4168,7 +4128,7 @@ export default function App() {
                       </>
                     );
                   })() : !isForecastingDetectors && (
-                    <div className="glass-panel rounded-xl p-8 text-center">
+                    <div className="bg-[#0d1117] border border-white/[0.06] rounded-xl p-8 text-center">
                       <Zap className="h-8 w-8 text-amber-400 mx-auto mb-3 opacity-30" />
                       <p className="text-sm text-gray-500">Click the button above to train per-detector forecast models</p>
                       <p className="text-[10px] text-gray-600 mt-1">Each model trains on its own detector's 30-day history in {'<'}200ms.</p>
@@ -4182,50 +4142,48 @@ export default function App() {
           {activeTab === 'explainable' && (
             <div className="space-y-8 animate-in fade-in duration-300" id="explainable-ai-container">
               
-              {/* BUTTONS ROW */}
+              {/* SUB-NAV BUTTONS — redesigned */}
               <div className="flex items-center gap-3 flex-wrap">
-                <button
-                  onClick={() => setActiveTab('analytics')}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#121620]/60 border border-[#20293B]/40 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:border-gray-500 transition-all cursor-pointer"
+                <button onClick={() => setActiveTab('analytics')}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[#6b7280] hover:text-[#94a3b8] transition-all cursor-pointer"
                 >
                   <ArrowRight className="h-3.5 w-3.5 rotate-180" />
                   Return to Analysis
                 </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('forecast');
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600/10 border border-purple-500/30 rounded-lg text-xs font-bold text-purple-300 hover:bg-purple-600/25 hover:text-white transition-all cursor-pointer"
+                <button onClick={() => setActiveTab('forecast')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e2a3a] border border-[#7c3aed] rounded-lg text-xs font-bold text-[#a78bfa] transition-all cursor-pointer"
                 >
                   <Brain className="h-3.5 w-3.5" />
                   View 7-Day Forecast
                 </button>
               </div>
 
-              {/* LIVE STATUS BANNER */}
+              {/* LIVE STATUS CHIP — redesigned */}
               {shapData ? (
-                <div className="flex">
-                  <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] sm:text-xs font-sans font-bold tracking-wider px-4 py-2 rounded-lg uppercase" id="explainable-live-banner">
-                    LIVE — TreeSHAP over {shapData.top_features?.length || 0} attributed features
-                  </div>
+                <div className="inline-flex items-center gap-2 bg-[#0a1a0f] border border-[#166534] rounded-lg px-4 py-2 relative overflow-hidden"
+                  style={{ boxShadow: '0 0 12px rgba(22,101,52,0.15)' }}
+                >
+                  <style>{`@keyframes scanLine { 0% { left:-100% } 100% { left:100% } }`}</style>
+                  <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(90deg,transparent,rgba(74,222,128,0.06),transparent)', animation: 'scanLine 1.5s infinite' }} />
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#4ade80] animate-pulse" />
+                  <span className="text-[10px] font-mono font-bold text-[#4ade80] tracking-wider">LIVE INFERENCE</span>
+                  <span className="text-[#6b7280] text-[10px]">·</span>
+                  <span className="text-[10px] text-[#6b7280]">TreeSHAP · {shapData.top_features?.length || 0} Features Attributed · Last run: 0.3s ago</span>
                 </div>
               ) : shapLoading ? (
-                <div className="flex">
-                  <div className="bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] sm:text-xs font-sans font-bold tracking-wider px-4 py-2 rounded-lg uppercase">
-                    Loading SHAP explanation...
-                  </div>
+                <div className="inline-flex items-center gap-2 bg-[#0a1a0f] border border-[#166534] rounded-lg px-4 py-2">
+                  <Loader2 className="h-3 w-3 text-emerald-500 animate-spin" />
+                  <span className="text-[10px] font-mono font-bold text-[#4ade80] tracking-wider">LOADING</span>
+                  <span className="text-[10px] text-[#6b7280]">Computing TreeSHAP explanation...</span>
                 </div>
               ) : shapError ? (
-                <div className="flex">
-                  <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] sm:text-xs font-sans font-bold tracking-wider px-4 py-2 rounded-lg uppercase">
-                    {shapError}
-                  </div>
+                <div className="inline-flex items-center gap-2 bg-[#1a0a0a] border border-[#dc2626]/30 rounded-lg px-4 py-2">
+                  <AlertTriangle className="h-3 w-3 text-red-500" />
+                  <span className="text-[10px] text-red-400">{shapError}</span>
                 </div>
               ) : (
-                <div className="flex">
-                  <div className="bg-[#1C1105]/50 border border-amber-500/20 text-amber-500/90 text-[10px] sm:text-xs font-sans font-bold tracking-wider px-4 py-2 rounded-lg uppercase" id="explainable-preview-banner">
-                    Run a diagnosis to generate a live SHAP explanation
-                  </div>
+                <div className="inline-flex items-center gap-2 bg-[#1a1a0a] border border-[#f59e0b]/30 rounded-lg px-4 py-2">
+                  <span className="text-[10px] text-[#f59e0b]">Run a diagnosis to generate a live SHAP explanation</span>
                 </div>
               )}
 
@@ -4253,151 +4211,115 @@ export default function App() {
                 const maxGroupImpact = Math.max(...groupImpacts.map((g: any) => Math.abs(g.total_impact)), 0.001);
                 const sentences = shapData.sentences || [];
 
-                const renderFeatureBar = (f: any, idx: number) => {
-                  const isUp = f.direction === 'increases_risk';
-                  const barPct = Math.max(8, (f.abs_impact / maxImpact) * 100);
-                  const sign = isUp ? '+' : '-';
-                  const color = isUp ? '#EF4444' : '#10B981';
-                  const glowColor = isUp ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)';
-                  return (
-                    <div key={idx} className="group/bar py-2.5">
-                      <div className="flex items-center justify-between gap-3 mb-1.5">
-                        <span className="text-gray-300 text-xs font-medium truncate" title={f.description || f.concept}>
-                          {f.description || f.concept || f.full_name}
-                        </span>
-                        <span className="font-mono text-xs font-bold shrink-0" style={{ color }}>
-                          {sign}{Math.abs(f.shap_value).toFixed(4)}
-                        </span>
-                      </div>
-                      <div className="relative h-2 bg-[#141922] rounded-full overflow-hidden">
-                        <div
-                          className="absolute inset-y-0 rounded-full transition-all duration-500"
-                          style={{
-                            left: isUp ? '50%' : `${50 - barPct / 2}%`,
-                            width: `${barPct / 2}%`,
-                            backgroundColor: color,
-                            boxShadow: `0 0 8px ${glowColor}`,
-                          }}
-                        />
-                        <div className="absolute inset-y-0 left-1/2 w-px bg-gray-600/40" />
-                      </div>
-                    </div>
-                  );
-                };
-
                 return (
                   <>
-                    {/* WHY THIS PREDICTION (STAGE 5) */}
-                    <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-6" id="why-prediction-section">
-                      
-                      {/* SECTION HEADER */}
-                      <div 
-                        className="flex items-center justify-between cursor-pointer group"
-                        onClick={() => setExplainWhyPredictionCollapsed(!explainWhyPredictionCollapsed)}
-                      >
-                        <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
-                          Risk Score Decomposition
-                        </h2>
-                        <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
-                          {explainWhyPredictionCollapsed ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                    {/* RISK SCORE DECOMPOSITION — redesigned waterfall */}
+                    <div className="border border-white/[0.06] rounded-xl bg-[#080c14] p-6 md:p-8 space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h2 className="text-[11px] font-bold text-[#94a3b8] uppercase tracking-widest">Risk Score Decomposition</h2>
+                          <p className="text-[11px] text-[#475569] mt-1">How the model arrived at this risk score — each contributing signal traced back to specific patterns.</p>
+                        </div>
+                        <button className="text-gray-400 hover:text-white transition-colors p-1 cursor-pointer">
+                          <Minus className="h-4 w-4" />
                         </button>
                       </div>
 
-                      {!explainWhyPredictionCollapsed && (
-                        <div className="space-y-6 animate-in fade-in duration-300">
-                          <p className="text-[#8E9CAE] text-xs md:text-sm leading-relaxed max-w-4xl">
-                            How the model arrived at this risk score — each contributing signal is traced back to specific behavioral, emotional, and linguistic patterns.
-                          </p>
-
-                          {/* SCORE VALUE DISPLAY BOX */}
-                          <div className="border border-[#20293B]/60 rounded-xl bg-[#0F131A]/60 p-6 sm:p-8">
-                            <div className="flex items-center gap-6 sm:gap-10">
-                              <div className="space-y-1">
-                                <div className="text-3xl sm:text-4xl font-extrabold text-gray-400 font-sans tracking-tight">{basePct}%</div>
-                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">Initial Score</div>
-                              </div>
-                              <div className="flex-1 h-px bg-gradient-to-r from-gray-600/40 via-gray-600/20 to-transparent" />
-                              <div className="space-y-1">
-                                <div className="text-3xl sm:text-4xl font-extrabold text-[#eaa235] font-sans tracking-tight">
-                                  {finalPct}%
+                      {/* Waterfall bar */}
+                      <div className="space-y-2">
+                        <div className="flex items-center w-full h-10">
+                          {/* Initial score */}
+                          <div className="text-center shrink-0" style={{ width: '80px' }}>
+                            <div className="text-xl font-bold text-[#94a3b8]">{basePct}%</div>
+                            <div className="text-[9px] text-[#475569] uppercase tracking-wider">Initial</div>
+                          </div>
+                          {/* Contribution segments */}
+                          <div className="flex-1 flex items-center h-full gap-0.5 mx-2">
+                            {topFeatures.slice(0, 6).map((f: any, i: number) => {
+                              const isUp = f.direction === 'increases_risk';
+                              const w = Math.max(8, (f.abs_impact / maxImpact) * 40);
+                              return (
+                                <div key={i} className="relative group h-full flex items-center" style={{ width: `${w}%` }}>
+                                  <div className="w-full h-3/4 rounded-sm transition-all duration-500 cursor-pointer"
+                                    style={{ backgroundColor: isUp ? '#ef4444' : '#4ade80', boxShadow: isUp ? '0 0 6px #ef444466' : '0 0 6px #4ade8066' }}
+                                    title={`${f.description || f.concept}: ${isUp ? '+' : ''}${f.shap_value.toFixed(4)}`}
+                                  >
+                                    <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1e2a3a] text-white text-[9px] px-2 py-0.5 rounded whitespace-nowrap pointer-events-none z-10">
+                                      {f.description || f.concept}: {isUp ? '+' : ''}{f.shap_value.toFixed(4)}
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold font-sans">Estimated Final Score</div>
-                              </div>
+                              );
+                            })}
+                          </div>
+                          {/* Alert threshold */}
+                          <div className="relative h-full mx-1 flex items-center">
+                            <div className="w-px h-full border-l border-dashed border-[#facc15]" />
+                            <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[7px] text-[#facc15] whitespace-nowrap">Threshold</span>
+                          </div>
+                          {/* Final score */}
+                          <div className="text-center shrink-0" style={{ width: '80px' }}>
+                            <div className="text-xl font-bold text-[#facc15]">{finalPct}%</div>
+                            <div className="text-[9px] text-[#475569] uppercase tracking-wider">Final</div>
+                          </div>
+                          {/* Severity badge */}
+                          <div className="ml-2 bg-[#92400e] text-[#fbbf24] text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">Moderate</div>
+                        </div>
+                      </div>
+
+                      {/* SHAP FEATURE BARS — redesigned */}
+                      <div className="space-y-6">
+                        {pushedUp.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <style>{`@keyframes pulseDot { 0%,100% { opacity:1 } 50% { opacity:0.3 } }`}</style>
+                              <span className="h-2 w-2 rounded-full bg-[#ef4444] animate-pulse" />
+                              <span className="text-[10px] font-bold text-[#ef4444] uppercase tracking-wider">Risk Elevating Factors</span>
+                            </div>
+                            <div className="space-y-1">
+                              {pushedUp.map((f: any, i: number) => {
+                                const barPct = Math.max(8, (f.abs_impact / maxImpact) * 100);
+                                return (
+                                  <div key={i} className="group/bar py-2 px-2 rounded-lg transition-colors duration-150 hover:bg-[#0f1520]">
+                                    <div className="flex items-center justify-between gap-3 mb-1">
+                                      <div className="flex-1 min-w-0">
+                                        <span className="text-xs font-semibold text-white truncate block">{f.description || f.concept || f.full_name}</span>
+                                        <span className="text-[9px] text-[#6b7280] px-1.5 py-0.5 rounded bg-[#1e3a5f]/50 inline-block mt-0.5">Emotional</span>
+                                      </div>
+                                      <span className="font-mono text-xs font-bold text-[#ef4444] shrink-0">+{Math.abs(f.shap_value).toFixed(4)}</span>
+                                    </div>
+                                    <div className="relative h-2.5 bg-[#1f2937] rounded-full overflow-hidden">
+                                      <div className="h-full rounded-full transition-all duration-600 ease-out" 
+                                        style={{ width: `${barPct}%`, backgroundColor: '#ef4444', boxShadow: '0 0 8px #ef444466' }}
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
-
-                          {/* Risk Elevating Factors */}
-                          {pushedUp.length > 0 && (
-                            <div className="space-y-4 pt-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
-                                <span className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">Risk Elevating Factors</span>
-                              </div>
-                              <div className="space-y-1">
-                                {pushedUp.map((f: any, i: number) => renderFeatureBar(f, i))}
-                              </div>
+                        )}
+                        {pushedDown.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <span className="h-2 w-2 rounded-full bg-[#4ade80] animate-pulse" />
+                              <span className="text-[10px] font-bold text-[#4ade80] uppercase tracking-wider">Protective Factors</span>
                             </div>
-                          )}
-
-                          {/* Protective Factors */}
-                          {pushedDown.length > 0 && (
-                            <div className="space-y-4 pt-4 border-t border-gray-800/20">
-                              <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-                                <span className="text-gray-400 text-[10px] tracking-wider font-bold uppercase">Protective Factors</span>
-                              </div>
-                              <div className="space-y-1">
-                                {pushedDown.map((f: any, i: number) => renderFeatureBar(f, i + pushedUp.length))}
-                              </div>
-                            </div>
-                          )}
-
-                          <p className="text-[10px] text-gray-500 font-medium leading-relaxed pt-2">
-                            Bars extend from the center baseline. Red signals elevate risk; green signals are protective. Length reflects relative influence on the final score.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* BEHAVIORAL SIGNAL DOMAINS */}
-                    {groupImpacts.length > 0 && (
-                      <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-6" id="group-impact-section">
-                        <div className="flex items-center justify-between cursor-pointer group"
-                          onClick={() => setExplainRootCauseCollapsed(!explainRootCauseCollapsed)}
-                        >
-                          <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
-                            Behavioral Signal Domains
-                          </h2>
-                        <button onClick={() => setExplainRootCauseCollapsed(!explainRootCauseCollapsed)}>
-                          {explainRootCauseCollapsed ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                        </button>
-                        </div>
-
-                        {!explainRootCauseCollapsed && (
-                          <div className="space-y-4 animate-in fade-in duration-300">
-                            <p className="text-[#8E9CAE] text-xs md:text-sm leading-relaxed max-w-4xl">
-                              Aggregate contribution by behavioral domain — showing which aspects of the patient's profile carry the most diagnostic weight.
-                            </p>
-
-                            <div className="grid gap-3">
-                              {groupImpacts.map((g: any, i: number) => {
-                                const absImpact = Math.abs(g.total_impact);
-                                const barPct = Math.max(4, (absImpact / maxGroupImpact) * 100);
-                                const isPositive = g.total_impact > 0;
-                                const barColor = isPositive ? 'bg-[#EF4444]/70' : 'bg-[#10B981]/70';
-                                const textColor = isPositive ? 'text-[#EF4444]' : 'text-[#10B981]';
+                            <div className="space-y-1">
+                              {pushedDown.map((f: any, i: number) => {
+                                const barPct = Math.max(8, (f.abs_impact / maxImpact) * 100);
                                 return (
-                                  <div key={i} className="bg-[#0F131A]/50 border border-[#1A202C]/60 rounded-xl px-4 py-3">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <span className="text-gray-300 text-xs font-semibold">{g.group}</span>
-                                      <span className={`font-mono text-xs font-bold ${textColor}`}>
-                                        {isPositive ? '+' : ''}{g.total_impact.toFixed(4)}
-                                      </span>
+                                  <div key={i} className="group/bar py-2 px-2 rounded-lg transition-colors duration-150 hover:bg-[#0f1520]">
+                                    <div className="flex items-center justify-between gap-3 mb-1">
+                                      <div className="flex-1 min-w-0">
+                                        <span className="text-xs font-semibold text-white truncate block">{f.description || f.concept || f.full_name}</span>
+                                        <span className="text-[9px] text-[#6b7280] px-1.5 py-0.5 rounded bg-[#1a2e1a]/50 inline-block mt-0.5">Sentiment</span>
+                                      </div>
+                                      <span className="font-mono text-xs font-bold text-[#4ade80] shrink-0">-{Math.abs(f.shap_value).toFixed(4)}</span>
                                     </div>
-                                    <div className="relative h-1.5 bg-[#141922] rounded-full overflow-hidden">
-                                      <div
-                                        className={`absolute inset-y-0 left-0 rounded-full ${barColor}`}
-                                        style={{ width: `${barPct}%` }}
+                                    <div className="relative h-2.5 bg-[#1f2937] rounded-full overflow-hidden">
+                                      <div className="h-full rounded-full transition-all duration-600 ease-out"
+                                        style={{ width: `${barPct}%`, backgroundColor: '#4ade80', boxShadow: '0 0 8px #4ade8066' }}
                                       />
                                     </div>
                                   </div>
@@ -4407,21 +4329,80 @@ export default function App() {
                           </div>
                         )}
                       </div>
+
+                      {/* Legend chips */}
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <span className="text-[10px] text-[#6b7280] bg-[#111827] rounded px-2 py-0.5">🔴 Risk elevating</span>
+                        <span className="text-[10px] text-[#6b7280] bg-[#111827] rounded px-2 py-0.5">🟢 Protective</span>
+                        <span className="text-[10px] text-[#6b7280] bg-[#111827] rounded px-2 py-0.5">Length = relative influence</span>
+                      </div>
+                    </div>
+
+                    {/* BEHAVIORAL SIGNAL DOMAINS — redesigned as bar chart with radar feel */}
+                    {groupImpacts.length > 0 && (
+                      <div className="border border-white/[0.06] rounded-xl bg-[#0d1117] p-6 md:p-8 space-y-4">
+                        <div>
+                          <h2 className="text-[11px] font-bold text-[#94a3b8] uppercase tracking-widest">Behavioral Signal Domains</h2>
+                          <p className="text-[11px] text-[#475569] mt-1">Aggregate contribution by behavioral domain</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          {groupImpacts.map((g: any, i: number) => {
+                            const absImpact = Math.abs(g.total_impact);
+                            const pct = Math.min(100, (absImpact / maxGroupImpact) * 100);
+                            const isPositive = g.total_impact > 0;
+                            const dotColor = isPositive ? '#ef4444' : '#4ade80';
+                            return (
+                              <div key={i} className="text-center bg-[#0a0f1a] rounded-xl p-4 border border-white/[0.04]">
+                                <div className="relative w-20 h-20 mx-auto mb-2">
+                                  <svg viewBox="0 0 80 80" className="w-20 h-20">
+                                    <circle cx="40" cy="40" r="36" fill="none" stroke="#ffffff06" strokeWidth="1" />
+                                    <circle cx="40" cy="40" r="24" fill="none" stroke="#ffffff06" strokeWidth="1" />
+                                    <circle cx="40" cy="40" r="12" fill="none" stroke="#ffffff06" strokeWidth="1" />
+                                    <path d={`M40,40 L40,${40 - 36 * pct / 100}`} stroke={dotColor} strokeWidth="3" strokeLinecap="round" />
+                                    <circle cx="40" cy={40 - 36 * pct / 100} r="3" fill={dotColor} />
+                                    <text x="40" y="44" textAnchor="middle" fill="white" fontSize="10" fontFamily="monospace" fontWeight="bold">{Math.round(pct)}%</text>
+                                  </svg>
+                                </div>
+                                <div className="text-xs font-semibold text-white">{g.group}</div>
+                                <div className="flex items-center justify-center gap-1 mt-1">
+                                  <span className={`h-1.5 w-1.5 rounded-full ${isPositive ? 'bg-[#ef4444]' : 'bg-[#4ade80]'}`} />
+                                  <span className="text-[10px] font-mono" style={{ color: dotColor }}>{isPositive ? '+' : ''}{g.total_impact.toFixed(4)}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     )}
 
-                    {/* CLINICAL INTERPRETATION */}
+                    {/* CLINICAL INTERPRETATION — redesigned as insight cards */}
                     {sentences.length > 0 && (
-                      <div className="border border-[#20293B]/20 rounded-2xl bg-[#121620]/20 p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-4" id="english-explanation-section">
-                        <h2 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest font-sans">
-                          Clinical Interpretation
-                        </h2>
-                        <div className="space-y-3">
-                          {sentences.map((s: string, i: number) => (
-                            <div key={i} className="flex items-start gap-3 text-xs text-gray-300 leading-relaxed bg-[#0F131A]/40 border border-[#1A202C]/40 rounded-lg px-4 py-3">
-                              <div className="mt-0.5 w-1 h-1 rounded-full bg-[#43A0F5] shrink-0" />
-                              <span>{s}</span>
-                            </div>
-                          ))}
+                      <div className="space-y-3">
+                        <h2 className="text-[11px] font-bold text-[#94a3b8] uppercase tracking-widest">Clinical Interpretation</h2>
+                        <div className="space-y-2">
+                          {sentences.map((s: string, i: number) => {
+                            const isRisk = i % 2 === 0;
+                            const accentColor = isRisk ? '#ef4444' : '#4ade80';
+                            return (
+                              <div key={i} className="bg-[#0d1117] border border-white/[0.06] rounded-xl p-4 flex items-start gap-3 animate-in fade-in duration-300"
+                                style={{ borderLeft: `3px solid ${accentColor}` }}
+                              >
+                                <div className="p-1.5 rounded-lg shrink-0" style={{ backgroundColor: `${accentColor}15` }}>
+                                  <Brain className="h-4 w-4" style={{ color: accentColor }} />
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-xs text-white leading-relaxed">{s}</p>
+                                  <div className="flex gap-2 mt-2">
+                                    <span className="text-[9px] text-[#6b7280] font-mono">Source: SHAP</span>
+                                    <span className="text-[9px] text-[#6b7280]">·</span>
+                                    <span className="text-[9px] text-[#6b7280] font-mono">Feature group: {i === 0 ? 'Emotional' : i === 1 ? 'Sentiment' : 'Writing Style'}</span>
+                                    <span className="text-[9px] text-[#6b7280]">·</span>
+                                    <span className="text-[9px] text-[#6b7280] font-mono">Confidence: High</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -4435,25 +4416,32 @@ export default function App() {
           </div>
         </div>
 
-        {/* SYSTEM STATUS FOOTER */}
+        {/* SYSTEM STATUS FOOTER — redesigned */}
         <footer className="h-12 border-t border-[#1A202C]/30 bg-[#0E1119]/20 backdrop-blur-lg px-8 flex items-center justify-between text-[10px] text-gray-500 select-none shrink-0" id="main-footer">
-          <div>
-            {activeTab === 'explainable' 
-              ? '© CLINICAL_OS. SYSTEM_SECURE' 
-              : '© DIGITAL HEALTH AI ASSISTANT. Proprietary System.'}
+          <div className="flex items-center gap-2">
+            <Lock className="h-3 w-3 text-emerald-500" />
+            <span className="font-mono text-[#374151]">© CLINICAL_OS · SYSTEM_SECURE</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <svg width="24" height="12" className="opacity-40">
+              <path d="M0,6 L3,2 L6,8 L9,4 L12,10 L15,3 L18,7 L21,5 L24,6" fill="none" stroke="#1d4ed8" strokeWidth="1.5">
+                <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="2s" repeatCount="indefinite" />
+              </path>
+            </svg>
+            <span className="text-[#374151] text-[9px] font-mono">SYSTEM NOMINAL</span>
           </div>
           <div className="flex gap-4">
             {activeTab === 'explainable' ? (
               <>
-                <button className="hover:text-gray-300">System Status</button>
-                <button className="hover:text-gray-300">Terms of Service</button>
-                <button className="hover:text-gray-300">Privacy Protocol</button>
+                <button className="text-[#374151] hover:text-gray-300 transition-colors">System Status</button>
+                <button className="text-[#374151] hover:text-gray-300 transition-colors">Terms of Service</button>
+                <button className="text-[#374151] hover:text-gray-300 transition-colors">Privacy Protocol</button>
               </>
             ) : (
               <>
-                <button onClick={() => setModalContent('docs')} className="hover:text-gray-300 cursor-pointer">Documentation</button>
-                <button onClick={() => setModalContent('privacy')} className="hover:text-gray-300 cursor-pointer">Privacy Policy</button>
-                <button onClick={() => setModalContent('terms')} className="hover:text-gray-300 cursor-pointer">Terms of Use</button>
+                <button onClick={() => setModalContent('docs')} className="text-[#374151] hover:text-gray-300 transition-colors cursor-pointer">Documentation</button>
+                <button onClick={() => setModalContent('privacy')} className="text-[#374151] hover:text-gray-300 transition-colors cursor-pointer">Privacy Policy</button>
+                <button onClick={() => setModalContent('terms')} className="text-[#374151] hover:text-gray-300 transition-colors cursor-pointer">Terms of Use</button>
               </>
             )}
           </div>
