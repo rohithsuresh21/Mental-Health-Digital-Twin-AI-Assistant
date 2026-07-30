@@ -8,8 +8,15 @@ export default function UserDetails() {
   const [error, setError] = useState('');
   const nav = useNavigate();
 
-  const generateUserId = () => `user_${Date.now().toString(36)}`;
-  const userId = generateUserId();
+  const getUserId = () => {
+    let id = localStorage.getItem('userId');
+    if (!id) {
+      id = `user_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+      localStorage.setItem('userId', id);
+    }
+    return id;
+  };
+  const userId = getUserId();
 
   async function pickRole(role: 'admin' | 'patient') {
     setLoading(true);
