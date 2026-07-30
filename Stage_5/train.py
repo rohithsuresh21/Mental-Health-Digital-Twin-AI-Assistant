@@ -6,8 +6,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.calibration import calibration_curve
-import matplotlib.pyplot as plt
+
 from scipy.special import expit
 from sklearn.metrics import f1_score
 
@@ -96,43 +95,6 @@ auroc_platt = roc_auc_score(y_val, cal_platt)
 print(f"AUROC after Platt: {auroc_platt:.4f}")
 print(f"ECE after Platt: {ece_platt:.4f}")
 print(f"A={A:.4f}, B={B:.4f}")
-
-#Reliability diagram
-fig, axes = plt.subplots(1, 3, figsize=(15,5))
-
-prob_arrays = [val_probs, cal_iso, cal_platt]
-titles = ["Raw", "Isotonic", "Platt"]
-
-for probs,title,ax in zip(prob_arrays, titles, axes):
-    # Calibration curve
-    prob_true, prob_pred = calibration_curve(
-        y_val, probs, n_bins=10
-    )
-
-    ece = compute_ece(y_val, probs)
-
-    ax.plot([0,1],[0,1], "k--", label="Perfect")
-    ax.plot(prob_pred, prob_true, "o--")
-    ax.set_title(f"{title} ECE={ece:.3f}")
-    ax.set_xlabel("Predicted")
-    ax.set_ylabel("Actual")
-    ax.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.savefig("reliability_diagram.png")
-print("Saved reliabilty_diagram.png")
-print("\n" + "="*50)
-print("TRAINING COMPLETE")
-print(f"  Train samples:        {len(X_train)}")
-print(f"  Val samples:          {len(X_val)}")
-print(f"  Validation AUROC:     {auroc:.4f}")
-print(f"  F1 score:             {f1:.4f}")
-print(f"  ECE raw:              {ece_raw:.4f}")
-print(f"  ECE isotonic:         {ece_iso:.4f}")
-print(f"  ECE Platt:            {ece_platt:.4f}")
-print(f"  pos_weight used:      {pos_weight:.2f}")
-print("="*50)
-
 # Save
 model.save_model("model.json")
 

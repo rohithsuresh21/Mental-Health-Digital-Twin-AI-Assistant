@@ -9,12 +9,6 @@ from pathlib import Path
 
 CSV_PATH = Path("Diac-Woz/other/train_split_Depression_AVEC2017.csv")
 
-STUDENTLIFE_COLS = [
-    "mean_activity", "stationary_frac", "active_frac",
-    "mean_happy", "mean_sad", "net_mood",
-    "mean_sleep_rate", "mean_wake_hour"
-]
-
 FEATURE_COLS = (
             [f"sbert_{i}" for i in range(384)] + 
             [f"emotion_{e}" for e in[
@@ -42,9 +36,9 @@ FEATURE_COLS = (
              [f'audio_mask_{i}' for i in range(7)]
         )
 
-def extract_window(end_date, daily_df, window_size=14,feature_cols=None):
+def extract_window(end_date, daily_df, window_size=14, feature_cols=None):
     if feature_cols is None:
-        feature_cols = STUDENTLIFE_COLS
+        feature_cols = FEATURE_COLS
         
     # Compute start_date
     start_date = end_date - timedelta(days=window_size)
@@ -73,27 +67,9 @@ def extract_window(end_date, daily_df, window_size=14,feature_cols=None):
     else:
         return window_df.to_numpy()
 
-def is_window_valid(window):
-    # Robust check when missing-value strategy is unknown
-
-    window = np.array(window)
-
-    # Count rows that are not completely empty
-    non_empty_rows = np.sum(~np.all(
-        (np.isnan(window) | (window == 0)), axis=1
-    ))
-
-    if non_empty_rows >= 7:
-        # also ensure there is some variance (not constant padding)
-        std_per_feature = np.nanstd(window, axis=0)
-        return bool(np.any(std_per_feature > 1e-6))
-
-    return False
-
-def assemble_feature_vector(window, anomaly_scores=None,feature_cols=None):
-    # Contains the average of all the things that the patient have done
+def assemble_feature_vector(window, anomaly_scores=None, feature_cols=None):
     if feature_cols is None:
-        feature_cols = STUDENTLIFE_COLS
+        feature_cols = FEATURE_COLS
 
     parts = []
     names = []
@@ -152,7 +128,7 @@ def build_matrix():
 
         window = get_daic_window(uid, TRANSCRIPT_DIR)
 
-        if window is None or not is_window_valid(window):
+        if window is None:
             continue
 
         x_flat, feat_names = assemble_feature_vector(
