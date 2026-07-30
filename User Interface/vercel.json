@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://browse-dropped-through-contracts.trycloudflare.com/$1"
+                         "destination": "https://brief-ecommerce-calculated-tear.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
