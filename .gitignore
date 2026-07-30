@@ -74,3 +74,4 @@ data/*.xlsx
 
 .vercel
 .env*
+.aider*

@@ -72,7 +72,10 @@ app.post('/api/diagnose-with-files', upload.fields([
     }
 
     if (files?.voiceFile?.[0]) {
-      cleanup.push(files.voiceFile[0].path);
+      const f = files.voiceFile[0];
+      const buf = fs.readFileSync(f.path);
+      formData.append('audio', new Blob([buf], { type: f.mimetype || 'audio/wav' }), f.originalname);
+      cleanup.push(f.path);
     }
 
     const flaskRes = await fetch(`${FLASK_URL}/run`, {

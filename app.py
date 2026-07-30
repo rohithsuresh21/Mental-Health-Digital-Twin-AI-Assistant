@@ -15,7 +15,6 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
 CORS(app, supports_credentials=True, origins=["https://mental-health-digital-twin-ai-assis.vercel.app", "http://127.0.0.1:5173", "http://localhost:5173"])
 
 # ── Security Configuration ──────────────────────────────────────────────────
-ADMIN_PASSWORD_HASH = hashlib.sha256("aiml25".encode()).hexdigest()
 
 # ── Rate Limiting ───────────────────────────────────────────────────────────
 # Per-user rate limits: { endpoint: (max_requests, window_seconds)
@@ -107,15 +106,9 @@ def auth_login():
     body = request.get_json(force=True, silent=True) or {}
     user_id = body.get("user_id", "").strip()
     role = body.get("role", "patient").strip()
-    password = body.get("password", "")
 
     if not user_id:
         return jsonify({"error": "user_id is required"}), 400
-
-    if role == "admin":
-        pw_hash = hashlib.sha256(password.encode()).hexdigest()
-        if pw_hash != ADMIN_PASSWORD_HASH:
-            return jsonify({"error": "Invalid admin password"}), 401
 
     session.permanent = True
     session["user_id"] = user_id
