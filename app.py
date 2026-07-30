@@ -1386,6 +1386,49 @@ def internal_feature_extractor():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/internal/test-vector", methods=["POST"])
+def internal_test_vector():
+    try:
+        body = request.get_json(force=True, silent=True) or {}
+        user_id = body.get("user_id", "").strip()
+        if not user_id:
+            return jsonify({"error": "user_id is required"}), 400
+
+        pipe = get_pipeline()
+        raw_vecs = pipe.raw_feature_vectors.get(user_id, [])
+        norm_vecs = pipe.normalized_vectors.get(user_id, [])
+        user_data = pipe.user_data.get(user_id, [])
+
+        if not raw_vecs:
+            return jsonify({
+                "user_id": user_id,
+                "vector": None,
+                "shape": None,
+                "user_data": None,
+                "error": "No vectors for this user. Submit an entry first."
+            }), 404
+
+        latest_raw = raw_vecs[-1].tolist()
+        latest_norm = norm_vecs[-1].tolist() if norm_vecs else None
+        latest_meta = user_data[-1] if user_data else {}
+
+        return jsonify({
+            "user_id": user_id,
+            "vector": latest_raw,
+            "normalized_vector": latest_norm,
+            "shape": len(latest_raw),
+            "user_data": {
+                "text_length": latest_meta.get("text_length", 0),
+                "has_audio": latest_meta.get("has_audio", False),
+                "timestamp": str(latest_meta.get("timestamp", "")),
+            },
+        })
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/internal/forecaster", methods=["POST"])
 def internal_forecaster():
     try:
