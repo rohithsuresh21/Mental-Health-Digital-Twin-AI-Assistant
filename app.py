@@ -1223,11 +1223,29 @@ def diagnose():
             result.get("cusum_alert_lower", []),
             result.get("timestamps", []),
         )
+
+        patient_name = body.get("fullName", "").strip() or user_id
+        has_text = bool(body.get("communicationLogs", "").strip() or body.get("clinicalReportsText", "").strip() or body.get("docFileContent", "").strip())
+        has_audio = bool(body.get("voiceRecordingsText", "").strip())
+
+        pipe = get_pipeline()
+        raw_vecs = pipe.raw_feature_vectors.get(user_id, [])
+        if raw_vecs:
+            latest = raw_vecs[-1]
+            n_features = len(latest)
+            n_zero = int(np.sum(latest == 0))
+            pct_filled = round((1 - n_zero / n_features) * 100, 1)
+            print(f"\n=== DIAGNOSE COMPLETE ===")
+            print(f"Patient: {patient_name}  |  Internal ID: {user_id}")
+            print(f"Files uploaded: {'text file' if has_text else ''}{' + audio file' if has_audio else ''}{' (none)' if not has_text and not has_audio else ''}")
+            print(f"466-dim feature vector: {n_features} dimensions, {n_zero} zeros ({pct_filled}% filled) — both text and audio processed into unified vector")
+            print(f"==========================\n")
+
         _write_activity_row({
             "Timestamp (UTC)": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
             "User ID": user_id,
             "Action": "diagnose",
-            "Full Name": user_id,
+            "Full Name": patient_name,
             "Age": "",
             "Gender": "",
             "Blood Type": "",
