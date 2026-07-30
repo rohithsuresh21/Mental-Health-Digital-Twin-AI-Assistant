@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://cent-historic-option-lafayette.trycloudflare.com/$1"
+                         "destination": "https://pin-aerial-residents-entertainment.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
