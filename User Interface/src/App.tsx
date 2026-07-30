@@ -3587,126 +3587,144 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* DETECTOR INFO SIDE PANEL */}
+                {/* DETECTOR INFO SIDE PANEL — redesigned per spec */}
                 <AnimatePresence>
-                  {detectorInfoKey && (() => {
-                    const detScores = pipeline?.pipelineDetectorScores;
-                    const lastScores: Record<string, number> = detScores && detScores.length > 0 ? detScores[detScores.length - 1] : {};
-                    const detFullInfo: Record<string, { name: string; icon: React.ElementType; model: string; longDesc: string; bullet1: string; bullet2: string; bullet3: string }> = {
-                      mahalanobis: {
-                        name: 'Mahalanobis Distance', icon: Radar, model: 'Pattern Deviation',
-                        longDesc: 'Mahalanobis Distance measures how far today\'s behavioral patterns are from your established personal baseline. A higher score means your behavior today is statistically unusual for you specifically.',
-                        bullet1: 'Helps detect when your overall behavioral profile shifts away from what\'s normal for you.',
-                        bullet2: 'Raises flags early when patterns start drifting, even if each individual metric seems fine.',
-                        bullet3: 'Useful for catching slow, creeping changes that might otherwise go unnoticed.',
-                      },
-                      copula: {
-                        name: 'Gaussian Copula', icon: ScatterChart, model: 'Behavioral Shift',
-                        longDesc: 'The Copula model detects when multiple behaviors shift together in unexpected ways — for example, sleeping less while becoming more withdrawn. It models the dependency structure between all your tracked features.',
-                        bullet1: 'Catches unusual co-occurrences — changes that happen together more often than expected.',
-                        bullet2: 'Identifies when the relationship between your sleep, activity, and mood patterns breaks down.',
-                        bullet3: 'Useful for detecting complex behavioral shifts that single-metric detectors might miss.',
-                      },
-                      isolation_forest: {
-                        name: 'Isolation Forest', icon: Zap, model: 'Outlier Spike',
-                        longDesc: 'Isolation Forest identifies individual days where your behavior looks very different from the rest. It works by randomly isolating data points — the easier a day is to isolate, the more unusual it is.',
-                        bullet1: 'Excellent at catching sudden, sharp deviations in your daily patterns.',
-                        bullet2: 'Flags individual days that stand out — like a single bad night or a sudden mood shift.',
-                        bullet3: 'Works well alongside trend-based detectors to distinguish spikes from gradual drifts.',
-                      },
-                      knn: {
-                        name: 'K-Nearest Neighbors', icon: Network, model: 'Cluster Drift',
-                        longDesc: 'KNN measures how far your recent patterns are from your K most similar historical entries. If your recent behavior doesn\'t resemble any of your past normal days, the score rises.',
-                        bullet1: 'Detects when your current state has no close match in your personal history.',
-                        bullet2: 'Gradually rises as you move away from your established behavioral clusters.',
-                        bullet3: 'Helps distinguish between familiar variation and genuinely new behavioral territory.',
-                      },
-                    };
-                    const k = detectorInfoKey;
-                    const d = detFullInfo[k];
-                    if (!d) return null;
-                    const Icon = d.icon;
-                    const score = lastScores[k] ?? 0.5;
-                    const pct = Math.round(score * 100);
-                    const sevLabel = pct >= 80 ? 'HIGH' : pct >= 60 ? 'ELEVATED' : pct >= 40 ? 'MODERATE' : 'LOW';
-                    const sevColor = pct >= 80 ? 'text-rose-400' : pct >= 60 ? 'text-amber-400' : pct >= 40 ? 'text-yellow-400' : 'text-emerald-400';
-                    const sevDot = pct >= 80 ? 'bg-rose-500' : pct >= 60 ? 'bg-amber-500' : pct >= 40 ? 'bg-yellow-500' : 'bg-emerald-500';
-                    const detHistory = detScores?.map(s => (s[k] ?? 0) * 100) || [];
-                    const miniSpark = detHistory.slice(-14);
-                    const miniMax = Math.max(...miniSpark, 1);
-                    return (
-                      <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setDetectorInfoKey(null)}>
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-                        <motion.div
-                          initial={{ x: '100%' }}
-                          animate={{ x: 0 }}
-                          exit={{ x: '100%' }}
-                          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                          className="relative w-full max-w-md bg-[#0d1117] border-l border-[#1e2a3a] shadow-2xl overflow-y-auto"
-                        >
-                          <div className="p-6 space-y-6">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="p-2.5 rounded-xl bg-[#1e2a3a] border border-white/[0.06]">
-                                  <Icon className="h-5 w-5 text-[#4fc3f7]" />
+                  {detectorInfoKey && (
+                    <motion.div
+                      className="fixed inset-0 top-16 z-40"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      onClick={() => setDetectorInfoKey(null)}
+                    />
+                  )}
+                </AnimatePresence>
+                <AnimatePresence>
+                  {detectorInfoKey && (
+                    <motion.div
+                      className="fixed right-0 top-16 w-[380px] max-sm:w-screen h-[calc(100vh-64px)] bg-[#0d1117] border-l border-[#1e2a3a] shadow-2xl z-50 overflow-y-auto"
+                      initial={{ x: '100%' }}
+                      animate={{ x: 0 }}
+                      exit={{ x: '100%' }}
+                      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="absolute left-0 top-0 bottom-0 w-8 pointer-events-none z-10" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.15), transparent)', backdropFilter: 'blur(2px)' }} />
+                      <AnimatePresence mode="wait">
+                        {detectorInfoKey && (() => {
+                          const detScores = pipeline?.pipelineDetectorScores;
+                          const lastScores: Record<string, number> = detScores && detScores.length > 0 ? detScores[detScores.length - 1] : {};
+                          const detFullInfo: Record<string, { name: string; icon: React.ElementType; model: string; longDesc: string; bullet1: string; bullet2: string; bullet3: string }> = {
+                            mahalanobis: {
+                              name: 'Mahalanobis Distance', icon: Radar, model: 'Pattern Deviation',
+                              longDesc: 'Mahalanobis Distance measures how far today\'s behavioral patterns are from your established personal baseline. A higher score means your behavior today is statistically unusual for you specifically.',
+                              bullet1: 'Helps detect when your overall behavioral profile shifts away from what\'s normal for you.',
+                              bullet2: 'Raises flags early when patterns start drifting, even if each individual metric seems fine.',
+                              bullet3: 'Useful for catching slow, creeping changes that might otherwise go unnoticed.',
+                            },
+                            copula: {
+                              name: 'Gaussian Copula', icon: ScatterChart, model: 'Behavioral Shift',
+                              longDesc: 'The Copula model detects when multiple behaviors shift together in unexpected ways — for example, sleeping less while becoming more withdrawn. It models the dependency structure between all your tracked features.',
+                              bullet1: 'Catches unusual co-occurrences — changes that happen together more often than expected.',
+                              bullet2: 'Identifies when the relationship between your sleep, activity, and mood patterns breaks down.',
+                              bullet3: 'Useful for detecting complex behavioral shifts that single-metric detectors might miss.',
+                            },
+                            isolation_forest: {
+                              name: 'Isolation Forest', icon: Zap, model: 'Outlier Spike',
+                              longDesc: 'Isolation Forest identifies individual days where your behavior looks very different from the rest. It works by randomly isolating data points — the easier a day is to isolate, the more unusual it is.',
+                              bullet1: 'Excellent at catching sudden, sharp deviations in your daily patterns.',
+                              bullet2: 'Flags individual days that stand out — like a single bad night or a sudden mood shift.',
+                              bullet3: 'Works well alongside trend-based detectors to distinguish spikes from gradual drifts.',
+                            },
+                            knn: {
+                              name: 'K-Nearest Neighbors', icon: Network, model: 'Cluster Drift',
+                              longDesc: 'KNN measures how far your recent patterns are from your K most similar historical entries. If your recent behavior doesn\'t resemble any of your past normal days, the score rises.',
+                              bullet1: 'Detects when your current state has no close match in your personal history.',
+                              bullet2: 'Gradually rises as you move away from your established behavioral clusters.',
+                              bullet3: 'Helps distinguish between familiar variation and genuinely new behavioral territory.',
+                            },
+                          };
+                          const k = detectorInfoKey;
+                          const d = detFullInfo[k];
+                          if (!d) return null;
+                          const Icon = d.icon;
+                          const score = lastScores[k] ?? 0.5;
+                          const pct = Math.round(score * 100);
+                          const sevLabel = pct >= 80 ? 'HIGH' : pct >= 60 ? 'ELEVATED' : pct >= 40 ? 'MODERATE' : 'LOW';
+                          const sevColor = pct >= 80 ? 'text-rose-400' : pct >= 60 ? 'text-amber-400' : pct >= 40 ? 'text-yellow-400' : 'text-emerald-400';
+                          const sevDot = pct >= 80 ? 'bg-rose-500' : pct >= 60 ? 'bg-amber-500' : pct >= 40 ? 'bg-yellow-500' : 'bg-emerald-500';
+                          const detHistory = detScores?.map(s => (s[k] ?? 0) * 100) || [];
+                          const miniSpark = detHistory.slice(-14);
+                          const miniMax = Math.max(...miniSpark, 1);
+                          return (
+                            <motion.div
+                              key={detectorInfoKey}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.15 }}
+                            >
+                              <div className="p-6 space-y-6">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="p-2.5 rounded-xl bg-[#1e2a3a] border border-white/[0.06]">
+                                      <Icon className="h-5 w-5 text-[#4fc3f7]" />
+                                    </div>
+                                    <div>
+                                      <h3 className="text-sm font-bold text-white">{d.name}</h3>
+                                      <span className="text-[10px] text-gray-500">{d.model}</span>
+                                    </div>
+                                  </div>
+                                  <button onClick={() => setDetectorInfoKey(null)} className="p-1.5 rounded-lg hover:bg-white/[0.06] text-gray-400 hover:text-white transition-all cursor-pointer">
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                                <div className="flex items-center gap-3 bg-[#1e2a3a]/50 rounded-xl p-4 border border-white/[0.04]">
+                                  <span className={`h-2.5 w-2.5 rounded-full ${sevDot} shadow-[0_0_8px_currentColor]`} />
+                                  <div>
+                                    <span className={`text-lg font-bold ${sevColor}`}>{pct}</span>
+                                    <span className={`text-lg font-bold ${sevColor} ml-1`}>/ 100</span>
+                                    <span className={`ml-2 text-xs font-bold ${sevColor}`}>{sevLabel}</span>
+                                  </div>
                                 </div>
                                 <div>
-                                  <h3 className="text-sm font-bold text-white">{d.name}</h3>
-                                  <span className="text-[10px] text-gray-500">{d.model}</span>
+                                  <p className="text-xs text-gray-300 leading-relaxed">{d.longDesc}</p>
+                                  {pct >= 40 && pct < 80 && (
+                                    <p className="text-xs text-amber-400/80 mt-2">Your pattern deviation is moderate. Behavioral and emotional patterns are the primary contributors today.</p>
+                                  )}
+                                  {pct >= 80 && (
+                                    <p className="text-xs text-rose-400/80 mt-2">Significant deviation detected. Multiple behavioral signals are consistently outside your normal range.</p>
+                                  )}
+                                  {pct < 40 && (
+                                    <p className="text-xs text-emerald-400/80 mt-2">Your patterns are close to your baseline. No significant deviation detected.</p>
+                                  )}
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">14-Day Trend</span>
+                                  <div className="mt-2 flex items-end gap-0.5 h-12">
+                                    {miniSpark.map((v, i) => (
+                                      <div key={i} className="flex-1 flex flex-col justify-end">
+                                        <div className="w-full rounded-t-sm transition-all duration-300" style={{ height: `${(v / miniMax) * 100}%`, backgroundColor: pct >= 60 ? '#f97316' : '#4fc3f7', opacity: 0.3 + (v / miniMax) * 0.7 }} />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="space-y-2 bg-[#1e2a3a]/30 rounded-xl p-4 border border-white/[0.04]">
+                                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-[#b39ddb]" /> What this means for you</span>
+                                  <ul className="space-y-1.5">
+                                    <li className="text-[11px] text-gray-400 flex gap-2"><span className="text-[#4fc3f7] mt-0.5">•</span>{d.bullet1}</li>
+                                    <li className="text-[11px] text-gray-400 flex gap-2"><span className="text-[#4fc3f7] mt-0.5">•</span>{d.bullet2}</li>
+                                    <li className="text-[11px] text-gray-400 flex gap-2"><span className="text-[#4fc3f7] mt-0.5">•</span>{d.bullet3}</li>
+                                  </ul>
                                 </div>
                               </div>
-                              <button onClick={() => setDetectorInfoKey(null)} className="p-1.5 rounded-lg hover:bg-white/[0.06] text-gray-400 hover:text-white transition-all cursor-pointer">
-                                <X className="h-4 w-4" />
-                              </button>
-                            </div>
-
-                            <div className="flex items-center gap-3 bg-[#1e2a3a]/50 rounded-xl p-4 border border-white/[0.04]">
-                              <span className={`h-2.5 w-2.5 rounded-full ${sevDot} shadow-[0_0_8px_currentColor]`} />
-                              <div>
-                                <span className={`text-lg font-bold ${sevColor}`}>{pct}</span>
-                                <span className={`text-lg font-bold ${sevColor} ml-1`}>/ 100</span>
-                                <span className={`ml-2 text-xs font-bold ${sevColor}`}>{sevLabel}</span>
-                              </div>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-gray-300 leading-relaxed">{d.longDesc}</p>
-                              {pct >= 40 && pct < 80 && (
-                                <p className="text-xs text-amber-400/80 mt-2">Your pattern deviation is moderate. Behavioral and emotional patterns are the primary contributors today.</p>
-                              )}
-                              {pct >= 80 && (
-                                <p className="text-xs text-rose-400/80 mt-2">Significant deviation detected. Multiple behavioral signals are consistently outside your normal range.</p>
-                              )}
-                              {pct < 40 && (
-                                <p className="text-xs text-emerald-400/80 mt-2">Your patterns are close to your baseline. No significant deviation detected.</p>
-                              )}
-                            </div>
-
-                            <div>
-                              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">14-Day Trend</span>
-                              <div className="mt-2 flex items-end gap-0.5 h-12">
-                                {miniSpark.map((v, i) => (
-                                  <div key={i} className="flex-1 flex flex-col justify-end">
-                                    <div className="w-full rounded-t-sm transition-all duration-300" style={{ height: `${(v / miniMax) * 100}%`, backgroundColor: pct >= 60 ? '#f97316' : '#4fc3f7', opacity: 0.3 + (v / miniMax) * 0.7 }} />
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div className="space-y-2 bg-[#1e2a3a]/30 rounded-xl p-4 border border-white/[0.04]">
-                              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-[#b39ddb]" /> What this means for you</span>
-                              <ul className="space-y-1.5">
-                                <li className="text-[11px] text-gray-400 flex gap-2"><span className="text-[#4fc3f7] mt-0.5">•</span>{d.bullet1}</li>
-                                <li className="text-[11px] text-gray-400 flex gap-2"><span className="text-[#4fc3f7] mt-0.5">•</span>{d.bullet2}</li>
-                                <li className="text-[11px] text-gray-400 flex gap-2"><span className="text-[#4fc3f7] mt-0.5">•</span>{d.bullet3}</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </motion.div>
-                      </div>
-                    );
-                  })()}
+                            </motion.div>
+                          );
+                        })()}
+                      </AnimatePresence>
+                    </motion.div>
+                  )}
                 </AnimatePresence>
 
               </div>
@@ -4358,8 +4376,12 @@ export default function App() {
                                     <circle cx="40" cy="40" r="36" fill="none" stroke="#ffffff06" strokeWidth="1" />
                                     <circle cx="40" cy="40" r="24" fill="none" stroke="#ffffff06" strokeWidth="1" />
                                     <circle cx="40" cy="40" r="12" fill="none" stroke="#ffffff06" strokeWidth="1" />
-                                    <path d={`M40,40 L40,${40 - 36 * pct / 100}`} stroke={dotColor} strokeWidth="3" strokeLinecap="round" />
-                                    <circle cx="40" cy={40 - 36 * pct / 100} r="3" fill={dotColor} />
+                                    <circle cx="40" cy="40" r="36" fill="none" stroke={dotColor} strokeWidth="3" strokeLinecap="round"
+                                      transform="rotate(-90 40 40)"
+                                      strokeDasharray="226.19"
+                                      strokeDashoffset={226.19 * (1 - pct / 100)}
+                                      style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }}
+                                    />
                                     <text x="40" y="44" textAnchor="middle" fill="white" fontSize="10" fontFamily="monospace" fontWeight="bold">{Math.round(pct)}%</text>
                                   </svg>
                                 </div>
