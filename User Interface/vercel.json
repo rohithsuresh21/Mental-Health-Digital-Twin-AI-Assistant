@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://professor-logo-collar-ion.trycloudflare.com/$1"
+                         "destination": "https://extensions-api-deeply-recorded.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
