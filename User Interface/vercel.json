@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://extensions-api-deeply-recorded.trycloudflare.com/$1"
+                         "destination": "https://browse-dropped-through-contracts.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
