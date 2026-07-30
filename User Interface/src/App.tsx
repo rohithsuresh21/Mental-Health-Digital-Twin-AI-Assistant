@@ -41,7 +41,6 @@ import {
   Target,
   Eye,
   Gauge,
-  Download,
   CalendarDays,
   Lock
 } from 'lucide-react';
@@ -1535,17 +1534,6 @@ export default function App() {
                     </div>
                   )}
                 </div>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold text-[#a78bfa] border border-[#a78bfa] bg-[#1e2a3a] hover:bg-[#1e2a3a]/70 transition-all cursor-pointer shrink-0">
-                  <Download className="h-3.5 w-3.5" />
-                  Download PDF Report
-                </button>
-                <button className="relative p-1.5 text-gray-500 hover:text-gray-300 transition-all cursor-pointer shrink-0">
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 border border-[#050810]" />
-                </button>
-                <button className="p-1.5 text-gray-500 hover:text-gray-300 transition-all cursor-pointer shrink-0">
-                  <Sun className="h-4 w-4" />
-                </button>
               </>
             )}
             {activeTab === 'explainable' && (
@@ -1566,17 +1554,6 @@ export default function App() {
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
                   <input type="text" placeholder="QUERY_PATIENT_ID..." className="w-full bg-[#0d1117] border border-[#1e2a3a] rounded-md pl-9 pr-4 py-1.5 text-xs text-white placeholder-[#374151] font-mono focus:outline-none focus:border-blue-500" />
                 </div>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold text-[#a78bfa] border border-[#a78bfa] bg-[#1e2a3a] hover:bg-[#1e2a3a]/70 transition-all cursor-pointer shrink-0">
-                  <Download className="h-3.5 w-3.5" />
-                  Download PDF Report
-                </button>
-                <button className="relative p-1.5 text-gray-500 hover:text-gray-300 transition-all cursor-pointer shrink-0">
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 border border-[#050810]" />
-                </button>
-                <button className="p-1.5 text-gray-500 hover:text-gray-300 transition-all cursor-pointer shrink-0">
-                  <Sun className="h-4 w-4" />
-                </button>
               </>
             )}
             {activeTab === 'forecast' && (
@@ -3631,7 +3608,7 @@ export default function App() {
                 <AnimatePresence>
                   {detectorInfoKey && (
                     <motion.div
-                      className="fixed inset-0 top-16 z-40"
+                      className="fixed inset-0 z-40"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -3643,7 +3620,7 @@ export default function App() {
                 <AnimatePresence>
                   {detectorInfoKey && (
                     <motion.div
-                      className="fixed right-0 top-16 w-[380px] max-sm:w-screen h-[calc(100vh-64px)] bg-[#0d1117] border-l border-[#1e2a3a] shadow-2xl z-50 overflow-y-auto"
+                      className="fixed right-0 top-0 w-[380px] max-sm:w-screen h-screen bg-[#0d1117] border-l border-[#1e2a3a] shadow-2xl z-50 overflow-y-auto"
                       initial={{ x: '100%' }}
                       animate={{ x: 0 }}
                       exit={{ x: '100%' }}
@@ -4159,29 +4136,98 @@ export default function App() {
                             <span className="text-[10px] text-gray-500">7-day detector trajectory across all anomaly models</span>
                           </div>
                           <div className="overflow-x-auto">
-                            <table className="w-full text-[11px]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                              <thead>
-                                <tr className="border-b border-white/[0.06]">
-                                  <th className="text-left py-2 pr-4 font-semibold text-gray-400 text-[10px] uppercase tracking-wider">Day</th>
-                                  <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#60a5fa' }}>Pattern Deviation</th>
-                                  <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#f87171' }}>Behavioral Shift</th>
-                                  <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#34d399' }}>Outlier Spike</th>
-                                  <th className="text-right py-2 px-3 font-semibold text-[10px] uppercase tracking-wider" style={{ color: '#fbbf24' }}>Cluster Drift</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {detectorForecastData.mahalanobis?.map((_: number, idx: number) => (
-                                  <tr key={idx} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors duration-150">
-                                    <td className="py-2 pr-4 font-semibold text-gray-300">Day {idx + 1}</td>
-                                    <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#93c5fd' }}>{detectorForecastData.mahalanobis?.[idx] != null ? Math.round(detectorForecastData.mahalanobis[idx] * 100) + '%' : '—'}</td>
-                                    <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#fca5a5' }}>{detectorForecastData.copula?.[idx] != null ? Math.round(detectorForecastData.copula[idx] * 100) + '%' : '—'}</td>
-                                    <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#6ee7b7' }}>{detectorForecastData.isolation_forest?.[idx] != null ? Math.round(detectorForecastData.isolation_forest[idx] * 100) + '%' : '—'}</td>
-                                    <td className="text-right py-2 px-3 font-mono text-[11px]" style={{ color: '#fde68a' }}>{detectorForecastData.knn?.[idx] != null ? Math.round(detectorForecastData.knn[idx] * 100) + '%' : '—'}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                            {(() => {
+                              const detKeys = ['mahalanobis', 'copula', 'isolation_forest', 'knn'];
+                              const detColors: Record<string, string> = { mahalanobis: '#4fc3f7', copula: '#f97316', isolation_forest: '#4ade80', knn: '#facc15' };
+                              const detLabels: Record<string, string> = { mahalanobis: 'Pattern Deviation', copula: 'Behavioral Shift', isolation_forest: 'Outlier Spike', knn: 'Cluster Drift' };
+                              const nDays = detectorForecastData.mahalanobis?.length || 0;
+                              if (nDays === 0) return null;
+                              const detMax: Record<string, number> = {};
+                              detKeys.forEach(k => { const arr = detectorForecastData[k] || []; detMax[k] = Math.max(...arr.filter((v: number) => v != null), 0.001); });
+                              const avgScores: Record<string, number> = {};
+                              detKeys.forEach(k => { const arr = detectorForecastData[k] || []; avgScores[k] = arr.reduce((s: number, v: number) => s + v, 0) / arr.length; });
+                              type CellInfo = { raw: number; norm: number; idx: number };
+                              function getCell(key: string, idx: number): CellInfo | null {
+                                const arr = detectorForecastData[key] || [];
+                                if (arr[idx] == null) return null;
+                                return { raw: arr[idx], norm: (arr[idx] / detMax[key]) * 100, idx };
+                              }
+                              function getMaxNormIdx(key: string): number {
+                                let maxIdx = 0, maxNorm = -1;
+                                for (let i = 0; i < nDays; i++) {
+                                  const c = getCell(key, i);
+                                  if (c && c.norm > maxNorm) { maxNorm = c.norm; maxIdx = i; }
+                                }
+                                return maxIdx;
+                              }
+                              const maxNormIdx: Record<string, number> = {};
+                              detKeys.forEach(k => { maxNormIdx[k] = getMaxNormIdx(k); });
+                              function severityColor(norm: number): string {
+                                return norm > 70 ? '#ef4444' : norm >= 40 ? '#facc15' : '#4ade80';
+                              }
+                              return (
+                                <table className="w-full text-[11px]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                  <thead>
+                                    <tr className="border-b border-white/[0.06]">
+                                      <th className="text-left py-2 pr-4 font-semibold text-gray-400 text-[10px] uppercase tracking-wider">Day</th>
+                                      {detKeys.map(k => (
+                                        <th key={k} className="text-right py-2 px-2 font-semibold text-[10px] uppercase tracking-wider" style={{ color: detColors[k] }}>{detLabels[k]}</th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {Array.from({ length: nDays }, (_, idx) => {
+                                      const isMaxDay = detKeys.some(k => maxNormIdx[k] === idx);
+                                      return (
+                                        <tr key={idx} className="border-b border-white/[0.03] transition-colors duration-150 hover:bg-[#0f1520]" style={{ backgroundColor: idx % 2 === 0 ? '#0d1117' : '#0a0f18' }}>
+                                          <td className="py-2.5 pr-4 font-semibold text-white">Day {idx + 1}</td>
+                                          {detKeys.map(k => {
+                                            const cell = getCell(k, idx);
+                                            if (!cell) return <td key={k} className="text-right py-2.5 px-2 font-mono text-gray-600">—</td>;
+                                            const sevDot = severityColor(cell.norm);
+                                            const isMax = maxNormIdx[k] === idx;
+                                            const avg = avgScores[k];
+                                            return (
+                                              <td key={k} className={`text-right py-2.5 px-2 ${isMax ? '' : ''}`}>
+                                                <div className="flex flex-col items-end gap-1">
+                                                  <div className="flex items-center justify-end gap-1.5">
+                                                    <span className={`h-1.5 w-1.5 rounded-full shrink-0`} style={{ backgroundColor: sevDot, boxShadow: `0 0 4px ${sevDot}` }} />
+                                                    <span className={`font-mono ${isMax ? 'font-bold text-white' : 'text-[#94a3b8]'}`} style={isMax ? { textShadow: `0 0 8px ${detColors[k]}66` } : {}}>{Math.round(cell.norm)}%</span>
+                                                  </div>
+                                                  <div className="w-full h-[3px] bg-[#1f2937] rounded-full overflow-hidden" style={{ maxWidth: '80px' }}>
+                                                    <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, cell.norm)}%`, backgroundColor: detColors[k], boxShadow: isMax ? `0 0 6px ${detColors[k]}` : 'none' }} />
+                                                  </div>
+                                                </div>
+                                              </td>
+                                            );
+                                          })}
+                                        </tr>
+                                      );
+                                    })}
+                                    {/* AVG row */}
+                                    <tr className="border-t border-white/[0.06] bg-[#0d1117]/80">
+                                      <td className="py-2.5 pr-4 font-bold text-[#94a3b8] text-[10px] uppercase tracking-wider">AVG</td>
+                                      {detKeys.map(k => {
+                                        const avg = avgScores[k];
+                                        const normAvg = (avg / detMax[k]) * 100;
+                                        return (
+                                          <td key={k} className="text-right py-2.5 px-2">
+                                            <div className="flex flex-col items-end gap-1">
+                                              <span className="font-mono text-[11px] font-bold" style={{ color: detColors[k] }}>{Math.round(normAvg)}%</span>
+                                              <div className="w-full h-[3px] bg-[#1f2937] rounded-full overflow-hidden" style={{ maxWidth: '80px' }}>
+                                                <div className="h-full rounded-full opacity-70" style={{ width: `${Math.min(100, normAvg)}%`, backgroundColor: detColors[k] }} />
+                                              </div>
+                                            </div>
+                                          </td>
+                                        );
+                                      })}
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              );
+                            })()}
                           </div>
+                          <p className="text-[11px] text-[#475569] mt-3">Scores normalized per detector across the 7-day forecast window.</p>
                         </div>
                       </>
                     );
@@ -4292,18 +4338,23 @@ export default function App() {
                             <div className="text-[9px] text-[#475569] uppercase tracking-wider">Initial</div>
                           </div>
                           {/* Contribution segments */}
-                          <div className="flex-1 flex items-center h-full gap-0.5 mx-2">
+                          <div className="flex-1 flex items-center h-full mx-2" style={{ gap: '1px' }}>
                             {topFeatures.slice(0, 6).map((f: any, i: number) => {
                               const isUp = f.direction === 'increases_risk';
                               const w = Math.max(8, (f.abs_impact / maxImpact) * 40);
+                              const directionText = isUp ? 'Risk ↑' : 'Protective ↓';
                               return (
                                 <div key={i} className="relative group h-full flex items-center" style={{ width: `${w}%` }}>
-                                  <div className="w-full h-3/4 rounded-sm transition-all duration-500 cursor-pointer"
+                                  <div className="w-full h-3/4 rounded-sm transition-all duration-500 cursor-pointer border-r border-[#ffffff15]"
                                     style={{ backgroundColor: isUp ? '#ef4444' : '#4ade80', boxShadow: isUp ? '0 0 6px #ef444466' : '0 0 6px #4ade8066' }}
-                                    title={`${f.description || f.concept}: ${isUp ? '+' : ''}${f.shap_value.toFixed(4)}`}
+                                    title={`${f.description || f.concept} | ${directionText} | SHAP: ${isUp ? '+' : ''}${f.shap_value.toFixed(4)}`}
                                   >
-                                    <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1e2a3a] text-white text-[9px] px-2 py-0.5 rounded whitespace-nowrap pointer-events-none z-10">
-                                      {f.description || f.concept}: {isUp ? '+' : ''}{f.shap_value.toFixed(4)}
+                                    <div className="opacity-0 group-hover:opacity-100 absolute -top-10 left-1/2 -translate-x-1/2 bg-[#1e2a3a] text-white text-[9px] px-2.5 py-1 rounded whitespace-nowrap pointer-events-none z-10 shadow-lg border border-white/[0.06]">
+                                      <div className="font-semibold">{f.description || f.concept}</div>
+                                      <div className="flex gap-2 mt-0.5">
+                                        <span style={{ color: isUp ? '#ef4444' : '#4ade80' }}>{directionText}</span>
+                                        <span className="text-[#94a3b8]">SHAP: {isUp ? '+' : ''}{f.shap_value.toFixed(4)}</span>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -4313,7 +4364,7 @@ export default function App() {
                           {/* Alert threshold */}
                           <div className="relative h-full mx-1 flex items-center">
                             <div className="w-px h-full border-l border-dashed border-[#facc15]" />
-                            <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[7px] text-[#facc15] whitespace-nowrap">Threshold</span>
+                            <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[8px] font-semibold text-[#facc15] whitespace-nowrap tracking-wider">Threshold</span>
                           </div>
                           {/* Final score */}
                           <div className="text-center shrink-0" style={{ width: '80px' }}>
@@ -4388,54 +4439,57 @@ export default function App() {
                         )}
                       </div>
 
-                      {/* Legend chips */}
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        <span className="text-[10px] text-[#6b7280] bg-[#111827] rounded px-2 py-0.5">🔴 Risk elevating</span>
-                        <span className="text-[10px] text-[#6b7280] bg-[#111827] rounded px-2 py-0.5">🟢 Protective</span>
-                        <span className="text-[10px] text-[#6b7280] bg-[#111827] rounded px-2 py-0.5">Length = relative influence</span>
+                      {/* Legend */}
+                      <div className="flex flex-wrap items-center gap-3 pt-1 text-[10px] text-[#6b7280]">
+                        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#ef4444]" /> Risk Elevating Factor</span>
+                        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#4ade80]" /> Protective Factor</span>
+                        <span className="flex items-center gap-1.5"><span className="h-0 border-t border-dashed border-[#facc15] w-4" /> Threshold</span>
                       </div>
+
+                      {/* Footnote */}
+                      <p className="text-[11px] text-[#475569] leading-relaxed">Each block represents one SHAP feature contribution. Block width indicates its relative influence.</p>
                     </div>
 
-                    {/* BEHAVIORAL SIGNAL DOMAINS — redesigned as bar chart with radar feel */}
-                    {groupImpacts.length > 0 && (
-                      <div className="border border-white/[0.06] rounded-xl bg-[#0d1117] p-6 md:p-8 space-y-4">
-                        <div>
-                          <h2 className="text-[11px] font-bold text-[#94a3b8] uppercase tracking-widest">Behavioral Signal Domains</h2>
-                          <p className="text-[11px] text-[#475569] mt-1">Aggregate contribution by behavioral domain</p>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4">
-                          {groupImpacts.map((g: any, i: number) => {
-                            const absImpact = Math.abs(g.total_impact);
-                            const pct = Math.min(100, (absImpact / maxGroupImpact) * 100);
-                            const isPositive = g.total_impact > 0;
-                            const dotColor = isPositive ? '#ef4444' : '#4ade80';
-                            return (
-                              <div key={i} className="text-center bg-[#0a0f1a] rounded-xl p-4 border border-white/[0.04]">
-                                <div className="relative w-20 h-20 mx-auto mb-2">
-                                  <svg viewBox="0 0 80 80" className="w-20 h-20">
-                                    <circle cx="40" cy="40" r="36" fill="none" stroke="#ffffff06" strokeWidth="1" />
-                                    <circle cx="40" cy="40" r="24" fill="none" stroke="#ffffff06" strokeWidth="1" />
-                                    <circle cx="40" cy="40" r="12" fill="none" stroke="#ffffff06" strokeWidth="1" />
-                                    <circle cx="40" cy="40" r="36" fill="none" stroke={dotColor} strokeWidth="3" strokeLinecap="round"
-                                      transform="rotate(-90 40 40)"
-                                      strokeDasharray="226.19"
-                                      strokeDashoffset={226.19 * (1 - pct / 100)}
-                                      style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }}
-                                    />
-                                    <text x="40" y="44" textAnchor="middle" fill="white" fontSize="10" fontFamily="monospace" fontWeight="bold">{Math.round(pct)}%</text>
-                                  </svg>
+                    {/* BEHAVIORAL SIGNAL DOMAINS — redesigned as ring chart */}
+                    {groupImpacts.length > 0 && (() => {
+                      const totalSum = groupImpacts.reduce((sum: number, g: any) => sum + Math.abs(g.total_impact), 0) || 1;
+                      return (
+                        <div className="border border-white/[0.06] rounded-xl bg-[#0d1117] p-6 md:p-8 space-y-4">
+                          <div>
+                            <h2 className="text-[11px] font-bold text-[#94a3b8] uppercase tracking-widest">Behavioral Signal Domains</h2>
+                            <p className="text-[11px] text-[#475569] mt-1">Aggregate contribution by behavioral domain</p>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            {groupImpacts.map((g: any, i: number) => {
+                              const absImpact = Math.abs(g.total_impact);
+                              const pct = (absImpact / totalSum) * 100;
+                              const ringColor = pct > 60 ? '#ef4444' : pct >= 20 ? '#facc15' : '#4ade80';
+                              const circumference = 2 * Math.PI * 36;
+                              const offset = circumference * (1 - pct / 100);
+                              return (
+                                <div key={i} className="text-center bg-[#0a0f1a] rounded-xl p-4 border border-white/[0.04]">
+                                  <div className="relative w-20 h-20 mx-auto mb-2">
+                                    <svg viewBox="0 0 80 80" className="w-20 h-20">
+                                      <circle cx="40" cy="40" r="36" fill="none" stroke="#1f2937" strokeWidth="4" />
+                                      <circle cx="40" cy="40" r="36" fill="none" stroke={ringColor} strokeWidth="4" strokeLinecap="round"
+                                        transform="rotate(-90 40 40)"
+                                        strokeDasharray={circumference}
+                                        strokeDashoffset={offset}
+                                        style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1)', filter: `drop-shadow(0 0 4px ${ringColor}66)` }}
+                                      />
+                                      <text x="40" y="44" textAnchor="middle" fill="white" fontSize="11" fontFamily="monospace" fontWeight="bold">{Math.round(pct)}%</text>
+                                    </svg>
+                                  </div>
+                                  <div className="text-xs font-semibold text-white mb-1">{g.group}</div>
+                                  <div className="text-[10px] font-mono font-bold" style={{ color: ringColor }}>{g.total_impact > 0 ? '+' : ''}{g.total_impact.toFixed(4)}</div>
                                 </div>
-                                <div className="text-xs font-semibold text-white">{g.group}</div>
-                                <div className="flex items-center justify-center gap-1 mt-1">
-                                  <span className={`h-1.5 w-1.5 rounded-full ${isPositive ? 'bg-[#ef4444]' : 'bg-[#4ade80]'}`} />
-                                  <span className="text-[10px] font-mono" style={{ color: dotColor }}>{isPositive ? '+' : ''}{g.total_impact.toFixed(4)}</span>
-                                </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
+                          <p className="text-[11px] text-[#475569]">Percentages show each domain's share of total SHAP contribution.</p>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* CLINICAL INTERPRETATION — redesigned as insight cards */}
                     {sentences.length > 0 && (
