@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://brief-ecommerce-calculated-tear.trycloudflare.com/$1"
+                         "destination": "https://gasoline-knight-retired-pay.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
