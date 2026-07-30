@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://pin-aerial-residents-entertainment.trycloudflare.com/$1"
+                         "destination": "https://professor-logo-collar-ion.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
