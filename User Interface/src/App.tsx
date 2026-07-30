@@ -1015,11 +1015,6 @@ export default function App() {
     try {
       let payload: any = { ...inputs, user_id: userId };
 
-      // Strip auto-generated audio placeholder so only user-typed transcript is sent
-      if (audioFileObj && payload.voiceRecordingsText?.startsWith('[Audio file: ')) {
-        payload.voiceRecordingsText = '';
-      }
-
       if (docFileObj) {
         const fileText = await docFileObj.text();
         payload = { ...payload, docFileContent: fileText, docFileName: docFileObj.name };
