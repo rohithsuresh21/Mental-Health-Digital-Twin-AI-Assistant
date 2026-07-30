@@ -1025,29 +1025,15 @@ export default function App() {
         payload = { ...payload, docFileContent: fileText, docFileName: docFileObj.name };
       }
 
-      // Use FormData when audio file is attached, JSON otherwise
-      let res: Response;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 600000);
-      if (audioFileObj) {
-        const fd = new FormData();
-        Object.entries(payload).forEach(([k, v]) => fd.append(k, String(v)));
-        fd.append('voiceFile', audioFileObj);
-        if (docFileObj) fd.append('docFile', docFileObj);
-        res = await fetch('/api/diagnose-with-files', {
-          method: 'POST',
-          body: fd,
-          signal: controller.signal,
-        });
-      } else {
-        res = await fetch('/api/diagnose', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-        });
-      }
+      const res = await fetch('/api/diagnose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
       clearTimeout(timeoutId);
       clearInterval(progressInterval);
       if (!res.ok) {

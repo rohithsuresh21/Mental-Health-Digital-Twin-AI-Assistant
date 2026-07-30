@@ -1,6 +1,6 @@
 import os, json, sys, traceback, tempfile, time, secrets, functools, hashlib
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import numpy as np
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
@@ -113,10 +113,10 @@ def auth_login():
     session.permanent = True
     session["user_id"] = user_id
     session["role"] = role
-    session["login_time"] = datetime.utcnow().isoformat()
+    session["login_time"] = datetime.now(timezone.utc).isoformat()
 
     _write_activity_row({
-        "Timestamp (UTC)": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        "Timestamp (UTC)": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         "User ID": user_id,
         "Action": "login",
         "Full Name": "",
@@ -251,7 +251,7 @@ def log_user_activity():
     body = request.get_json(force=True, silent=True) or {}
     action = body.get("action", "unknown")
     user_id = session.get("user_id", "anonymous")
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     row_data = {
         "Timestamp (UTC)": now.strftime("%Y-%m-%d %H:%M:%S"),
@@ -1224,7 +1224,7 @@ def diagnose():
             result.get("timestamps", []),
         )
         _write_activity_row({
-            "Timestamp (UTC)": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+            "Timestamp (UTC)": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
             "User ID": user_id,
             "Action": "diagnose",
             "Full Name": user_id,
