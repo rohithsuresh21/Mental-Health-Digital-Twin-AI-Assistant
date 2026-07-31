@@ -23,6 +23,7 @@ dist/
 !tft_checkpoint.ckpt
 *.pkl
 !Stage_5/pca.pkl
+!Stage_5/platt.pkl
 !Stage_5/platt_new.pkl
 !Stage_5/isotonic_new.pkl
 *.pt
