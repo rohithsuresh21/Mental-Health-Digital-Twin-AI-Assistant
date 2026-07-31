@@ -1,20 +1,31 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Mental Health Digital Twin — Frontend
 
-# Run and deploy your AI Studio app
+React (Vite) analytics dashboard for the Mental Health Digital Twin system. Consumes the Flask backend described in the [root README](../README.md).
 
-This contains everything you need to run your app locally.
+## Stack
 
-View your app in AI Studio: https://ai.studio/apps/3ec36e54-b585-49ab-b07d-727888f99b6f
+- React 19 + TypeScript
+- Vite 6
+- Tailwind CSS 4
+- Lucide React (icons), Motion (animations)
+- Express (`server.ts`) acting as a dev/serve proxy to the Flask backend
 
-## Run Locally
+## Run locally
 
-**Prerequisites:**  Node.js
+```bash
+npm install
+npm run dev
+```
 
+Serves on `http://localhost:3000`. The Express proxy forwards API calls to the Flask backend at `http://127.0.0.1:5000` (override with the `FLASK_URL` environment variable).
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Build
+
+```bash
+npm run build        # vite build → dist/
+npm run lint         # tsc --noEmit
+```
+
+## Deploy
+
+`vercel.json` rewrites `/api/(.*)` to the backend (via a Cloudflare tunnel in local demos); all other routes fall back to `index.html` for client-side routing.
