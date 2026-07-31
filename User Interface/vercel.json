@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://accessibility-gathered-thriller-fridge.trycloudflare.com/$1"
+                         "destination": "https://balanced-strengthening-marketing-courier.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
