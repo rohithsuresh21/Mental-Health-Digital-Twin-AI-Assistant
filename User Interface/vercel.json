@@ -9,7 +9,7 @@
                      },
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://grants-was-broadcasting-reward.trycloudflare.com/$1"
+                         "destination": "https://assume-dans-swimming-end.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
