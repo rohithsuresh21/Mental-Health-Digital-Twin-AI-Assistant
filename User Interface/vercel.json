@@ -9,7 +9,7 @@
                      },
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://reaching-yield-robbie-gloves.trycloudflare.com/$1"
+                         "destination": "https://would-rebecca-cigarettes-james.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
