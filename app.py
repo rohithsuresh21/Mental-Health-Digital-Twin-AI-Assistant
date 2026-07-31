@@ -4,7 +4,6 @@ from datetime import datetime, timedelta, timezone
 import numpy as np
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
-
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
@@ -13,47 +12,36 @@ app.config["SESSION_COOKIE_SAMESITE"] = "None"
 app.config["SESSION_COOKIE_SECURE"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
 CORS(app, supports_credentials=True, origins=["https://mental-health-digital-twin-ai-assis.vercel.app", "http://127.0.0.1:5173", "http://localhost:5173"])
-
-# ── Security Configuration ──────────────────────────────────────────────────
-
-# ── Rate Limiting ───────────────────────────────────────────────────────────
-# Per-user rate limits: { endpoint: (max_requests, window_seconds)
 RATE_LIMITS = {
-    "diagnose":    (10,  300),   # 10 diagnoses per 5 min
-    "generate_pdf": (10, 300),   # 10 PDF downloads per 5 min
-    "login":       (10,  60),    # 10 login attempts per min
-    "submit":      (20,  3600),  # 20 daily submissions per hour
-    "default":     (60, 60),     # 60 requests per min for everything else
+    "diagnose":    (10,  300),
+    "generate_pdf": (10, 300),
+    "login":       (10,  60),
+    "submit":      (20,  3600),
+    "default":     (60, 60),
 }
-
 _rate_limit_store = {}
-
 def _get_client_key():
-    """Get a rate-limit key: user_id if logged in, else IP address."""
+
     uid = session.get("user_id")
     if uid:
         return f"user:{uid}"
     return f"ip:{request.remote_addr}"
-
 def _check_rate_limit(endpoint, max_requests=None, window_seconds=None):
-    """Check if request is within rate limit. Returns True if allowed."""
+
     if max_requests is None:
         limit_info = RATE_LIMITS.get(endpoint, RATE_LIMITS["default"])
         max_requests, window_seconds = limit_info
-
     key = f"{_get_client_key()}:{endpoint}"
     now = time.time()
     if key not in _rate_limit_store:
         _rate_limit_store[key] = []
-    # Remove expired entries
     _rate_limit_store[key] = [t for t in _rate_limit_store[key] if now - t < window_seconds]
     if len(_rate_limit_store[key]) >= max_requests:
         return False
     _rate_limit_store[key].append(now)
     return True
-
 def rate_limit(endpoint=None):
-    """Decorator: enforce per-user rate limit on a route."""
+
     ep = endpoint
     def decorator(f):
         @functools.wraps(f)
@@ -70,9 +58,8 @@ def rate_limit(endpoint=None):
             return f(*args, **kwargs)
         return decorated
     return decorator
-
 def require_session(f):
-    """Decorator: require a valid session with user_id."""
+
     @functools.wraps(f)
     def decorated(*args, **kwargs):
         user_id = session.get("user_id")
@@ -80,41 +67,33 @@ def require_session(f):
             return jsonify({"error": "Authentication required"}), 401
         return f(*args, **kwargs)
     return decorated
-
 def require_admin(f):
-    """Decorator: require admin role in session."""
+
     @functools.wraps(f)
     def decorated(*args, **kwargs):
         if session.get("role") != "admin":
             return jsonify({"error": "Admin access required"}), 403
         return f(*args, **kwargs)
     return decorated
-
 def validate_user_access(user_id):
-    """Ensure the session user matches the requested user_id, or is admin."""
+
     session_user = session.get("user_id", "")
     if session.get("role") == "admin":
         return True
     return session_user == user_id
-
-# ── Auth Endpoints ──────────────────────────────────────────────────────────
-
 @app.route("/auth/login", methods=["POST"])
 @rate_limit("login")
 def auth_login():
-    """Server-side login: validates credentials, creates session."""
+
     body = request.get_json(force=True, silent=True) or {}
     user_id = body.get("user_id", "").strip()
     role = body.get("role", "patient").strip()
-
     if not user_id:
         return jsonify({"error": "user_id is required"}), 400
-
     session.permanent = True
     session["user_id"] = user_id
     session["role"] = role
     session["login_time"] = datetime.now(timezone.utc).isoformat()
-
     _write_activity_row({
         "Timestamp (UTC)": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         "User ID": user_id,
@@ -126,21 +105,18 @@ def auth_login():
         "Date of Birth": "",
         "IP Address": request.remote_addr or "",
     })
-
     return jsonify({
         "success": True,
         "user_id": user_id,
         "role": role,
     })
-
 @app.route("/auth/logout", methods=["POST"])
 def auth_logout():
     session.clear()
     return jsonify({"success": True})
-
 @app.route("/auth/verify", methods=["GET"])
 def auth_verify():
-    """Check if current session is valid."""
+
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"authenticated": False}), 401
@@ -149,40 +125,32 @@ def auth_verify():
         "user_id": user_id,
         "role": session.get("role", "patient"),
     })
-
 @app.route("/auth/avatar", methods=["POST"])
 def upload_avatar():
-    """Upload a profile photo for the logged-in user."""
+
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Authentication required"}), 401
-
     if "avatar" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
-
     file = request.files["avatar"]
     if not file.filename:
         return jsonify({"error": "Empty filename"}), 400
-
     ext = Path(file.filename).suffix.lower()
     if ext not in {".jpg", ".jpeg", ".png", ".webp"}:
         return jsonify({"error": "Only JPG, PNG, WebP allowed"}), 400
-
     avatar_dir = Path("data/avatars")
     avatar_dir.mkdir(parents=True, exist_ok=True)
-
     safe_name = f"{user_id}{ext}"
     save_path = avatar_dir / safe_name
     file.save(str(save_path))
-
     return jsonify({
         "success": True,
         "avatar_url": f"/api/auth/avatar/{user_id}",
     })
-
 @app.route("/auth/avatar/<user_id>", methods=["GET"])
 def get_avatar(user_id):
-    """Serve a user's profile photo."""
+
     from flask import send_file as _send
     avatar_dir = Path("data/avatars")
     for ext in [".jpg", ".jpeg", ".png", ".webp"]:
@@ -190,15 +158,11 @@ def get_avatar(user_id):
         if path.exists():
             return _send(str(path))
     return jsonify({"error": "Avatar not found"}), 404
-
-# ── User Activity Logging (Excel) ────────────────────────────────────────────
 _ACTIVITY_XLSX = Path("data/user_activity.xlsx")
-
 def _write_activity_row(row_data: dict):
-    """Append one row to the activity Excel file (thread-safe-ish via append)."""
+
     from openpyxl import Workbook, load_workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-
     _ACTIVITY_XLSX.parent.mkdir(parents=True, exist_ok=True)
     header_font = Font(bold=True, color="FFFFFF", size=11)
     header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
@@ -207,7 +171,6 @@ def _write_activity_row(row_data: dict):
         left=Side(style="thin"), right=Side(style="thin"),
         top=Side(style="thin"), bottom=Side(style="thin"),
     )
-
     if _ACTIVITY_XLSX.exists():
         try:
             wb = load_workbook(str(_ACTIVITY_XLSX))
@@ -229,12 +192,10 @@ def _write_activity_row(row_data: dict):
             cell.alignment = header_align
             cell.border = thin_border
         ws.auto_filter.ref = f"A1:{chr(64+len(headers))}1"
-
     ws.append(list(row_data.values()))
     last_row = ws.max_row
     for col in range(1, ws.max_column + 1):
         ws.cell(row=last_row, column=col).border = thin_border
-
     for col_cells in ws.columns:
         max_len = 0
         col_letter = col_cells[0].column_letter
@@ -242,17 +203,14 @@ def _write_activity_row(row_data: dict):
             if cell.value:
                 max_len = max(max_len, len(str(cell.value)))
         ws.column_dimensions[col_letter].width = min(max_len + 4, 40)
-
     wb.save(str(_ACTIVITY_XLSX))
-
 @app.route("/user-activity", methods=["POST"])
 def log_user_activity():
-    """Log user activity to an Excel spreadsheet."""
+
     body = request.get_json(force=True, silent=True) or {}
     action = body.get("action", "unknown")
     user_id = session.get("user_id", "anonymous")
     now = datetime.now(timezone.utc)
-
     row_data = {
         "Timestamp (UTC)": now.strftime("%Y-%m-%d %H:%M:%S"),
         "User ID": user_id,
@@ -266,7 +224,6 @@ def log_user_activity():
     }
     _write_activity_row(row_data)
     return jsonify({"success": True})
-
 @app.after_request
 def add_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -275,24 +232,19 @@ def add_security_headers(response):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'"
     return response
-
 _pipeline = None
-
 def get_pipeline():
     global _pipeline
     if _pipeline is None:
         from unified_pipeline import UnifiedJournalPipeline
         _pipeline = UnifiedJournalPipeline()
     return _pipeline
-
 from daily_portal.routes import daily
 from daily_portal.db import init_db
 init_db()
 app.register_blueprint(daily)
-
 from Stage_1.Extract_features import preload_models
 preload_models()
-
 CUSUM_STATUS_TEXT = {
     1: {
         "state": "stable",
@@ -315,10 +267,8 @@ CUSUM_STATUS_TEXT = {
         "message": "Your readings are fluctuating above and below your normal range. This unusual pattern may require closer attention. Keep monitoring your condition and consider seeking guidance if it continues.",
     },
 }
-
-
 def classify_cusum_state(alert_upper: bool, alert_lower: bool) -> int:
-    """Map a pair of CUSUM alert flags to one of the four states above."""
+
     if alert_upper and alert_lower:
         return 4
     if alert_upper:
@@ -326,8 +276,6 @@ def classify_cusum_state(alert_upper: bool, alert_lower: bool) -> int:
     if alert_lower:
         return 3
     return 1
-
-
 def build_cusum_status(cusum_alert_upper: list, cusum_alert_lower: list, timestamps: list = None) -> dict:
     states = [
         classify_cusum_state(u, l)
@@ -335,7 +283,6 @@ def build_cusum_status(cusum_alert_upper: list, cusum_alert_lower: list, timesta
     ]
     latest_code = states[-1] if states else 1
     latest = CUSUM_STATUS_TEXT[latest_code]
-
     alert_indices = [i for i, s in enumerate(states) if s != 1]
     had_alert_history = len(alert_indices) > 0
     last_alert_index = alert_indices[-1] if had_alert_history else None
@@ -345,7 +292,6 @@ def build_cusum_status(cusum_alert_upper: list, cusum_alert_lower: list, timesta
         if had_alert_history and timestamps and last_alert_index < len(timestamps)
         else None
     )
-
     result = {
         "states": states,
         "current_code": latest_code,
@@ -354,7 +300,6 @@ def build_cusum_status(cusum_alert_upper: list, cusum_alert_lower: list, timesta
         "current_message": latest["message"],
         "had_alert_history": had_alert_history,
     }
-
     if had_alert_history and latest_code == 1:
         last_alert_state = CUSUM_STATUS_TEXT[last_alert_code]["state"].replace("_", " ")
         result["current_state"] = "recovered"
@@ -366,9 +311,7 @@ def build_cusum_status(cusum_alert_upper: list, cusum_alert_lower: list, timesta
         )
         result["last_alert_date"] = last_alert_date
         result["last_alert_state"] = last_alert_state
-
     return result
-
 HTML = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1135,8 +1078,6 @@ dz.addEventListener("drop", e => {
 </script>
 </body>
 </html>"""
-
-
 @app.route("/")
 def index():
     return jsonify({
@@ -1150,15 +1091,12 @@ def index():
             "calibrate": "POST /daily/calibrate",
         }
     })
-
-
 @app.route("/diagnose", methods=["POST"])
 @rate_limit("diagnose")
 def diagnose():
     try:
         body = request.get_json(force=True, silent=True) or {}
         user_id = (body.get("user_id") or body.get("fullName", "user_demo")).strip() or "user_demo"
-
         text_parts = [
             body.get("communicationLogs", ""),
             body.get("voiceRecordingsText", ""),
@@ -1166,8 +1104,6 @@ def diagnose():
             body.get("docFileContent", ""),
         ]
         text = "\n\n".join(p for p in text_parts if p)
-
-        # Also pull any daily portal entries for this user
         try:
             from daily_portal import db as daily_db
             daily_entries = daily_db.get_recent_entries(user_id, limit=500)
@@ -1184,10 +1120,8 @@ def diagnose():
                     text = daily_block
         except Exception as _de:
             print(f"[diagnose] Could not load daily entries: {_de}")
-
         from pipeline_runner import run_pipeline
         import tempfile, os
-
         if text.strip():
             fd, tmp_path = tempfile.mkstemp(suffix=".txt")
             os.close(fd)
@@ -1203,7 +1137,6 @@ def diagnose():
                         if _delay == 1.0: pass
                         else: time.sleep(_delay)
         else:
-            # demo mode — create dummy entries so file_path is not required
             fd, tmp_path = tempfile.mkstemp(suffix=".txt")
             os.close(fd)
             with open(tmp_path, "w", encoding="utf-8") as f:
@@ -1217,17 +1150,14 @@ def diagnose():
                     except PermissionError:
                         if _delay == 1.0: pass
                         else: time.sleep(_delay)
-
         result["cusum_status"] = build_cusum_status(
             result.get("cusum_alert_upper", []),
             result.get("cusum_alert_lower", []),
             result.get("timestamps", []),
         )
-
         patient_name = body.get("fullName", "").strip() or user_id
         has_text = bool(body.get("communicationLogs", "").strip() or body.get("clinicalReportsText", "").strip() or body.get("docFileContent", "").strip())
         has_audio = bool(body.get("voiceRecordingsText", "").strip())
-
         pipe = get_pipeline()
         raw_vecs = pipe.raw_feature_vectors.get(user_id, [])
         if raw_vecs:
@@ -1240,7 +1170,6 @@ def diagnose():
             print(f"Files uploaded: {'text file' if has_text else ''}{' + audio file' if has_audio else ''}{' (none)' if not has_text and not has_audio else ''}")
             print(f"466-dim feature vector: {n_features} dimensions, {n_zero} zeros ({pct_filled}% filled) — both text and audio processed into unified vector")
             print(f"==========================\n")
-
         _write_activity_row({
             "Timestamp (UTC)": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
             "User ID": user_id,
@@ -1256,27 +1185,21 @@ def diagnose():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/forecast-detectors", methods=["POST"])
 @rate_limit("diagnose")
 def forecast_detectors():
-    """Train 4 per-detector GradientBoosting models and return 7-day forecasts."""
+
     try:
         body = request.get_json(force=True, silent=True) or {}
         user_id = (body.get("user_id") or body.get("fullName", "user_demo")).strip() or "user_demo"
-
         import pipeline_runner as _pr
         shared = _pr._shared_pipeline
         if shared is None:
             return jsonify({"detector_forecasts": {}, "error": "No pipeline data. Run a diagnosis first."}), 400
-
         user_scores = shared.anomaly_scores.get(user_id, [])
-
         if len(user_scores) >= 37:
             forecasts = shared._generate_detector_forecasts(user_id, forecast_days=7)
             return jsonify({"detector_forecasts": forecasts})
-
         return jsonify({
             "detector_forecasts": {},
             "error": f"Insufficient data ({len(user_scores)}/37 entries). Run a diagnosis first to train the detector models."
@@ -1284,8 +1207,6 @@ def forecast_detectors():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/generate-pdf", methods=["POST"])
 @rate_limit("generate_pdf")
 def generate_pdf():
@@ -1293,19 +1214,15 @@ def generate_pdf():
         body = request.get_json(force=True, silent=True) or {}
         diagnostic_data = body.get("diagnosticData", {})
         inputs = body.get("inputs", {})
-
         if not diagnostic_data:
             return jsonify({"error": "diagnosticData is required"}), 400
-
         from pdf_generator import generate_pdf as _gen
         pdf_bytes = _gen(diagnostic_data, inputs)
-
         from flask import send_file
         import io
         patient_name = inputs.get("fullName", "Patient").replace(" ", "_")
         date_str = datetime.now().strftime("%Y-%m-%d")
         filename = f"Medical_Summary_{patient_name}_{date_str}.pdf"
-
         return send_file(
             io.BytesIO(pdf_bytes),
             mimetype="application/pdf",
@@ -1315,24 +1232,18 @@ def generate_pdf():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/run", methods=["POST"])
 @rate_limit("diagnose")
 def run():
     try:
         user_id = request.form.get("user_id", "user_demo").strip()
         file    = request.files.get("file")
-
         if not file or not file.filename:
             return jsonify({"error": "No file uploaded. Upload a CSV, JSON, TXT, PDF, or DOCX file with journal entries."}), 400
-
         suffix = Path(file.filename).suffix.lower()
         if suffix not in {".csv",".json",".txt",".pdf",".docx",".doc"}:
             return jsonify({"error": f"Unsupported file type: {suffix}"}), 400
-
         from pipeline_runner import run_pipeline
-
         fd, tmp_path = tempfile.mkstemp(suffix=suffix)
         os.close(fd)
         file.save(tmp_path)
@@ -1348,20 +1259,15 @@ def run():
                         pass
                     else:
                         time.sleep(_delay)
-
         result["cusum_status"] = build_cusum_status(
             result.get("cusum_alert_upper", []),
             result.get("cusum_alert_lower", []),
             result.get("timestamps", []),
         )
-
         return jsonify(result)
-
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/internal/feature-extractor", methods=["POST"])
 def internal_feature_extractor():
     try:
@@ -1370,14 +1276,12 @@ def internal_feature_extractor():
         text = body.get("text", "").strip()
         if not user_id or not text:
             return jsonify({"error": "user_id and text are required"}), 400
-
         ts = None
         if body.get("timestamp"):
             try:
                 ts = datetime.fromisoformat(body["timestamp"])
             except Exception:
                 pass
-
         result = get_pipeline().process_entry(
             user_id=user_id,
             text=text,
@@ -1387,7 +1291,6 @@ def internal_feature_extractor():
             activity_level=body.get("activity_level"),
             music_mood_score=body.get("music_mood_score"),
         )
-
         ub = get_pipeline().user_baselines.get(user_id)
         return jsonify({
             "user_id": user_id,
@@ -1398,12 +1301,9 @@ def internal_feature_extractor():
             "calibrated": result["stage_2"]["calibrated"],
             "calibration_status": ub.calibration_status() if ub else None,
         })
-
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/internal/test-vector", methods=["POST"])
 def internal_test_vector():
     try:
@@ -1411,12 +1311,10 @@ def internal_test_vector():
         user_id = body.get("user_id", "").strip()
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
-
         pipe = get_pipeline()
         raw_vecs = pipe.raw_feature_vectors.get(user_id, [])
         norm_vecs = pipe.normalized_vectors.get(user_id, [])
         user_data = pipe.user_data.get(user_id, [])
-
         if not raw_vecs:
             return jsonify({
                 "user_id": user_id,
@@ -1425,11 +1323,9 @@ def internal_test_vector():
                 "user_data": None,
                 "error": "No vectors for this user. Submit an entry first."
             }), 404
-
         latest_raw = raw_vecs[-1].tolist()
         latest_norm = norm_vecs[-1].tolist() if norm_vecs else None
         latest_meta = user_data[-1] if user_data else {}
-
         return jsonify({
             "user_id": user_id,
             "vector": latest_raw,
@@ -1441,12 +1337,9 @@ def internal_test_vector():
                 "timestamp": str(latest_meta.get("timestamp", "")),
             },
         })
-
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/internal/forecaster", methods=["POST"])
 def internal_forecaster():
     try:
@@ -1454,11 +1347,9 @@ def internal_forecaster():
         user_id = body.get("user_id", "").strip()
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
-
         n = len(get_pipeline().normalized_vectors.get(user_id, []))
         if n < 3:
             return jsonify({"error": f"Need at least 3 entries, got {n}"}), 400
-
         all_vecs = get_pipeline().get_batch_consistent_vectors(user_id)
         if not get_pipeline().anomaly_detector:
             n_train = max(10, int(len(all_vecs) * 0.7))
@@ -1470,7 +1361,6 @@ def internal_forecaster():
         for vec in all_vecs:
             anomaly_results.append(get_pipeline().detect_anomalies(vec))
         get_pipeline().anomaly_scores[user_id] = anomaly_results
-
         num_patches = max(20, min(30, n + 10))
         tft = get_pipeline().train_tft_model(
             num_patches=num_patches,
@@ -1478,7 +1368,6 @@ def internal_forecaster():
             max_epochs=5,
             batch_size=8,
         )
-
         return jsonify({
             "user_id": user_id,
             "latent_shape": list(tft["latents"].shape),
@@ -1486,12 +1375,9 @@ def internal_forecaster():
             "umap_coords": tft["umap_coords"].tolist() if hasattr(tft["umap_coords"], "tolist") else tft["umap_coords"],
             "n_entries": n,
         })
-
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/internal/consensus", methods=["POST"])
 def internal_consensus():
     try:
@@ -1499,12 +1385,9 @@ def internal_consensus():
         user_id = body.get("user_id", "").strip()
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
-
         if user_id not in get_pipeline().normalized_vectors or len(get_pipeline().normalized_vectors[user_id]) == 0:
             return jsonify({"error": f"No normalized vectors for user {user_id}"}), 400
-
         all_vecs = get_pipeline().get_batch_consistent_vectors(user_id)
-
         if not get_pipeline().anomaly_detector:
             n_train = max(10, int(len(all_vecs) * 0.7))
             from stage_4.anomaly_pipeline import MultiDetectorPipeline
@@ -1515,12 +1398,9 @@ def internal_consensus():
         anomaly_results = []
         for vec in all_vecs:
             anomaly_results.append(get_pipeline().detect_anomalies(vec))
-
         get_pipeline().anomaly_scores[user_id] = anomaly_results
-
         cusum_results = get_pipeline().fit_and_run_cusum(user_id)
         cusum_threshold = round(float(get_pipeline().cusum_detectors[user_id].h), 4)
-
         return jsonify({
             "user_id": user_id,
             "overall_anomaly_scores": [round(a["overall_risk_score"], 4) for a in anomaly_results],
@@ -1533,12 +1413,9 @@ def internal_consensus():
             "cusum_threshold": cusum_threshold,
             "n_entries": len(anomaly_results),
         })
-
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/internal/risk-calculator", methods=["POST"])
 def internal_risk_calculator():
     try:
@@ -1546,7 +1423,6 @@ def internal_risk_calculator():
         user_id = body.get("user_id", "").strip()
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
-
         vecs = get_pipeline().normalized_vectors.get(user_id, [])
         anomalies = get_pipeline().anomaly_scores.get(user_id, [])
         if len(vecs) < 5:
@@ -1558,7 +1434,6 @@ def internal_risk_calculator():
                 "risk_level": "LOW",
                 "intervention_recommended": False,
             })
-
         features = get_pipeline().assemble_stage5_features(vecs, anomalies)
         prediction = get_pipeline().predict_classification(features)
         return jsonify({
@@ -1569,12 +1444,9 @@ def internal_risk_calculator():
             "risk_level": prediction["risk_level"],
             "intervention_recommended": prediction["intervention_recommended"],
         })
-
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/internal/calibration", methods=["POST"])
 def internal_calibration():
     try:
@@ -1583,10 +1455,8 @@ def internal_calibration():
         calibration_method = body.get("calibration_method", "temperature")
         if calibration_method not in ("temperature", "platt"):
             return jsonify({"error": "Unsupported calibration method. Accepted: 'temperature', 'platt'"}), 400
-
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
-
         vecs = get_pipeline().normalized_vectors.get(user_id, [])
         anomalies = get_pipeline().anomaly_scores.get(user_id, [])
         if len(vecs) < 5:
@@ -1597,7 +1467,6 @@ def internal_calibration():
                 "probability": 0.0,
                 "risk_level": "LOW",
             })
-
         features = get_pipeline().assemble_stage5_features(vecs, anomalies)
         prediction = get_pipeline().predict_classification(features, calibration=calibration_method)
         return jsonify({
@@ -1608,12 +1477,9 @@ def internal_calibration():
             "risk_level": prediction["risk_level"],
             "intervention_recommended": prediction["intervention_recommended"],
         })
-
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/internal/explainer", methods=["POST"])
 def internal_explainer():
     try:
@@ -1622,10 +1488,8 @@ def internal_explainer():
         calibration_method = body.get("calibration_method", "temperature")
         if calibration_method not in ("temperature", "platt"):
             return jsonify({"error": "Unsupported calibration method. Accepted: 'temperature', 'platt'"}), 400
-
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
-
         vecs = get_pipeline().normalized_vectors.get(user_id, [])
         anomalies = get_pipeline().anomaly_scores.get(user_id, [])
         if len(vecs) < 5:
@@ -1637,22 +1501,17 @@ def internal_explainer():
                 "risk_level": "LOW",
                 "explanation": "Not enough journal entries to generate a meaningful explanation."
             })
-
         features = get_pipeline().assemble_stage5_features(vecs, anomalies)
         prediction = get_pipeline().predict_classification(features, calibration=calibration_method)
-
-        # Simple feature-level explanation based on aggregate anomaly signals
         latest_anomaly = anomalies[-1] if anomalies else {}
         det_scores = latest_anomaly.get("detector_scores", {})
         contributors = sorted(det_scores.items(), key=lambda x: x[1], reverse=True) if det_scores else []
-
         explanation = f"Risk assessment based on {len(vecs)} journal entries."
         if contributors:
             top = contributors[0]
             explanation += f" Primary signal driver: {top[0]} detector (score: {top[1]:.3f})."
         if prediction["risk_level"] != "LOW":
             explanation += " Consider consulting a mental health professional for a complete evaluation."
-
         return jsonify({
             "user_id": user_id,
             "calibration_method": calibration_method,
@@ -1663,25 +1522,20 @@ def internal_explainer():
             "explanation": explanation,
             "feature_contributors": contributors,
         })
-
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/api/explain", methods=["POST"])
 @rate_limit("diagnose")
 def api_explain():
-    """Return SHAP-based XAI explanation for a user."""
+
     try:
         body = request.get_json(force=True, silent=True) or {}
         user_id = (body.get("user_id") or body.get("fullName", "user_demo")).strip() or "user_demo"
-
         import pipeline_runner as _pr
         shared = _pr._shared_pipeline
         if shared is None:
             return jsonify({"error": "No pipeline data. Run a diagnosis first."}), 400
-
         explanation = shared.explain_prediction(user_id)
         if explanation is None:
             return jsonify({
@@ -1689,14 +1543,10 @@ def api_explain():
                 "note": "No explanation available. Ensure a diagnosis has been run and the XGBoost model is loaded.",
                 "explanation": None,
             })
-
         return jsonify({"user_id": user_id, "explanation": explanation})
-
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 PORTAL_HTML = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2196,8 +2046,6 @@ refreshStatus();
 </script>
 </body>
 </html>"""
-
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print(f"Flask API running on http://0.0.0.0:{port}")

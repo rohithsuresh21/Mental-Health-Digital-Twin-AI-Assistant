@@ -3,19 +3,15 @@ import torch
 import pandas as pd
 import numpy as np
 from torch.utils.data import DataLoader
-
 try:
     import lightning.pytorch as pl
     from lightning.pytorch.callbacks import ModelCheckpoint
 except ImportError:
     import pytorch_lightning as pl
     from pytorch_lightning.callbacks import ModelCheckpoint
-
 from pytorch_forecasting import TemporalFusionTransformer, TimeSeriesDataSet
 from pytorch_forecasting.data import EncoderNormalizer
 from pytorch_forecasting.metrics import MAE
-
-
 def build_dataframe(patched_data: dict, patched_risks: dict = None) -> pd.DataFrame:
     rows = []
     for user_id, windows in patched_data.items():
@@ -27,18 +23,14 @@ def build_dataframe(patched_data: dict, patched_risks: dict = None) -> pd.DataFr
                     risk_val = float(risk_windows[window_idx, patch_idx])
                 else:
                     risk_val = 0.5
-
                 sentiment = float(feature_vec[415]) if len(feature_vec) > 415 else 0.0
                 sleep_hours = float(feature_vec[436]) if len(feature_vec) > 436 else 0.0
                 sleep_quality = float(feature_vec[437]) if len(feature_vec) > 437 else 0.0
                 activity = float(feature_vec[439]) if len(feature_vec) > 439 else 0.0
-
                 sentiment_score = (sentiment + 1.0) / 2.0
                 health_score = np.clip((sleep_hours / 10.0 * 0.3 + sleep_quality * 0.4 + activity * 0.3), 0.0, 1.0)
-
                 target_val = risk_val * 0.5 + sentiment_score * 0.25 + health_score * 0.25
                 target_val = float(np.clip(target_val, 0.01, 0.99))
-
                 row = {
                     "user_id":   str(user_id),
                     "window_id": f"{user_id}_{window_idx}",
@@ -49,16 +41,12 @@ def build_dataframe(patched_data: dict, patched_risks: dict = None) -> pd.DataFr
                     row[f"feature_{f_idx}"] = float(f_val)
                 rows.append(row)
     return pd.DataFrame(rows)
-
-
 def build_dataset(df: pd.DataFrame, feature_dim: int, num_patches: int = 30) -> TimeSeriesDataSet:
     from pytorch_forecasting.data.encoders import NaNLabelEncoder
     from pytorch_forecasting.data import GroupNormalizer
-
     feature_cols = [f"feature_{i}" for i in range(feature_dim)]
     max_prediction_length = 7
     max_encoder_length    = num_patches - max_prediction_length
-
     return TimeSeriesDataSet(
         df,
         time_idx="time_idx",
@@ -78,8 +66,6 @@ def build_dataset(df: pd.DataFrame, feature_dim: int, num_patches: int = 30) -> 
         allow_missing_timesteps=True,
         categorical_encoders={"window_id": NaNLabelEncoder(add_nan=True)},
     )
-
-
 def build_tft(
     dataset: TimeSeriesDataSet,
     hidden_size: int = 64,
@@ -87,12 +73,10 @@ def build_tft(
     n_entries: int = 100,
     learning_rate: float = 1e-3,
 ) -> TemporalFusionTransformer:
-
     if n_entries < 20:
         dropout = 0.3
         hidden_size = min(hidden_size, 32)
         print(f"[TFT] Small dataset ({n_entries} entries) — dropout set to 0.3, hidden_size capped at {hidden_size}")
-
     return TemporalFusionTransformer.from_dataset(
         dataset,
         learning_rate=learning_rate,
@@ -104,8 +88,6 @@ def build_tft(
         log_interval=10,
         reduce_on_plateau_patience=4,
     )
-
-
 def train_tft(
     tft: TemporalFusionTransformer,
     train_dataset: TimeSeriesDataSet,
@@ -115,10 +97,8 @@ def train_tft(
     checkpoint_path: str = "tft_checkpoint.ckpt",
     learning_rate: float = 1e-3,
 ) -> TemporalFusionTransformer:
-
     train_loader = train_dataset.to_dataloader(train=True,  batch_size=batch_size, num_workers=0)
     val_loader   = val_dataset.to_dataloader(  train=False, batch_size=batch_size, num_workers=0)
-
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.dirname(os.path.abspath(checkpoint_path)),
         filename=os.path.basename(checkpoint_path).replace(".ckpt", ""),
@@ -126,7 +106,6 @@ def train_tft(
         save_top_k=1,
         mode="min",
     )
-
     trainer = pl.Trainer(
         max_epochs=max_epochs,
         gradient_clip_val=0.1,
@@ -135,11 +114,8 @@ def train_tft(
         callbacks=[checkpoint_callback],
         accelerator="cpu",
     )
-
     trainer.fit(tft, train_dataloaders=train_loader, val_dataloaders=val_loader)
     return tft
-
-
 def extract_latent_and_attention(
     tft: TemporalFusionTransformer,
     dataset: TimeSeriesDataSet,
@@ -150,10 +126,8 @@ def extract_latent_and_attention(
     all_latents   = []
     all_attention = []
     latent_cache  = {}
-
     def hook_fn(module, input, output):
         latent_cache["z_t"] = output[1][0][-1].detach()
-
     hook = tft.lstm_encoder.register_forward_hook(hook_fn)
     tft.eval()
     with torch.no_grad():
@@ -165,13 +139,10 @@ def extract_latent_and_attention(
             z_t       = latent_cache["z_t"].reshape(latent_cache["z_t"].shape[0], -1)
             all_latents.append(z_t.cpu())
             all_attention.append(attn_mean.cpu())
-
     hook.remove()
     latents    = torch.cat(all_latents,   dim=0)
     attentions = torch.cat(all_attention, dim=0)
     return latents, attentions
-
-
 def project_umap(latents: torch.Tensor, n_components: int = 2, random_state: int = 42):
     try:
         from umap import UMAP
@@ -185,8 +156,6 @@ def project_umap(latents: torch.Tensor, n_components: int = 2, random_state: int
     n_neighbors = max(2, min(15, data.shape[0] - 1))
     reducer = UMAP(n_components=n_components, n_neighbors=n_neighbors, random_state=random_state)
     return reducer.fit_transform(data)
-
-
 def generate_forecast(
     tft: TemporalFusionTransformer,
     dataset: TimeSeriesDataSet,
@@ -194,35 +163,24 @@ def generate_forecast(
 ) -> list:
     tft = tft.cpu()
     tft.eval()
-
     try:
         import torch
-
         loader = dataset.to_dataloader(train=False, batch_size=1, num_workers=0)
-
         last_batch = None
         for x, y in loader:
             last_batch = {k: v.clone().cpu() if isinstance(v, torch.Tensor) else v for k, v in x.items()}
-
         if last_batch is None:
             return [0.5] * forecast_days
-
         with torch.no_grad():
             output = tft(last_batch)
             preds = output["prediction"].cpu().numpy().flatten()
-
         forecast = [round(float(p), 4) for p in preds[:forecast_days]]
-
         while len(forecast) < forecast_days:
             forecast.append(forecast[-1] if forecast else 0.5)
-
         return forecast
-
     except Exception as e:
         print(f"[TFT] Forecast generation failed: {e}")
         return [0.5] * forecast_days
-
-
 def load_tft_checkpoint(checkpoint_path: str = "tft_checkpoint.ckpt"):
     import torch
     if not os.path.exists(checkpoint_path):
@@ -248,8 +206,6 @@ def load_tft_checkpoint(checkpoint_path: str = "tft_checkpoint.ckpt"):
     except Exception as e:
         print(f"[TFT] Could not load checkpoint at startup ({type(e).__name__}: {e})")
         return None
-
-
 def run_stage3(
     patched_data: dict,
     feature_dim: int,
@@ -261,17 +217,14 @@ def run_stage3(
     n_entries: int = 100,
     patched_risks: dict = None,
 ) -> dict:
-
     df         = build_dataframe(patched_data, patched_risks)
     window_ids = df["window_id"].unique().tolist()
-
     user_prefixes  = list(set("_".join(w.split("_")[:-1]) for w in window_ids))
     val_window_ids = set()
     for prefix in user_prefixes:
         user_windows = sorted([w for w in window_ids if "_".join(w.split("_")[:-1]) == prefix])
         if len(user_windows) > 4:
             val_window_ids.update(user_windows[-2:])
-
     if val_window_ids:
         train_df = df[~df["window_id"].isin(val_window_ids)].reset_index(drop=True)
         val_df   = df[df["window_id"].isin(val_window_ids)].reset_index(drop=True)
@@ -279,17 +232,14 @@ def run_stage3(
     else:
         train_df = df
         val_df   = df
-
     full_dataset  = build_dataset(df,       feature_dim, num_patches=num_patches)
     train_dataset = build_dataset(train_df, feature_dim, num_patches=num_patches)
     val_dataset   = TimeSeriesDataSet.from_dataset(train_dataset, val_df, predict=True)
-
     if os.path.exists(checkpoint_path):
         try:
             print(f"[TFT] Checkpoint found — attempting to load for fine-tuning.")
             tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path)
             tft = tft.cpu()
-
             expected_encoder_len = num_patches - 7
             actual_encoder_len = tft.hparams.encoder_max_length if hasattr(tft.hparams, 'encoder_max_length') else None
             if actual_encoder_len and actual_encoder_len != expected_encoder_len:
@@ -297,14 +247,12 @@ def run_stage3(
                     f"Checkpoint encoder length ({actual_encoder_len}) != "
                     f"current config ({expected_encoder_len}). Retraining from scratch."
                 )
-
             frozen_count = 0
             for name, param in tft.named_parameters():
                 if any(x in name for x in ["lstm_encoder", "input_embeddings", "prescalers", "static_covariates_encoder"]):
                     param.requires_grad = False
                     frozen_count += 1
             print(f"[TFT] Froze {frozen_count} encoder parameter tensors. Fine-tuning decoder only.")
-
             tft = train_tft(
                 tft, train_dataset, val_dataset,
                 max_epochs=max(2, max_epochs // 3),
@@ -321,7 +269,6 @@ def run_stage3(
                 batch_size=batch_size,
                 checkpoint_path=checkpoint_path,
             )
-
     else:
         print("[TFT] No checkpoint found — training from scratch.")
         tft = build_tft(train_dataset, hidden_size=hidden_size, n_entries=n_entries)
@@ -331,11 +278,8 @@ def run_stage3(
             batch_size=batch_size,
             checkpoint_path=checkpoint_path,
         )
-
     latents, attentions = extract_latent_and_attention(tft, full_dataset, batch_size)
-
     mean_attention = attentions.mean(dim=0)
-    # Handle both 1D and multi-dimensional attention
     if mean_attention.dim() > 1:
         mean_attention = mean_attention.mean(dim=1)
     mean_attention_np = mean_attention.numpy()
@@ -344,9 +288,7 @@ def run_stage3(
         w_scalar = float(w.item() if hasattr(w, 'item') else w)
         bar = "#" * int(w_scalar * 40)
         print(f"  Patch {i+1:2d}: {w_scalar:.4f}  {bar}")
-
     umap_coords = project_umap(latents)
-
     return {
         "model":                tft,
         "latents":              latents,

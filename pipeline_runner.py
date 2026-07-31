@@ -4,48 +4,33 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 from collections import Counter
-
 _shared_pipeline = None
-
-
 W = 64
-
 def _p(*a, **kw):
     kw.setdefault("flush", True)
     print(*a, **kw)
-
 def _hdr(title):
     _p(f"\n{'='*W}")
     _p(f"  {title}")
     _p(f"{'='*W}")
-
 def _sec(title):
     _p(f"\n  [{title}]")
-
 def _ok(msg):
     _p(f"    [OK] {msg}")
-
 def _info(msg):
     _p(f"      {msg}")
-
 def _warn(msg):
     _p(f"    ! {msg}")
-
 def _fail(msg):
     _p(f"    X {msg}")
-
 def _elapsed(t):
     diff = time.time()-t
     return f"{diff:.2f}s" if diff < 1 else f"{diff:.1f}s"
-
-
 def _sf(val):
     try:
         return float(val) if str(val).strip() not in ("", "None", "nan", "NaN") else None
     except Exception:
         return None
-
-
 def _pts(val):
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%d/%m/%Y"):
         try:
@@ -53,11 +38,8 @@ def _pts(val):
         except Exception:
             pass
     return datetime.now()
-
-
 def load_any_file(path: str) -> list[dict]:
     suffix = Path(path).suffix.lower()
-
     if suffix == ".csv":
         import csv
         with open(path, newline="", encoding="utf-8") as f:
@@ -70,7 +52,6 @@ def load_any_file(path: str) -> list[dict]:
             "activity_level":   _sf(r.get("activity_level")),
             "music_mood_score": _sf(r.get("music_mood_score")),
         } for r in rows if r.get("text", "").strip()]
-
     elif suffix == ".json":
         import json as _json
         with open(path, encoding="utf-8") as f:
@@ -85,7 +66,6 @@ def load_any_file(path: str) -> list[dict]:
             "activity_level":   _sf(d.get("activity_level")),
             "music_mood_score": _sf(d.get("music_mood_score")),
         } for d in data if d.get("text", "").strip()]
-
     elif suffix == ".txt":
         lines = [l.strip() for l in Path(path).read_text(encoding="utf-8", errors="ignore").splitlines() if l.strip()]
         base  = datetime.now() - timedelta(days=len(lines))
@@ -93,7 +73,6 @@ def load_any_file(path: str) -> list[dict]:
                  "sleep_hours": None, "sleep_quality": None,
                  "activity_level": None, "music_mood_score": None}
                 for i, l in enumerate(lines)]
-
     elif suffix == ".pdf":
         try:
             import pdfplumber
@@ -107,7 +86,6 @@ def load_any_file(path: str) -> list[dict]:
                  "sleep_hours": None, "sleep_quality": None,
                  "activity_level": None, "music_mood_score": None}
                 for i, l in enumerate(lines)]
-
     elif suffix in (".docx", ".doc"):
         try:
             import docx
@@ -120,46 +98,34 @@ def load_any_file(path: str) -> list[dict]:
                  "sleep_hours": None, "sleep_quality": None,
                  "activity_level": None, "music_mood_score": None}
                 for i, l in enumerate(lines)]
-
     else:
         raise ValueError(f"Unsupported format: {suffix}")
-
-
 def run_pipeline(user_id: str, file_path: str) -> dict:
     from unified_pipeline import UnifiedJournalPipeline
-
     t_start = time.time()
     _hdr(f"MENTAL HEALTH DIGITAL TWIN  —  Pipeline Run")
     _p(f"  User:       {user_id}")
     _p(f"  Timestamp:  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
     path = Path(file_path)
     if not path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
-
     records = load_any_file(file_path)
     records = [r for r in records if r["text"]]
     if len(records) < 3:
         raise ValueError(f"Need at least 3 entries, got {len(records)}")
-
     suffix = Path(file_path).suffix.lower()
     _p(f"  Source:     {Path(file_path).name} ({suffix})")
     _p(f"  Entries:    {len(records)} journal entries loaded")
-
     t_load = time.time()
     pipeline = UnifiedJournalPipeline()
-
-    # ── Stage 1 + 2: Feature extraction + Normalization ──
     _sec("Stage 1 + 2 — Feature Extraction & Normalization")
     t_s12 = time.time()
     _p(f"  Extracting text, sentiment, emotion, and audio features...")
     _p(f"  Normalizing against user baseline...")
-
     prev_ts = None
     sentiment_series, sleep_series, activity_series, music_series = [], [], [], []
     emotions_series, timestamps = [], []
     context_bin_series = []
-
     for i, rec in enumerate(records, 1):
         result = pipeline.process_entry(
             user_id=user_id,
@@ -183,78 +149,59 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
             activity_series.append((rec["timestamp"], rec["activity_level"]))
         if rec["music_mood_score"] is not None:
             music_series.append((rec["timestamp"], rec["music_mood_score"]))
-
     cal = pipeline.calibration_flags.get(user_id, [])
     cal_count = sum(1 for c in cal if c)
     _ok(f"{len(records)} entries processed — 466 features extracted per entry")
     _ok(f"Normalization: {cal_count}/{len(records)} entries z-scored (baseline {'calibrated' if cal_count > 0 else 'still collecting'})")
     _info(f"Time: {_elapsed(t_s12)}")
-
     n = len(records)
     emotions_unique = Counter(emotions_series)
     top_emotions = ", ".join(f"{e} ({c})" for e, c in emotions_unique.most_common(5))
     _info(f"Top emotions: {top_emotions}")
     _info(f"Sentiment range: {min(sentiment_series):.3f} to {max(sentiment_series):.3f} (avg {np.mean(sentiment_series):.3f})")
-
-    # ── Stage 4: Anomaly Detection + CUSUM (runs first so TFT has risk scores) ──
     _sec("Stage 4 — Anomaly Detection & CUSUM Monitoring")
     t_s4 = time.time()
-
     all_vecs = pipeline.get_batch_consistent_vectors(user_id)
     n_total = len(all_vecs)
-
     n_train = max(10, int(n_total * 0.7))
     train_vecs = all_vecs[:n_train]
     X_train = np.array(train_vecs)
     _info(f"Training detectors on {n_train} vectors (70% chronological split)...")
-
     from stage_4.anomaly_pipeline import MultiDetectorPipeline
     pipeline.anomaly_detector = MultiDetectorPipeline()
     pipeline.anomaly_detector.fit(X_train)
     _info("Detectors fitted to current data")
-
     _p(f"  Running 4-detector consensus on {n_total} entries...")
     anomaly_results = []
     for vec in all_vecs:
         anomaly_results.append(pipeline.detect_anomalies(vec))
-
     pipeline.anomaly_scores[user_id] = anomaly_results
-
     cusum_results = pipeline.fit_and_run_cusum(user_id)
     cusum_threshold = round(float(pipeline.cusum_detectors[user_id].h), 4)
-
     avg_risk = np.mean([a["overall_risk_score"] for a in anomaly_results])
     max_risk = max(a["overall_risk_score"] for a in anomaly_results)
     n_anomalies = sum(1 for a in anomaly_results if a.get("is_anomaly", False))
     n_cusum_alerts = sum(1 for c in cusum_results if c["cusum_alert_upper"] or c["cusum_alert_lower"])
-
     _ok(f"Anomaly detection complete: avg risk {avg_risk:.3f}, max {max_risk:.3f}")
     _ok(f"Anomalies flagged: {n_anomalies}/{n_total} entries")
     _ok(f"CUSUM threshold: {cusum_threshold}, alerts triggered: {n_cusum_alerts}/{n_total}")
     _info(f"Detectors: Mahalanobis, Copula, Isolation Forest, KNN")
     _info(f"Time: {_elapsed(t_s4)}")
-
-    # ── Stage 3: TFT (runs after anomaly detection so it has real risk scores) ──
     _sec("Stage 3 — Temporal Fusion Transformer (Forecasting)")
     t_s3 = time.time()
-
     if n >= 60:
         num_patches = 30; hidden_size = 64; max_epochs = 30; batch_size = 16
     elif n >= 30:
         num_patches = 30; hidden_size = 48; max_epochs = 20; batch_size = 12
     else:
         num_patches = max(20, min(30, n + 10)); hidden_size = 32; max_epochs = 15; batch_size = 8
-
     _info(f"Config: {num_patches} patches, hidden={hidden_size}, epochs={max_epochs}, batch={batch_size}")
-
     checkpoint_path = "tft_checkpoint.ckpt"
     checkpoint_exists = os.path.exists(checkpoint_path)
-
     if not checkpoint_exists and n < 20:
         _warn(f"No trained TFT checkpoint found yet")
         _info(f"Skipping TFT this run — training in background for next request.")
         tft = None
-
         def _train_tft_background():
             try:
                 pipeline.train_tft_model(
@@ -266,7 +213,6 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
                 print(f"  [TFT] Background training complete — checkpoint saved.")
             except Exception as e:
                 print(f"  [TFT] Background training failed: {e}")
-
         threading.Thread(target=_train_tft_background, daemon=True).start()
     else:
         try:
@@ -283,13 +229,9 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
             _warn(f"TFT training failed: {e}")
             _info(f"Continuing without TFT latent features")
             tft = None
-
-    # ── Stage 5: Risk Classification ──
     _sec("Stage 5 — Risk Classification (XGBoost)")
     t_s5 = time.time()
-
     xgb = pipeline.train_xgboost_classifier()
-
     vecs      = pipeline.normalized_vectors[user_id]
     anomalies = pipeline.anomaly_scores.get(user_id, [])
     if len(vecs) < 5:
@@ -308,17 +250,13 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         _ok(f"Risk assessment: {risk} ({prob_pct:.1f}%)")
         _info(f"Intervention recommended: {intervention}")
         _info(f"Raw probability: {prediction['probability_raw']:.4f} -> Calibrated: {prediction['probability']:.4f}")
-
     if xgb["auroc"] is not None and xgb["auroc"] == xgb["auroc"]:
         _info(f"Model AUROC: {xgb['auroc']:.4f}")
     _info(f"Time: {_elapsed(t_s5)}")
-
-    # ── Baseline Summary ──
     _sec("Baseline & Context Summary")
     ub = pipeline.user_baselines[user_id]
     calibration_status = ub.calibration_status()
     cutoff = ub.min_entries_to_fit - 1
-
     deviation_series = []
     for i, vec in enumerate(vecs):
         if i < cutoff:
@@ -328,7 +266,6 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
             audio_part = vec[ub.AUDIO_START:ub.AUDIO_END]
             deviation = float(np.mean(np.abs(np.concatenate([text_part, audio_part]))))
             deviation_series.append(round(deviation, 4))
-
     valid_deviation = [v for v in deviation_series if v is not None]
     if len(valid_deviation) >= 6:
         k = max(3, len(valid_deviation) // 3)
@@ -343,7 +280,6 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
             baseline_trend = "stable"
     else:
         baseline_trend = "insufficient_data"
-
     trend_labels = {
         "stable": "Stable — staying within baseline",
         "moving_away": "Drifting away from baseline",
@@ -352,7 +288,6 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     }
     _info(f"Calibration: {calibration_status['calibration_progress']}")
     _info(f"Baseline trend: {trend_labels.get(baseline_trend, baseline_trend)}")
-
     bin_labels = {
         "Morning_Weekday": "Morning (Weekday)", "Afternoon_Weekday": "Afternoon (Weekday)",
         "Evening_Weekday": "Evening (Weekday)", "Morning_Weekend": "Morning (Weekend)",
@@ -363,8 +298,6 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     active_bins = {k: v for k, v in context_bin_counts.items() if v > 0}
     if active_bins:
         _info(f"Temporal context: {', '.join(f'{k}: {v}' for k, v in active_bins.items())}")
-
-    # ── Final Summary ──
     t_total = time.time() - t_start
     _p(f"\n{'-'*W}")
     _p(f"  Pipeline complete in {_elapsed(t_start)}")
@@ -375,8 +308,6 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     if tft:
         _p(f"  TFT latent shape:  {list(tft['latents'].shape)}")
     _p(f"{'-'*W}\n")
-
-    # Per-detector 7-day forecasts
     detector_forecasts = {}
     try:
         if hasattr(pipeline, '_generate_detector_forecasts'):
@@ -384,13 +315,11 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
             _ok(f"Per-detector forecasts generated: {list(detector_forecasts.keys())}")
     except Exception as e:
         _warn(f"Per-detector forecast generation failed: {e}")
-
     try:
         global _shared_pipeline
         _shared_pipeline = pipeline
     except Exception as e:
         _warn(f"Could not store pipeline: {e}")
-
     result = {
         "user_id":             user_id,
         "n_entries":           len(records),
@@ -418,13 +347,10 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
         "baseline_trend":      baseline_trend,
         "context_bin_counts":  context_bin_counts,
     }
-
-    # SHAP explanation
     try:
         explanation = pipeline.explain_prediction(user_id)
         if explanation:
             result["shap_explanation"] = explanation
     except Exception as e:
         _warn(f"SHAP explanation failed: {e}")
-
     return result

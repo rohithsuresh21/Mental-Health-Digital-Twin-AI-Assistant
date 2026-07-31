@@ -7,17 +7,14 @@ import pandas as pd
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
-
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(line_buffering=True)
-
 from Stage_1.Extract_features import extract_features
 from stage_2.baseline import UserBaseline
 from stage_2.temporal_bin import TemporalBinning
 from stage_4.detectors.cusum import CUSUMDetector
 from stage_4.anomaly_pipeline import MultiDetectorPipeline
 from stage_4.config import PipelineConfig
-
 try:
     import xgboost as xgb
     from scipy.special import expit
@@ -26,7 +23,6 @@ try:
 except ImportError:
     STAGE5_AVAILABLE = False
     print("XGBoost not installed. Stage 5 will be skipped.")
-
 try:
     _xai_dir = os.path.join(os.path.dirname(__file__), "XAI")
     sys.path.insert(0, _xai_dir)
@@ -36,9 +32,7 @@ try:
 except Exception as _xai_err:
     XAI_AVAILABLE = False
     print(f"[XAI] Not available: {_xai_err}")
-
 DAIC_MODEL_DIR = os.path.join(os.path.dirname(__file__), "Stage_5")
-
 class UnifiedJournalPipeline:
     def __init__(self, output_dir: str = "pipeline_outputs"):
         self.output_dir = output_dir
@@ -47,7 +41,6 @@ class UnifiedJournalPipeline:
         self.temporal_binner = TemporalBinning()
         self.calibration_flags = {}
         self.raw_feature_vectors = {}
-
         self.tft_model = None
         self.anomaly_detector = None
         self.xgb_model = None
@@ -57,20 +50,18 @@ class UnifiedJournalPipeline:
         self.pca = None
         self.platt_params = None
         self.feature_names = None
-        self.feature_vectors = {}  
-        self.normalized_vectors = {}  
-        self.anomaly_scores = {}  
-        self.user_data = {} 
+        self.feature_vectors = {}
+        self.normalized_vectors = {}
+        self.anomaly_scores = {}
+        self.user_data = {}
         self.user_labels = {}
         self._user_id_mapping = {}
         self.cusum_detectors = {}
         self.tft_forecast = None
-
         self._load_daic_model()
         self._load_tft_checkpoint()
-
     def _load_tft_checkpoint(self):
-        """Load TFT checkpoint at startup so it's ready immediately."""
+
         if self.tft_model is not None:
             return
         checkpoint_path = "tft_checkpoint.ckpt"
@@ -87,13 +78,10 @@ class UnifiedJournalPipeline:
                 print("[Stage 3] TFT checkpoint load returned empty — will train on first request.")
         except Exception as e:
             print(f"[Stage 3] TFT startup load failed ({type(e).__name__}: {e}) — will train on first request.")
-
     def _load_daic_model(self):
-        """Load pretrained DAIC-WOZ XGBoost model, PCA preprocessor, and calibrators."""
+
         if not STAGE5_AVAILABLE:
             return
-
-        # Model — prefer new file, fall back to old
         model_path = os.path.join(DAIC_MODEL_DIR, "model (1).json")
         if not os.path.exists(model_path):
             model_path = os.path.join(DAIC_MODEL_DIR, "model.json")
@@ -105,9 +93,6 @@ class UnifiedJournalPipeline:
             except Exception as e:
                 print(f"[Stage 5] Failed to load model: {e}")
                 self.xgb_model = None
-
-
-        # Temperature scaling
         temp_path = os.path.join(DAIC_MODEL_DIR, "temperature.json")
         if os.path.exists(temp_path):
             try:
@@ -117,8 +102,6 @@ class UnifiedJournalPipeline:
             except Exception as e:
                 print(f"[Stage 5] Failed to load temperature: {e}")
                 self.temperature = None
-
-        # Platt calibrator — prefer new file, fall back to old
         platt_path = os.path.join(DAIC_MODEL_DIR, "platt (1).pkl")
         if not os.path.exists(platt_path):
             platt_path = os.path.join(DAIC_MODEL_DIR, "platt.pkl")
@@ -131,9 +114,8 @@ class UnifiedJournalPipeline:
                 print(f"[Stage 5] Loaded Platt calibrator (A={A:.4f}, B={B:.4f})")
             except Exception as e:
                 print(f"[Stage 5] Failed to load Platt calibrator: {e}")
-
     def _generate_stage5_feature_names(self) -> list:
-        """Generate the 2336 feature names matching assemble_stage5_features layout."""
+
         base_features = (
             [f"sbert_{i}" for i in range(384)]
             + [f"emotion_{e}" for e in [
@@ -169,39 +151,32 @@ class UnifiedJournalPipeline:
             "isolation_forest","knn","is_anomaly"
         ])
         return names
-
     def explain_prediction(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """Run SHAP explanation on the latest Stage 5 feature vector for a user."""
+
         if not XAI_AVAILABLE:
             return None
         if self.xgb_model is None:
             return None
         if user_id not in self.normalized_vectors:
             return None
-
         vectors = self.normalized_vectors.get(user_id, [])
         anomalies = self.anomaly_scores.get(user_id, [])
         if not vectors:
             return None
-
         try:
             feature_vec = self.assemble_stage5_features(vectors, anomalies)
             feature_names = self._generate_stage5_feature_names()
-
             explainer = SHAPExplainer(self.xgb_model, feature_names)
             explanation = explainer.explain(feature_vec)
-
             return explanation
         except Exception as e:
             print(f"[XAI] SHAP explanation failed: {e}")
             return None
-
     def _normalize_user_id(self, user_id: str) -> str:
         if user_id not in self._user_id_mapping:
             idx = len(self._user_id_mapping)
             self._user_id_mapping[user_id] = f"user_{idx}"
         return self._user_id_mapping[user_id]
-
     def extract_user_entry(
         self,
         user_id: str,
@@ -216,7 +191,6 @@ class UnifiedJournalPipeline:
     ) -> Tuple[np.ndarray, Dict[str, Any]]:
         if timestamp is None:
             timestamp = datetime.now()
-        
         try:
             feature_vec, readable_data = extract_features(
                 text=text,
@@ -228,29 +202,22 @@ class UnifiedJournalPipeline:
                 activity_level=activity_level,
                 music_mood_score=music_mood_score
             )
-            
             assert feature_vec.shape[0] == 466, f"Expected 466 features, got {feature_vec.shape[0]}"
             assert not np.any(np.isnan(feature_vec)), "NaN values detected in feature vector"
-            
             if user_id not in self.feature_vectors:
                 self.feature_vectors[user_id] = []
                 self.user_data[user_id] = []
-            
             self.feature_vectors[user_id].append(feature_vec)
             self.user_data[user_id].append({
                 "timestamp": timestamp,
                 "text_length": len(text),
                 "has_audio": audio_path is not None
             })
-            
-            pass  # progress handled by pipeline_runner
-            
+            pass
             return feature_vec, readable_data
-            
         except Exception as e:
             print(f"Stage 1 error for user {user_id}: {str(e)}")
             raise
- 
     def normalize_features(
         self,
         feature_vec: np.ndarray,
@@ -260,30 +227,23 @@ class UnifiedJournalPipeline:
         try:
             if user_id not in self.user_baselines:
                 self.user_baselines[user_id] = UserBaseline(user_id=user_id)
-
             baseline = self.user_baselines[user_id]
             baseline.add_entry(feature_vec)
-
             context_bin = self.temporal_binner.route_vector(feature_vec, timestamp.isoformat())
-
             z_scored_vec = baseline.normalise(feature_vec)
             was_calibrated = z_scored_vec is not None
             if z_scored_vec is None:
                 z_scored_vec = feature_vec
-
             if user_id not in self.normalized_vectors:
                 self.normalized_vectors[user_id] = []
             if user_id not in self.calibration_flags:
                 self.calibration_flags[user_id] = []
             if user_id not in self.raw_feature_vectors:
                 self.raw_feature_vectors[user_id] = []
-
             self.normalized_vectors[user_id].append(z_scored_vec)
             self.calibration_flags[user_id].append(was_calibrated)
             self.raw_feature_vectors[user_id].append(feature_vec.copy())
-
-            pass  # progress handled by pipeline_runner
-
+            pass
             return {
                 "user_id": user_id,
                 "timestamp": timestamp,
@@ -291,25 +251,20 @@ class UnifiedJournalPipeline:
                 "z_scored_vector": z_scored_vec,
                 "readables": {}
             }
-
         except Exception as e:
             print(f"Stage 2 error for user {user_id}: {str(e)}")
             raise
-
     def get_batch_consistent_vectors(self, user_id: str) -> list:
         if user_id not in self.raw_feature_vectors:
             return self.normalized_vectors.get(user_id, [])
-
         baseline = self.user_baselines.get(user_id)
         if baseline is None or not baseline.calibrated:
             return self.normalized_vectors.get(user_id, [])
-
         consistent_vectors = []
         for raw_vec in self.raw_feature_vectors[user_id]:
             scored = baseline.normalise(raw_vec)
             consistent_vectors.append(scored if scored is not None else raw_vec)
         return consistent_vectors
-
     def train_tft_model(
         self,
         num_patches: int = 30,
@@ -328,14 +283,10 @@ class UnifiedJournalPipeline:
                 raise ValueError(
                     f"Need at least 1 user for training, got {len(self.normalized_vectors)}"
                 )
-
             from stage_3.tft_model import run_stage3
-
             patched_data, patched_risks = self._create_patched_data(num_patches)
-            
             print(f"  Created patched data for TFT: {len(patched_data)} users")
             print(f"  User ID mapping: {self._user_id_mapping}")
-            
             self.tft_model = run_stage3(
                 patched_data=patched_data,
                 feature_dim=466,
@@ -346,7 +297,6 @@ class UnifiedJournalPipeline:
                 n_entries=n_entries,
                 patched_risks=patched_risks
             )
-
             import torch
             model_path = os.path.join(self.output_dir, "tft_model.pt")
             torch.save({
@@ -355,17 +305,12 @@ class UnifiedJournalPipeline:
                 "attention":  self.tft_model["attention"],
                 "umap_coords": self.tft_model["umap_coords"],
             }, model_path)
-            
             print(f"  Model saved to {model_path}")
             print(f"  Latent shape: {list(self.tft_model['latents'].shape)}")
             print(f"  Attention shape: {list(self.tft_model['attention'].shape)}")
-
             self.tft_forecast = self._generate_tft_forecast(num_patches)
-            
             return self.tft_model
-            
             return self.tft_model
-            
         except Exception as e:
             error_msg = str(e)
             if "Unknown category" in error_msg:
@@ -377,9 +322,8 @@ class UnifiedJournalPipeline:
             else:
                 print(f"Stage 3 error: {error_msg}")
             raise
-    
     def _generate_tft_forecast(self, num_patches: int = 30) -> list:
-        """Generate 7-day TFT forecast from the trained model."""
+
         try:
             from stage_3.tft_model import generate_forecast, build_dataset, build_dataframe
             patched_data, patched_risks = self._create_patched_data(num_patches)
@@ -396,19 +340,15 @@ class UnifiedJournalPipeline:
         except Exception as e:
             print(f"  TFT forecast generation failed: {e}")
             return [0.5] * 7
-
     def _generate_detector_forecasts(self, user_id: str, forecast_days: int = 7) -> dict:
-        """Train 4 GradientBoosting models (one per detector) and predict next 7 days."""
-        from stage_4.forecasting.dynamic_detector import DynamicTrajectoryForecastingEngine
 
+        from stage_4.forecasting.dynamic_detector import DynamicTrajectoryForecastingEngine
         result = {}
         detector_keys = ["mahalanobis", "copula", "isolation_forest", "knn"]
-
         user_scores = self.anomaly_scores.get(user_id, [])
         if not user_scores:
             print("[Detector Forecast] No anomaly scores found, returning nulls")
             return {k: [None] * forecast_days for k in detector_keys}
-
         for key in detector_keys:
             try:
                 series = []
@@ -416,15 +356,12 @@ class UnifiedJournalPipeline:
                     ds = entry.get("detector_scores", entry) if isinstance(entry, dict) else {}
                     val = ds.get(key, 0.5) if isinstance(ds, dict) else 0.5
                     series.append(float(val))
-
                 arr = np.array(series, dtype=np.float64)
                 min_needed = 30 + forecast_days
-
                 if len(arr) < min_needed:
                     print(f"  {key}: insufficient data ({len(arr)}/{min_needed}), skipping")
                     result[key] = [None] * forecast_days
                     continue
-
                 engine = DynamicTrajectoryForecastingEngine(
                     window_size=30, max_horizon=forecast_days
                 )
@@ -432,28 +369,21 @@ class UnifiedJournalPipeline:
                 forecast = engine.predict_lookahead(arr[-30:].reshape(-1, 1), forecast_days)
                 result[key] = [round(float(v), 4) for v in forecast]
                 print(f"  {key}: {[round(v, 3) for v in forecast]}")
-
             except Exception as e:
                 print(f"  {key}: forecast failed - {e}")
                 result[key] = [None] * forecast_days
-
         return result
-    
     def _create_patched_data(self, num_patches: int = 30) -> Dict[str, Any]:
         patched = {}
         patched_risks = {}
         import torch
-        
         for user_id, vectors in self.normalized_vectors.items():
             normalized_user_id = self._normalize_user_id(user_id)
-            
             vectors = np.array(vectors)
             n_vectors = len(vectors)
-            
             if n_vectors < num_patches:
                 padding = np.zeros((num_patches - n_vectors, vectors.shape[1]))
                 vectors = np.vstack([vectors, padding])
-
             windows = []
             risk_windows = []
             for i in range(max(1, n_vectors - num_patches + 1)):
@@ -462,7 +392,6 @@ class UnifiedJournalPipeline:
                     padding = np.zeros((num_patches - len(window), vectors.shape[1]))
                     window = np.vstack([window, padding])
                 windows.append(window)
-
             user_risks = self.anomaly_scores.get(user_id, [])
             risk_vals = [r.get("overall_risk_score", 0.5) if isinstance(r, dict) else 0.5 for r in user_risks]
             if len(risk_vals) < n_vectors:
@@ -470,19 +399,15 @@ class UnifiedJournalPipeline:
                 risk_vals = risk_vals + [fill_val] * (n_vectors - len(risk_vals))
             elif len(risk_vals) > n_vectors:
                 risk_vals = risk_vals[:n_vectors]
-
             for i in range(max(1, n_vectors - num_patches + 1)):
                 risk_window = risk_vals[i:i + num_patches]
                 if len(risk_window) < num_patches:
                     fill_val = risk_window[-1] if risk_window else 0.5
                     risk_window = risk_window + [fill_val] * (num_patches - len(risk_window))
                 risk_windows.append(risk_window)
-            
             patched[normalized_user_id] = torch.tensor(np.array(windows), dtype=torch.float32)
             patched_risks[normalized_user_id] = torch.tensor(np.array(risk_windows), dtype=torch.float32)
-        
         return patched, patched_risks
-    
     def train_anomaly_detector(self, use_latent_features: bool = False) -> None:
         try:
             all_vectors = []
@@ -496,26 +421,19 @@ class UnifiedJournalPipeline:
                     all_vectors.extend(vectors)
             X_train = np.array(all_vectors)
             print(f"Stage 4: training detectors on calibrated data, shape {X_train.shape}")
-
             assert X_train.shape[0] > 0, "No training data available"
             assert not np.any(np.isnan(X_train)), "NaN values in training data"
-
             self.anomaly_detector = MultiDetectorPipeline()
             self.anomaly_detector.fit(X_train)
-
             detector_path = os.path.join(self.output_dir, "anomaly_detector.pkl")
             self.anomaly_detector.save(detector_path)
-
             print(f"Stage 4 complete: anomaly detector trained and saved")
-
         except Exception as e:
             print(f"Stage 4 error: {str(e)}")
             raise
-
     def detect_anomalies(self, feature_vec: np.ndarray, use_latent: bool = False) -> Dict[str, Any]:
         if self.anomaly_detector is None:
             raise ValueError("Anomaly detector not trained. Call train_anomaly_detector first.")
-
         try:
             X = np.array([feature_vec])
             results = self.anomaly_detector.predict(X)
@@ -526,27 +444,19 @@ class UnifiedJournalPipeline:
                 "detector_scores":    results["metrics_summary"][0],
                 "timestamp":          datetime.now().isoformat()
             }
-
         except Exception as e:
             print(f"Anomaly detection error: {str(e)}")
             raise
-
     def fit_and_run_cusum(self, user_id) -> list:
         score = self.anomaly_scores[user_id]
         detector = CUSUMDetector()
         detector.fit(np.array([a["overall_risk_score"] for a in score]))
-
         cusum_result = []
         for s in score:
             result_dict = detector.update_score(s["overall_risk_score"])
             cusum_result.append(result_dict)
-
         self.cusum_detectors[user_id] = detector
-        
         return cusum_result
-
-
-
     def process_entry(
         self,
         user_id: str,
@@ -560,9 +470,7 @@ class UnifiedJournalPipeline:
         prev_timestamp: Optional[datetime] = None,
         label: Optional[int] = None
     ) -> Dict[str, Any]:
-        
-        pass  # progress handled by pipeline_runner
-        
+        pass
         feature_vec, readable = self.extract_user_entry(
             user_id=user_id,
             text=text,
@@ -574,19 +482,15 @@ class UnifiedJournalPipeline:
             music_mood_score=music_mood_score,
             prev_timestamp=prev_timestamp
         )
-
         if timestamp is None:
             timestamp = datetime.now()
-        
         normalized = self.normalize_features(
             feature_vec=feature_vec,
             user_id=user_id,
             timestamp=timestamp
         )
-
         if label is not None:
             self.user_labels[user_id] = label
-        
         result = {
             "stage_1": {
                 "feature_vector_shape": feature_vec.shape,
@@ -602,10 +506,8 @@ class UnifiedJournalPipeline:
             },
             "status": "Stages 1-2 complete"
         }
-        
         if self.anomaly_detector:
             anomaly_result = self.detect_anomalies(normalized["z_scored_vector"])
-
             prev_scores = self.anomaly_scores.get(user_id, [])
             if len(prev_scores) >= 1:
                 prev_flag = prev_scores[-1].get("is_anomaly", False)
@@ -617,16 +519,12 @@ class UnifiedJournalPipeline:
                 anomaly_result["is_persistent_anomaly"] = bool(prev_flag and curr_flag)
             else:
                 anomaly_result["is_persistent_anomaly"] = False
-
             result["stage_4"] = anomaly_result
             result["status"] += " + Stage 4"
-
             if user_id not in self.anomaly_scores:
                 self.anomaly_scores[user_id] = []
             self.anomaly_scores[user_id].append(anomaly_result)
-        
         return result
-    
     def assemble_stage5_features(
         self,
         window_vectors: List[np.ndarray],
@@ -636,17 +534,13 @@ class UnifiedJournalPipeline:
     ) -> np.ndarray:
         window_vectors = window_vectors[-recent_window:]
         window = np.array(window_vectors)
-
         if window.shape[0] == 0:
             raise ValueError("No vectors in window")
-
         features = []
-
         for stat_name in ["mean", "std", "max", "min"]:
             stat_func = getattr(np, f"nan{stat_name}")
             stats = stat_func(window, axis=0)
             features.extend(stats)
-
         if window.shape[0] >= delta_window * 2:
             early_mean = np.nanmean(window[:delta_window], axis=0)
             late_mean  = np.nanmean(window[-delta_window:], axis=0)
@@ -654,7 +548,6 @@ class UnifiedJournalPipeline:
         else:
             deltas = np.zeros(window.shape[1])
         features.extend(deltas)
-
         if anomaly_scores and len(anomaly_scores) > 0:
             latest_anomaly = anomaly_scores[-1]
             anomaly_features = np.array([
@@ -667,15 +560,10 @@ class UnifiedJournalPipeline:
             ])
         else:
             anomaly_features = np.zeros(6)
-
         features.extend(anomaly_features)
-
         feature_vector = np.nan_to_num(np.array(features))
-
         print(f"  Stage 5 features assembled: shape {feature_vector.shape}")
-
         return feature_vector
-    
     def train_xgboost_classifier(
         self,
         test_size: float = 0.2,
@@ -685,39 +573,28 @@ class UnifiedJournalPipeline:
     ) -> Dict[str, Any]:
         if not STAGE5_AVAILABLE:
             raise RuntimeError("XGBoost not installed. Install with: pip install xgboost scikit-learn")
-
-
         if self.xgb_model is not None:
             print("[Stage 5] Using pretrained DAIC-WOZ model — skipping retraining.")
             return {"model": self.xgb_model, "auroc": None, "f1": None, "n_features": None}
-        
         try:
             from sklearn.model_selection import train_test_split
             from sklearn.metrics import roc_auc_score, f1_score
-            
             X_train_list = []
             y_train_list = []
-            
             for user_id, vectors in self.normalized_vectors.items():
                 if user_id not in self.user_labels:
-                    continue  
-                
+                    continue
                 user_anomalies = self.anomaly_scores.get(user_id, [])
-                
                 feature_vec = self.assemble_stage5_features(
                     vectors,
                     user_anomalies
                 )
-                
                 X_train_list.append(feature_vec)
                 y_train_list.append(self.user_labels[user_id])
-            
             if len(X_train_list) < 2:
                 raise ValueError(f"Need at least 2 labeled examples, got {len(X_train_list)}")
-            
             X = np.array(X_train_list)
             y = np.array(y_train_list)
-            
             if len(X) < 4:
                 X_train, X_val, y_train, y_val = train_test_split(
                     X, y, test_size=0.33, random_state=42
@@ -726,9 +603,7 @@ class UnifiedJournalPipeline:
                 X_train, X_val, y_train, y_val = train_test_split(
                     X, y, test_size=test_size, random_state=42, stratify=y
                 )
-            
             pos_weight = (y_train == 0).sum() / max(1, (y_train == 1).sum())
-            
             print(f"  Training XGBoost on {len(X_train)} samples, validating on {len(X_val)}...")
             self.xgb_model = xgb.XGBClassifier(
                 n_estimators=n_estimators,
@@ -738,43 +613,32 @@ class UnifiedJournalPipeline:
                 random_state=42,
                 n_jobs=-1
             )
-            
             self.xgb_model.fit(
                 X_train, y_train,
                 eval_set=[(X_val, y_val)],
                 verbose=False
             )
-            
             y_pred_proba = self.xgb_model.predict_proba(X_val)[:, 1]
-            
             try:
                 auroc = roc_auc_score(y_val, y_pred_proba)
             except ValueError:
                 auroc = 0.0
-                
             y_pred = (y_pred_proba >= 0.5).astype(int)
             f1 = f1_score(y_val, y_pred, zero_division=0)
-            
             model_path = os.path.join(self.output_dir, "xgb_model.pkl")
             with open(model_path, "wb") as f:
                 pickle.dump(self.xgb_model, f)
-            
-
-            
             print(f"  Model saved to {model_path}")
             print(f"  AUROC: {auroc:.4f}" if auroc else "  AUROC: N/A")
-            
             return {
                 "model": self.xgb_model,
                 "auroc": auroc,
                 "f1": f1,
                 "n_features": X.shape
             }
-            
         except Exception as e:
             print(f"Stage 5 error: {str(e)}")
             raise
-    
     def predict_classification(
         self,
         feature_vec: np.ndarray,
@@ -782,15 +646,10 @@ class UnifiedJournalPipeline:
     ) -> Dict[str, Any]:
         if self.xgb_model is None:
             raise ValueError("XGBoost model not trained. Call train_xgboost_classifier first.")
-        
         try:
             X_input = np.array([feature_vec])
-
-            # Raw margin (before sigmoid)
             raw_margin = float(self.xgb_model.predict(X_input, output_margin=True)[0])
             p_raw = float(expit(raw_margin))
-
-            # Calibration
             if calibration == "temperature" and hasattr(self, 'temperature') and self.temperature is not None:
                 scaled_margin = raw_margin / self.temperature
                 p_calibrated = float(expit(scaled_margin))
@@ -802,9 +661,7 @@ class UnifiedJournalPipeline:
                 p_calibrated = float(self.isotonic_calibrator.predict([[p_raw]])[0])
             else:
                 p_calibrated = p_raw
-            
             p_calibrated = np.clip(p_calibrated, 0.0, 1.0)
-            
             if p_calibrated < 0.33:
                 risk_level = "LOW"
                 intervention = False
@@ -814,7 +671,6 @@ class UnifiedJournalPipeline:
             else:
                 risk_level = "HIGH"
                 intervention = True
-            
             return {
                 "probability": p_calibrated,
                 "probability_raw": p_raw,
@@ -822,11 +678,9 @@ class UnifiedJournalPipeline:
                 "intervention_recommended": intervention,
                 "prediction": 1 if p_calibrated >= 0.5 else 0
             }
-            
         except Exception as e:
             print(f"Classification error: {str(e)}")
             raise
-    
     def predict_complete_pipeline(
         self,
         user_id: str,
@@ -840,10 +694,8 @@ class UnifiedJournalPipeline:
         print(f"\n{'='*70}")
         print(f"Complete Prediction Pipeline - All 5 Stages")
         print(f"{'='*70}\n")
-        
         if timestamp is None:
             timestamp = datetime.now()
-        
         try:
             result = self.process_entry(
                 user_id=user_id,
@@ -854,28 +706,22 @@ class UnifiedJournalPipeline:
                 activity_level=activity_level,
                 music_mood_score=music_mood_score
             )
-            
             if self.anomaly_detector:
                 anomaly_result = self.detect_anomalies(
                     result["stage_2_output"]["z_scored_vector"]
                 )
                 result["stage_4"] = anomaly_result
-            
             if self.xgb_model and user_id in self.normalized_vectors:
                 vectors = self.normalized_vectors[user_id]
                 anomalies = self.anomaly_scores.get(user_id, [])
-                
                 feature_vec = self.assemble_stage5_features(vectors, anomalies)
                 classification = self.predict_classification(feature_vec)
                 result["stage_5"] = classification
                 result["stage_5_features"] = feature_vec.shape
-
                 explanation = self.explain_prediction(user_id)
                 if explanation:
                     result["stage_5_explanation"] = explanation
-            
             return result
-            
         except Exception as e:
             print(f"Pipeline error: {str(e)}")
             raise

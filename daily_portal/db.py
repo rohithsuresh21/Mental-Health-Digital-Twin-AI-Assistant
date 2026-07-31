@@ -2,21 +2,16 @@ import json, os
 from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
-
 _DATABASE_URL = os.environ.get("DATABASE_URL")
 if _DATABASE_URL:
     import psycopg2
     import psycopg2.extras
-
-
 def _conn():
     if _DATABASE_URL:
         conn = psycopg2.connect(_DATABASE_URL)
         conn.autocommit = False
         return conn
-    # Fallback to SQLite for local dev
     import sqlite3
-
     DB_DIR = Path(__file__).parent.parent / "data"
     DB_DIR.mkdir(exist_ok=True)
     DB_PATH = DB_DIR / "daily_portal.db"
@@ -25,8 +20,6 @@ def _conn():
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA synchronous=NORMAL")
     return conn
-
-
 def init_db():
     with _conn() as c:
         if _DATABASE_URL:
@@ -79,37 +72,26 @@ def init_db():
                 CREATE INDEX IF NOT EXISTS idx_entries_user
                 ON daily_entries(user_id, entry_date DESC)
             """)
-        # Migration: add entry_source column if missing
         try:
             c.execute("ALTER TABLE daily_entries ADD COLUMN entry_source TEXT DEFAULT 'text'")
         except Exception:
             pass
-
-
 def _fetchone(cur):
     if _DATABASE_URL:
         return cur.fetchone()
     return cur.fetchone()
-
-
 def _fetchall(cur):
     if _DATABASE_URL:
         return cur.fetchall()
     return cur.fetchall()
-
-
 def _row_to_dict(row, cur=None):
     if row is None:
         return None
     if _DATABASE_URL:
         return dict(row)
     return dict(row)
-
-
 def _placeholder():
     return "%s" if _DATABASE_URL else "?"
-
-
 def save_entry(
     user_id: str,
     entry_date: str,
@@ -160,8 +142,6 @@ def save_entry(
         return row_id
     finally:
         conn.close()
-
-
 def update_features(entry_id: int, feature_vector: list, readable_metrics: dict):
     ph = _placeholder()
     conn = _conn()
@@ -175,8 +155,6 @@ def update_features(entry_id: int, feature_vector: list, readable_metrics: dict)
         conn.commit()
     finally:
         conn.close()
-
-
 def update_entry_text(user_id: str, entry_date: str, text_raw: str, entry_source: str = "text"):
     ph = _placeholder()
     conn = _conn()
@@ -189,8 +167,6 @@ def update_entry_text(user_id: str, entry_date: str, text_raw: str, entry_source
         conn.commit()
     finally:
         conn.close()
-
-
 def mark_baselined(user_id: str):
     ph = _placeholder()
     conn = _conn()
@@ -202,8 +178,6 @@ def mark_baselined(user_id: str):
         conn.commit()
     finally:
         conn.close()
-
-
 def get_entry(user_id: str, entry_date: str) -> Optional[dict]:
     ph = _placeholder()
     with _conn() as c:
@@ -212,8 +186,6 @@ def get_entry(user_id: str, entry_date: str) -> Optional[dict]:
             (user_id, entry_date),
         )
         return _row_to_dict(_fetchone(cur))
-
-
 def get_recent_entries(user_id: str, limit: int = 60) -> list[dict]:
     ph = _placeholder()
     with _conn() as c:
@@ -222,8 +194,6 @@ def get_recent_entries(user_id: str, limit: int = 60) -> list[dict]:
             (user_id, limit),
         )
         return [_row_to_dict(r) for r in _fetchall(cur)]
-
-
 def get_entry_count(user_id: str) -> int:
     ph = _placeholder()
     with _conn() as c:
@@ -233,8 +203,6 @@ def get_entry_count(user_id: str) -> int:
         )
         row = _fetchone(cur)
         return row["cnt"] if row else 0
-
-
 def get_all_feature_vectors(user_id: str) -> list[list[float]]:
     ph = _placeholder()
     with _conn() as c:
@@ -247,8 +215,6 @@ def get_all_feature_vectors(user_id: str) -> list[list[float]]:
             if r["feature_vector"]:
                 result.append(json.loads(r["feature_vector"]))
         return result
-
-
 def delete_user(user_id: str):
     ph = _placeholder()
     with _conn() as c:

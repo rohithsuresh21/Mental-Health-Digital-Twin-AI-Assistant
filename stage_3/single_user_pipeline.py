@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Optional
 from collections import Counter
 import random
-
 HEALTHY = [
     "Had a great day at work, got everything done and even had time to catch up with a friend over coffee.",
     "Morning run felt amazing. Energy is high and I feel ready for whatever comes.",
@@ -22,7 +21,6 @@ HEALTHY = [
     "Exercised after work. Body feels tired but mind feels great.",
     "The weekend was exactly what I needed. Relaxed and recharged.",
 ]
-
 AT_RISK = [
     "Can't get out of bed today. Everything feels pointless and heavy.",
     "Didn't sleep at all last night. Keep thinking about everything that's wrong.",
@@ -39,15 +37,11 @@ AT_RISK = [
     "Dark thoughts today. Tried to distract myself but they keep coming back.",
     "I hate feeling like this. I'm so tired of feeling like this.",
 ]
-
-
 def _sf(val):
     try:
         return float(val) if str(val).strip() not in ("", "None", "nan", "NaN") else None
     except Exception:
         return None
-
-
 def _pts(val):
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%d/%m/%Y"):
         try:
@@ -55,11 +49,8 @@ def _pts(val):
         except Exception:
             pass
     return datetime.now()
-
-
 def load_any_file(path: str) -> list[dict]:
     suffix = Path(path).suffix.lower()
-
     if suffix == ".csv":
         import csv
         with open(path, newline="", encoding="utf-8") as f:
@@ -72,7 +63,6 @@ def load_any_file(path: str) -> list[dict]:
             "activity_level":   _sf(r.get("activity_level")),
             "music_mood_score": _sf(r.get("music_mood_score")),
         } for r in rows if r.get("text", "").strip()]
-
     elif suffix == ".json":
         import json as _json
         with open(path, encoding="utf-8") as f:
@@ -87,7 +77,6 @@ def load_any_file(path: str) -> list[dict]:
             "activity_level":   _sf(d.get("activity_level")),
             "music_mood_score": _sf(d.get("music_mood_score")),
         } for d in data if d.get("text", "").strip()]
-
     elif suffix == ".txt":
         lines = [l.strip() for l in Path(path).read_text(encoding="utf-8", errors="ignore").splitlines() if l.strip()]
         base  = datetime.now() - timedelta(days=len(lines))
@@ -95,7 +84,6 @@ def load_any_file(path: str) -> list[dict]:
                  "sleep_hours": None, "sleep_quality": None,
                  "activity_level": None, "music_mood_score": None}
                 for i, l in enumerate(lines)]
-
     elif suffix == ".pdf":
         try:
             import pdfplumber
@@ -109,7 +97,6 @@ def load_any_file(path: str) -> list[dict]:
                  "sleep_hours": None, "sleep_quality": None,
                  "activity_level": None, "music_mood_score": None}
                 for i, l in enumerate(lines)]
-
     elif suffix in (".docx", ".doc"):
         try:
             import docx
@@ -122,11 +109,8 @@ def load_any_file(path: str) -> list[dict]:
                  "sleep_hours": None, "sleep_quality": None,
                  "activity_level": None, "music_mood_score": None}
                 for i, l in enumerate(lines)]
-
     else:
         raise ValueError(f"Unsupported format: {suffix}")
-
-
 def _make_demo_records(is_atrisk: bool, n_days: int = 14) -> list[dict]:
     random.seed(42)
     pool = AT_RISK if is_atrisk else HEALTHY
@@ -144,15 +128,11 @@ def _make_demo_records(is_atrisk: bool, n_days: int = 14) -> list[dict]:
             "music_mood_score": round(random.uniform(0.0, 0.3  if is_atrisk else 1.0), 2),
         })
     return records
-
-
 def run_single_user(user_id: str, file_path: Optional[str] = None,
                     use_demo: bool = False, demo_atrisk: bool = False) -> dict:
     from unified_pipeline import UnifiedJournalPipeline
     from pathlib import Path
-
     pipeline = UnifiedJournalPipeline()
-
     if file_path and Path(file_path).exists():
         records = load_any_file(file_path)
         records = [r for r in records if r["text"]]
@@ -160,15 +140,12 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
     else:
         records = _make_demo_records(demo_atrisk)
         print(f"Using 14-day demo ({'at-risk' if demo_atrisk else 'healthy'}) data for {user_id}")
-
     if len(records) < 3:
         raise ValueError(f"Need at least 3 entries, got {len(records)}")
-
     prev_ts = None
     sentiment_series, sleep_series, activity_series, music_series = [], [], [], []
     emotions_series, timestamps = [], []
     context_bin_series = []
-
     for rec in records:
         result = pipeline.process_entry(
             user_id=user_id,
@@ -192,9 +169,7 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
             activity_series.append((rec["timestamp"], rec["activity_level"]))
         if rec["music_mood_score"] is not None:
             music_series.append((rec["timestamp"], rec["music_mood_score"]))
-
     n = len(records)
-
     if n >= 60:
         num_patches = 30
         hidden_size = 64
@@ -210,43 +185,33 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
         hidden_size = 32
         max_epochs  = 15
         batch_size  = 8
-
     all_vecs = pipeline.get_batch_consistent_vectors(user_id)
     n_total = len(all_vecs)
-
     print("Stage 4: training detectors with chronological split...")
     n_train = max(10, int(n_total * 0.7))
     train_vecs = all_vecs[:n_train]
     X_train = np.array(train_vecs)
     print(f"  Training on first {n_train}/{n_total} entries, scoring all {n_total}")
-
     from stage_4.anomaly_pipeline import MultiDetectorPipeline
     pipeline.anomaly_detector = MultiDetectorPipeline()
     pipeline.anomaly_detector.fit(X_train)
-
-        import pickle as _pkl
-        detector_path = os.path.join(pipeline.output_dir, "anomaly_detector.pkl")
-        pipeline.anomaly_detector.save(detector_path)
-
+    import pickle as _pkl
+    detector_path = os.path.join(pipeline.output_dir, "anomaly_detector.pkl")
+    pipeline.anomaly_detector.save(detector_path)
     anomaly_results = []
     for vec in all_vecs:
         anomaly_results.append(pipeline.detect_anomalies(vec))
-
     pipeline.anomaly_scores[user_id] = anomaly_results
-     
     cusum_results = pipeline.fit_and_run_cusum(user_id)
     cusum_threshold = round(float(pipeline.cusum_detectors[user_id].h), 4)
-
     tft = pipeline.train_tft_model(
         num_patches=num_patches,
         hidden_size=hidden_size,
         max_epochs=max_epochs,
         batch_size=batch_size,
-        n_entries=n,           
+        n_entries=n,
     )
-
     xgb = pipeline.train_xgboost_classifier()
-
     vecs      = pipeline.normalized_vectors[user_id]
     anomalies = pipeline.anomaly_scores.get(user_id, [])
     if len(vecs) < 5:
@@ -264,11 +229,9 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
         print(f"DEBUG: n_entries={len(records)}, vecs={len(vecs)}, features_shape={features.shape}")
         prediction = pipeline.predict_classification(features)
         print(f"DEBUG: probability_raw={prediction.get('probability_raw')}, probability_calibrated={prediction.get('probability')}")
-
     ub = pipeline.user_baselines[user_id]
     calibration_status = ub.calibration_status()
     cutoff = ub.min_entries_to_fit - 1
-
     deviation_series = []
     for i, vec in enumerate(vecs):
         if i < cutoff:
@@ -278,7 +241,6 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
             audio_part = vec[ub.AUDIO_START:ub.AUDIO_END]
             deviation = float(np.mean(np.abs(np.concatenate([text_part, audio_part]))))
             deviation_series.append(round(deviation, 4))
-
     valid_deviation = [v for v in deviation_series if v is not None]
     if len(valid_deviation) >= 6:
         k = max(3, len(valid_deviation) // 3)
@@ -293,7 +255,6 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
             baseline_trend = "stable"
     else:
         baseline_trend = "insufficient_data"
-
     bin_labels = {
         "Morning_Weekday":   "Morning (Weekday)",
         "Afternoon_Weekday": "Afternoon (Weekday)",
@@ -304,7 +265,6 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
     }
     bin_counts_raw = Counter(context_bin_series)
     context_bin_counts = {bin_labels.get(k, k): bin_counts_raw.get(k, 0) for k in bin_labels}
-
     return {
         "user_id":          user_id,
         "n_entries":        len(records),
@@ -330,8 +290,6 @@ def run_single_user(user_id: str, file_path: Optional[str] = None,
         "baseline_trend": baseline_trend,
         "context_bin_counts": context_bin_counts,
     }
-
-
 if __name__ == "__main__":
     r = run_single_user("demo_healthy", use_demo=True, demo_atrisk=False)
     print(json.dumps({k: v for k, v in r.items() if k != "detector_scores"}, indent=2, default=str))

@@ -1,7 +1,4 @@
-
 BASE_FEATURES = {
-
-    # ── GoEmotions (28 emotions) ──────────────────────────────────────────
     "emotion_admiration":    {"group": "Emotional State", "concept": "Admiration",     "show": True},
     "emotion_amusement":     {"group": "Emotional State", "concept": "Amusement",      "show": True},
     "emotion_anger":         {"group": "Emotional State", "concept": "Anger",          "show": True},
@@ -30,8 +27,6 @@ BASE_FEATURES = {
     "emotion_sadness":       {"group": "Emotional State", "concept": "Sadness",        "show": True},
     "emotion_surprise":      {"group": "Emotional State", "concept": "Surprise",        "show": True},
     "emotion_neutral":       {"group": "Emotional State", "concept": "Emotional Flatness", "show": True},
-
-    # ── VADER sentiment (pipeline names) ──────────────────────────────────
     "vader_compound":        {"group": "Sentiment", "concept": "Overall Sentiment",          "show": True},
     "vader_pos":             {"group": "Sentiment", "concept": "Positive Tone",              "show": True},
     "vader_neg":             {"group": "Sentiment", "concept": "Negative Tone",              "show": True},
@@ -39,40 +34,24 @@ BASE_FEATURES = {
     "vader_min_compound":    {"group": "Sentiment", "concept": "Lowest Sentiment",           "show": True},
     "vader_max_compound":    {"group": "Sentiment", "concept": "Highest Sentiment",          "show": True},
     "vader_std_compound":    {"group": "Sentiment", "concept": "Sentiment Variability",      "show": True},
-
-    # ── lexical diversity (pipeline names) ────────────────────────────────
     "ttr":                   {"group": "Writing Style", "concept": "Vocabulary Richness (TTR)",    "show": True},
     "mtld":                  {"group": "Writing Style", "concept": "Lexical Diversity (MTLD)",     "show": True},
-
-    # ── readability (pipeline names) ──────────────────────────────────────
     "readability_fre":       {"group": "Writing Style", "concept": "Reading Ease",                 "show": True},
     "readability_fkgl":      {"group": "Writing Style", "concept": "Writing Complexity (Grade)",   "show": True},
     "readability_ari":       {"group": "Writing Style", "concept": "Readability (ARI)",            "show": False},
-
-    # ── pronoun usage (pipeline names) ────────────────────────────────────
     "first_person_singular": {"group": "Cognitive Patterns", "concept": "Self-Focus (I/me/my)",    "show": True},
     "first_person_plural":   {"group": "Cognitive Patterns", "concept": "Self-Reference Count",    "show": False},
-
-    # ── length features (pipeline names) ──────────────────────────────────
     "word_count":            {"group": "Writing Style", "concept": "Entry Length",                 "show": True},
     "sentence_count":        {"group": "Writing Style", "concept": "Number of Sentences",          "show": False},
     "avg_sentence_length":   {"group": "Writing Style", "concept": "Sentence Length",              "show": True},
-
-    # ── punctuation patterns (pipeline names) ─────────────────────────────
     "question_ratio":        {"group": "Cognitive Patterns", "concept": "Question Usage (? marks)",    "show": True},
     "exclamation_ratio":     {"group": "Cognitive Patterns", "concept": "Emotional Arousal (! marks)","show": True},
     "ellipsis_ratio":        {"group": "Cognitive Patterns", "concept": "Ellipsis Usage (...)", "show": True},
     "caps_ratio":            {"group": "Cognitive Patterns", "concept": "Emphasis (CAPS)",         "show": False},
-
-    # ── temporal metadata (pipeline names) ─────────────────────────────────
     "hour_sin":              {"group": "Behavioural Patterns", "concept": "Time of Writing",       "show": True},
     "hour_cos":              {"group": "Behavioural Patterns", "concept": "Day of Week",           "show": False},
     "days_gap":              {"group": "Behavioural Patterns", "concept": "Gap Since Last Entry",  "show": True},
 }
-
-# ── statistic descriptions ────────────────────────────────────────────────────
-# how to translate the 5 statistics into plain English for each feature concept
-
 STAT_DESCRIPTIONS = {
     "mean":  "Average {concept} over recent entries",
     "std":   "Variation in {concept} over recent entries",
@@ -80,21 +59,14 @@ STAT_DESCRIPTIONS = {
     "max":   "Highest observed {concept}",
     "delta": "Recent change in {concept}",
 }
-
-# ── features to never show regardless ────────────────────────────────────────
 ALWAYS_EXCLUDE = {
-    # health features — not in DAIC-WOZ training data
     "sleep_hours", "sleep_quality", "activity_level", "music_mood",
     "mask_sleep", "mask_sleep_quality", "mask_activity", "mask_music",
-    # audio/acoustic — not in DAIC-WOZ training data
     "audio_speech_rate", "audio_pause_ratio", "audio_avg_pause",
     "audio_pitch_mean", "audio_pitch_std", "audio_rms_mean", "audio_rms_std",
     "audio_emotion_angry", "audio_emotion_happy", "audio_emotion_neutral", "audio_emotion_sad",
-    # masks — binary flags, not meaningful to display
     "audio_mask",
 }
-
-# ── group ordering for display ────────────────────────────────────────────────
 GROUP_ORDER = [
     "Emotional State",
     "Sentiment",
@@ -102,13 +74,8 @@ GROUP_ORDER = [
     "Writing Style",
     "Behavioural Patterns",
 ]
-
 def parse_feature_name(full_name: str) -> tuple[str, str] | tuple[None, None]:
-    """
-    Parses 'mean_emotion_sadness' → ('mean', 'emotion_sadness')
-    Parses 'max_vader_compound'   → ('max',  'vader_compound')
-    Returns (None, None) if not parseable.
-    """
+
     stats = {"mean", "std", "min", "max", "delta"}
     parts = full_name.split("_", 1)
     if len(parts) != 2:
@@ -117,32 +84,21 @@ def parse_feature_name(full_name: str) -> tuple[str, str] | tuple[None, None]:
     if stat not in stats:
         return None, None
     return stat, base
-
 def get_feature_info(full_name: str) -> dict | None:
-    """
-    Given a full feature name like 'mean_emotion_sadness',
-    returns all info needed for display. Returns None if should be hidden.
-    """
+
     stat, base = parse_feature_name(full_name)
     if stat is None or base is None:
         return None
-
-    # check exclusion list
     for excluded in ALWAYS_EXCLUDE:
         if excluded in base:
             return None
-
-    # look up base feature
     info = BASE_FEATURES.get(base)
     if info is None:
         return None
-
     if not info.get("show", True):
         return None
-
     concept = info["concept"]
     description = STAT_DESCRIPTIONS.get(stat, f"{stat} of {concept}").format(concept=concept)
-
     return {
         "full_name":   full_name,
         "stat":        stat,
