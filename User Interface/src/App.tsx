@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { createPortal } from 'react-dom';
 import { 
   Activity, 
   Bell, 
@@ -370,6 +371,15 @@ export default function App() {
   const [selectedDetector, setSelectedDetector] = useState(0);
   const [detectorInfoKey, setDetectorInfoKey] = useState<string | null>(null);
 
+  // Lock body scroll while the detector info panel is open
+  useEffect(() => {
+    if (detectorInfoKey) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = prevOverflow; };
+    }
+  }, [detectorInfoKey]);
+
   // Global hover state for longitudinal charts
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
   const [chartMouseXPct, setChartMouseXPct] = useState(50);
@@ -453,17 +463,14 @@ export default function App() {
     }
   }, [chartViewport, diagnosticData.pipelineTimestamps]);
 
-  // Initialize CUSUM viewport when data loads — zoomed in to last ~20%
+  // Initialize CUSUM viewport when data loads — full range by default
   useEffect(() => {
     if (cusumViewport[0] === -1) {
       const upper = diagnosticData.pipelineCusumUpper || [];
       const lower = diagnosticData.pipelineCusumLower || [];
       const len = Math.max(upper.length, lower.length);
       if (len > 0) {
-        const visibleCount = Math.max(6, Math.round(len * 0.2));
-        const end = len - 1;
-        const start = Math.max(0, end - visibleCount + 1);
-        setCusumViewport([start, end]);
+        setCusumViewport([0, len - 1]);
       }
     }
   }, [cusumViewport, diagnosticData.pipelineCusumUpper, diagnosticData.pipelineCusumLower]);
@@ -2559,17 +2566,17 @@ export default function App() {
                 </div>
 
                 {/* 1. MOOD AND RISK OVER TIME SECTION */}
-                <div className="border-t border-gray-800/60 pt-6">
+                <div className="pt-8 pb-8 border-b border-[#ffffff04]">
                   <div 
-                    className="flex items-center justify-between cursor-pointer group"
+                    className="flex items-center justify-between cursor-pointer group border-b border-[#ffffff06] pb-3 mb-8"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, moodRisk: !prev.moodRisk }))}
                   >
                     <div>
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
-                        <Activity className="h-4.5 w-4.5 text-blue-400" />
-                        Emotional Tone &amp; Risk Trajectory
-                      </h3>
-                      <p className="text-[10px] text-gray-500 mt-1 ml-7">Daily emotional tone and broader direction</p>
+                      <div className="flex items-center gap-2.5">
+                        <Activity className="h-4 w-4 text-[#4fc3f7]" />
+                        <h3 className="text-xs font-bold text-white uppercase tracking-[0.15em] font-sans">Emotional Tone &amp; Risk Trajectory</h3>
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-1">Daily emotional tone and broader direction</p>
                     </div>
                     <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
                       {collapsedSections.moodRisk ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
@@ -2843,13 +2850,13 @@ export default function App() {
 
                 </div>
 
-                {/* 2. YOUR PERSONAL BASELINE SECTION — REDESIGNED */}
-                <div className="border-t border-gray-800/60 pt-6">
+                {/* 2. YOUR PERSONAL BASELINE SECTION */}
+                <div className="pt-8 pb-8 border-b border-[#ffffff04]">
                   <div 
-                    className="flex items-center justify-between cursor-pointer group"
+                    className="flex items-center justify-between cursor-pointer group border-b border-[#ffffff06] pb-3 mb-8"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, baseline: !prev.baseline }))}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <User className="h-4 w-4 text-[#4fc3f7]" />
                       <h3 className="text-xs font-bold text-white uppercase tracking-[0.15em] font-sans">Your Personal Baseline</h3>
                     </div>
@@ -2857,7 +2864,7 @@ export default function App() {
                       {collapsedSections.baseline ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                     </button>
                   </div>
-                  <p className="text-[13px] text-[#475569] mt-1 ml-6">This shows how well the system has learned what's "normal" for this specific person, and whether recent entries are drifting away from that.</p>
+                  <p className="text-[13px] text-[#475569] mb-8">This shows how well the system has learned what's "normal" for this specific person, and whether recent entries are drifting away from that.</p>
 
                   {!collapsedSections.baseline && (() => {
                     const trend = diagnosticData.pipelineBaselineTrend;
@@ -2933,18 +2940,29 @@ export default function App() {
                   })()}
                 </div>
 
-                {/* 3. TREND STABILITY (CUSUM) — REDESIGNED */}
-                <div className="border-t border-gray-800/60 pt-6">
+                {/* 3. TREND STABILITY (CUSUM) SECTION */}
+                <div className="pt-8 pb-8 border-b border-[#ffffff04]">
                   <div 
-                    className="flex items-center justify-between cursor-pointer group"
+                    className="flex items-center justify-between cursor-pointer group border-b border-[#ffffff06] pb-3 mb-8"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, cusum: !prev.cusum }))}
                   >
-                    <div>
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
-                        <Activity className="h-4.5 w-4.5 text-[#4fc3f7]" />
-                        Sustained Change from Baseline
-                      </h3>
-                      <p className="text-[10px] text-gray-500 mt-1 ml-7">Detects whether recent behavior has shifted consistently away from the established baseline</p>
+                    <div className="flex items-center gap-2.5">
+                      <Activity className="h-4 w-4 text-[#f97316]" />
+                      <h3 className="text-xs font-bold text-white uppercase tracking-[0.15em] font-sans">Sustained Change from Baseline</h3>
+                      {(() => {
+                        const lastUp = upperCusumVals.length > 0 ? upperCusumVals[upperCusumVals.length - 1] : 0;
+                        const drift = lastUp > cusumThreshold;
+                        return drift ? (
+                          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-[#f97316]/10 border border-[#f97316]/30 text-[#f97316]">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#f97316] animate-pulse" />
+                            Upper Drift Detected
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                            Within Range
+                          </span>
+                        );
+                      })()}
                     </div>
                     <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
                       {collapsedSections.cusum ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
@@ -3165,15 +3183,25 @@ export default function App() {
                 </div>
 
                 {/* 4. WHAT'S DRIVING THAT SIGNAL SECTION */}
-                <div className="border-t border-gray-800/60 pt-6">
+                <div className="pt-8 pb-8 border-b border-[#ffffff04]">
                   <div 
-                    className="flex items-center justify-between cursor-pointer group"
+                    className="flex items-center justify-between cursor-pointer group border-b border-[#ffffff06] pb-3 mb-8"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, whatsDriving: !prev.whatsDriving }))}
                   >
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
-                      <Brain className="h-4.5 w-4.5 text-blue-400" />
-                      What's Driving That Signal
-                    </h3>
+                    <div className="flex items-center gap-2.5">
+                      <Brain className="h-4 w-4 text-[#a78bfa]" />
+                      <h3 className="text-xs font-bold text-white uppercase tracking-[0.15em] font-sans">What's Driving That Signal</h3>
+                      {(() => {
+                        const detScores = pipeline?.pipelineDetectorScores;
+                        const lastScores = detScores && detScores.length > 0 ? detScores[detScores.length - 1] : {};
+                        const elevated = Object.values(lastScores).filter(v => v >= 0.6).length;
+                        return (
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${elevated > 0 ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'}`}>
+                            {elevated}/4 Elevated
+                          </span>
+                        );
+                      })()}
+                    </div>
                     <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
                       {collapsedSections.whatsDriving ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                     </button>
@@ -3503,15 +3531,18 @@ export default function App() {
                 </div>
 
                 {/* 5. TECHNICAL DETAILS SECTION */}
-                <div className="border-t border-gray-800/60 pt-6">
+                <div className="pt-8 pb-8 border-b border-[#ffffff04]">
                   <div 
-                    className="flex items-center justify-between cursor-pointer group"
+                    className="flex items-center justify-between cursor-pointer group border-b border-[#ffffff06] pb-3 mb-8"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, techDetails: !prev.techDetails }))}
                   >
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest font-sans flex items-center gap-2">
-                      <Database className="h-4.5 w-4.5 text-gray-400" />
-                      Technical Details
-                    </h3>
+                    <div className="flex items-center gap-2.5">
+                      <Database className="h-4 w-4 text-[#6b7280]" />
+                      <h3 className="text-xs font-bold text-white uppercase tracking-[0.15em] font-sans">Technical Details</h3>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-white/[0.04] border border-white/[0.06] text-gray-500">
+                        Debug Mode
+                      </span>
+                    </div>
                     <button className="text-gray-400 group-hover:text-white transition-colors p-1 cursor-pointer">
                       {collapsedSections.techDetails ? <Plus className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                     </button>
@@ -3604,29 +3635,29 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* DETECTOR INFO SIDE PANEL — redesigned per spec */}
-                <AnimatePresence>
-                  {detectorInfoKey && (
-                    <motion.div
-                      className="fixed inset-0 z-40"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      onClick={() => setDetectorInfoKey(null)}
-                    />
-                  )}
-                </AnimatePresence>
-                <AnimatePresence>
-                  {detectorInfoKey && (
-                    <motion.div
-                      className="fixed right-0 top-0 w-[380px] max-sm:w-screen h-screen bg-[#0d1117] border-l border-[#1e2a3a] shadow-2xl z-50 overflow-y-auto"
-                      initial={{ x: '100%' }}
-                      animate={{ x: 0 }}
-                      exit={{ x: '100%' }}
-                      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                {/* DETECTOR INFO SIDE PANEL — rendered via portal on document.body */}
+                {createPortal(
+                  <AnimatePresence>
+                    {detectorInfoKey && (
+                      <>
+                        <motion.div
+                          className="fixed inset-0"
+                          style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                          onClick={() => setDetectorInfoKey(null)}
+                        />
+                        <motion.div
+                          className="w-[380px] max-sm:w-screen bg-[#0d1117] border-l border-[#1e2a3a] shadow-2xl overflow-y-auto"
+                          style={{ position: 'fixed', zIndex: 9999, top: 64, right: 0, width: 380, height: 'calc(100vh - 64px)', overflowY: 'auto' }}
+                          initial={{ x: '100%' }}
+                          animate={{ x: 0 }}
+                          exit={{ x: '100%' }}
+                          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
                       <div className="absolute left-0 top-0 bottom-0 w-8 pointer-events-none z-10" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.15), transparent)', backdropFilter: 'blur(2px)' }} />
                       <AnimatePresence mode="wait">
                         {detectorInfoKey && (() => {
@@ -3739,10 +3770,13 @@ export default function App() {
                             </motion.div>
                           );
                         })()}
-                      </AnimatePresence>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                          </AnimatePresence>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>,
+                  document.body
+                )}
 
               </div>
             );
