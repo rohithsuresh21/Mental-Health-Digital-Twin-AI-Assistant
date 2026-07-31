@@ -10,9 +10,9 @@ Write-Host ""
 
 # ── Step 0: Kill old processes ──
 Write-Host "[0/5] Cleaning up old processes..." -ForegroundColor Yellow
-Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force
-Get-Process cloudflared -ErrorAction SilentlyContinue | Stop-Process -Force
-Start-Sleep -Seconds 2
+Get-Process python* -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process cloudflared* -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Seconds 3
 Remove-Item $TUNNEL_ERR -Force -ErrorAction SilentlyContinue
 Write-Host "  Done." -ForegroundColor Gray
 
@@ -42,10 +42,7 @@ for ($i = 0; $i -lt 15; $i++) {
     Start-Sleep -Seconds 2
     $lines = Get-Content $TUNNEL_ERR -ErrorAction SilentlyContinue
     foreach ($line in $lines) {
-        if ($line -match "https://[a-z0-9-]+\.trycloudflare\.com") {
-            $tunnelUrl = $Matches[0]
-            break
-        }
+        if ($line -match "https://[a-z0-9-]+\.trycloudflare\.com") { $tunnelUrl = $Matches[0] }
     }
     if ($tunnelUrl) { break }
     Write-Host "  Waiting for tunnel... ($($i+1)/15)" -ForegroundColor Gray

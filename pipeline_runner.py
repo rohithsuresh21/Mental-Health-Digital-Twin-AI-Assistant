@@ -198,22 +198,9 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
     _info(f"Config: {num_patches} patches, hidden={hidden_size}, epochs={max_epochs}, batch={batch_size}")
     checkpoint_path = "tft_checkpoint.ckpt"
     checkpoint_exists = os.path.exists(checkpoint_path)
-    if not checkpoint_exists and n < 20:
-        _warn(f"No trained TFT checkpoint found yet")
-        _info(f"Skipping TFT this run — training in background for next request.")
+    if not checkpoint_exists:
+        _warn(f"No trained TFT checkpoint found — skipping Stage 3 (server runs inference-only).")
         tft = None
-        def _train_tft_background():
-            try:
-                pipeline.train_tft_model(
-                    num_patches=num_patches,
-                    hidden_size=hidden_size,
-                    max_epochs=max_epochs,
-                    batch_size=batch_size,
-                )
-                print(f"  [TFT] Background training complete — checkpoint saved.")
-            except Exception as e:
-                print(f"  [TFT] Background training failed: {e}")
-        threading.Thread(target=_train_tft_background, daemon=True).start()
     else:
         try:
             tft = pipeline.train_tft_model(
@@ -221,12 +208,16 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
                 hidden_size=hidden_size,
                 max_epochs=max_epochs,
                 batch_size=batch_size,
+                training=False,
             )
-            _ok(f"TFT model trained successfully")
-            _info(f"Latent shape: {list(tft['latents'].shape)}")
-            _info(f"Time: {_elapsed(t_s3)}")
+            if tft is None:
+                _warn(f"TFT checkpoint could not be loaded — continuing without TFT latent features")
+            else:
+                _ok(f"TFT model ready (inference, no retraining)")
+                _info(f"Latent shape: {list(tft['latents'].shape)}")
+                _info(f"Time: {_elapsed(t_s3)}")
         except Exception as e:
-            _warn(f"TFT training failed: {e}")
+            _warn(f"TFT inference failed: {e}")
             _info(f"Continuing without TFT latent features")
             tft = None
     _sec("Stage 5 — Risk Classification (XGBoost)")

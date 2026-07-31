@@ -1367,7 +1367,10 @@ def internal_forecaster():
             hidden_size=32,
             max_epochs=5,
             batch_size=8,
+            training=False,
         )
+        if tft is None:
+            return jsonify({"error": "No TFT checkpoint available"}), 400
         return jsonify({
             "user_id": user_id,
             "latent_shape": list(tft["latents"].shape),

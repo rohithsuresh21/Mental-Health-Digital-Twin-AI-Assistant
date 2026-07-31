@@ -271,7 +271,8 @@ class UnifiedJournalPipeline:
         hidden_size: int = 64,
         max_epochs: int = 30,
         batch_size: int = 64,
-        n_entries: int = 100
+        n_entries: int = 100,
+        training: bool = True,
     ) -> Dict[str, Any]:
         if self.tft_model is not None:
             print("[Stage 3] TFT model already loaded -- skipping retraining.")
@@ -295,8 +296,12 @@ class UnifiedJournalPipeline:
                 max_epochs=max_epochs,
                 batch_size=batch_size,
                 n_entries=n_entries,
-                patched_risks=patched_risks
+                patched_risks=patched_risks,
+                training=training,
             )
+            if self.tft_model is None:
+                print("[Stage 3] TFT unavailable (inference-only mode, no usable checkpoint).")
+                return None
             import torch
             model_path = os.path.join(self.output_dir, "tft_model.pt")
             torch.save({

@@ -11,7 +11,13 @@ except ImportError:
     from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_forecasting import TemporalFusionTransformer, TimeSeriesDataSet
 from pytorch_forecasting.data import EncoderNormalizer
+from pytorch_forecasting.data.encoders import GroupNormalizer as _GroupNormalizer, NaNLabelEncoder as _NaNLabelEncoder
 from pytorch_forecasting.metrics import MAE
+for _tft_safe_global in (_GroupNormalizer, _NaNLabelEncoder):
+    try:
+        torch.serialization.add_safe_globals([_tft_safe_global])
+    except Exception:
+        pass
 def build_dataframe(patched_data: dict, patched_risks: dict = None) -> pd.DataFrame:
     rows = []
     for user_id, windows in patched_data.items():
@@ -112,7 +118,8 @@ def train_tft(
         enable_model_summary=True,
         enable_progress_bar=True,
         callbacks=[checkpoint_callback],
-        accelerator="cpu",
+        accelerator="auto",
+        devices="auto",
     )
     trainer.fit(tft, train_dataloaders=train_loader, val_dataloaders=val_loader)
     return tft
@@ -186,7 +193,7 @@ def load_tft_checkpoint(checkpoint_path: str = "tft_checkpoint.ckpt"):
     if not os.path.exists(checkpoint_path):
         return None
     try:
-        tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path)
+        tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path, weights_only=False)
         tft = tft.cpu()
         tft.eval()
         checkpoint_dir = os.path.dirname(os.path.abspath(checkpoint_path))
@@ -216,6 +223,7 @@ def run_stage3(
     checkpoint_path: str = "tft_checkpoint.ckpt",
     n_entries: int = 100,
     patched_risks: dict = None,
+    training: bool = True,
 ) -> dict:
     df         = build_dataframe(patched_data, patched_risks)
     window_ids = df["window_id"].unique().tolist()
@@ -235,33 +243,44 @@ def run_stage3(
     full_dataset  = build_dataset(df,       feature_dim, num_patches=num_patches)
     train_dataset = build_dataset(train_df, feature_dim, num_patches=num_patches)
     val_dataset   = TimeSeriesDataSet.from_dataset(train_dataset, val_df, predict=True)
-    if os.path.exists(checkpoint_path):
-        try:
-            print(f"[TFT] Checkpoint found — attempting to load for fine-tuning.")
-            tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path)
-            tft = tft.cpu()
-            expected_encoder_len = num_patches - 7
-            actual_encoder_len = tft.hparams.encoder_max_length if hasattr(tft.hparams, 'encoder_max_length') else None
-            if actual_encoder_len and actual_encoder_len != expected_encoder_len:
-                raise ValueError(
-                    f"Checkpoint encoder length ({actual_encoder_len}) != "
-                    f"current config ({expected_encoder_len}). Retraining from scratch."
+    tft = None
+    if training:
+        if os.path.exists(checkpoint_path):
+            try:
+                print(f"[TFT] Checkpoint found — attempting to load for fine-tuning.")
+                tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path, weights_only=False)
+                tft = tft.cpu()
+                expected_encoder_len = num_patches - 7
+                actual_encoder_len = tft.hparams.encoder_max_length if hasattr(tft.hparams, 'encoder_max_length') else None
+                if actual_encoder_len and actual_encoder_len != expected_encoder_len:
+                    raise ValueError(
+                        f"Checkpoint encoder length ({actual_encoder_len}) != "
+                        f"current config ({expected_encoder_len}). Retraining from scratch."
+                    )
+                frozen_count = 0
+                for name, param in tft.named_parameters():
+                    if any(x in name for x in ["lstm_encoder", "input_embeddings", "prescalers", "static_covariates_encoder"]):
+                        param.requires_grad = False
+                        frozen_count += 1
+                print(f"[TFT] Froze {frozen_count} encoder parameter tensors. Fine-tuning decoder only.")
+                tft = train_tft(
+                    tft, train_dataset, val_dataset,
+                    max_epochs=max(2, max_epochs // 3),
+                    batch_size=batch_size,
+                    checkpoint_path=checkpoint_path,
+                    learning_rate=1e-4,
                 )
-            frozen_count = 0
-            for name, param in tft.named_parameters():
-                if any(x in name for x in ["lstm_encoder", "input_embeddings", "prescalers", "static_covariates_encoder"]):
-                    param.requires_grad = False
-                    frozen_count += 1
-            print(f"[TFT] Froze {frozen_count} encoder parameter tensors. Fine-tuning decoder only.")
-            tft = train_tft(
-                tft, train_dataset, val_dataset,
-                max_epochs=max(2, max_epochs // 3),
-                batch_size=batch_size,
-                checkpoint_path=checkpoint_path,
-                learning_rate=1e-4,
-            )
-        except Exception as e:
-            print(f"[TFT] Checkpoint incompatible ({type(e).__name__}: {e}) — training from scratch.")
+            except Exception as e:
+                print(f"[TFT] Checkpoint incompatible ({type(e).__name__}: {e}) — training from scratch.")
+                tft = build_tft(train_dataset, hidden_size=hidden_size, n_entries=n_entries)
+                tft = train_tft(
+                    tft, train_dataset, val_dataset,
+                    max_epochs=max_epochs,
+                    batch_size=batch_size,
+                    checkpoint_path=checkpoint_path,
+                )
+        else:
+            print("[TFT] No checkpoint found — training from scratch.")
             tft = build_tft(train_dataset, hidden_size=hidden_size, n_entries=n_entries)
             tft = train_tft(
                 tft, train_dataset, val_dataset,
@@ -270,14 +289,20 @@ def run_stage3(
                 checkpoint_path=checkpoint_path,
             )
     else:
-        print("[TFT] No checkpoint found — training from scratch.")
-        tft = build_tft(train_dataset, hidden_size=hidden_size, n_entries=n_entries)
-        tft = train_tft(
-            tft, train_dataset, val_dataset,
-            max_epochs=max_epochs,
-            batch_size=batch_size,
-            checkpoint_path=checkpoint_path,
-        )
+        if os.path.exists(checkpoint_path):
+            print("[TFT] Inference mode — loading saved checkpoint (no training).")
+            loaded = load_tft_checkpoint(checkpoint_path)
+            if loaded and loaded.get("model") is not None:
+                tft = loaded["model"]
+            else:
+                print("[TFT] Checkpoint load failed — skipping Stage 3.")
+                return None
+        else:
+            print("[TFT] No checkpoint available and training disabled — skipping Stage 3.")
+            return None
+    if tft is None:
+        print("[TFT] Stage 3 unavailable — skipping.")
+        return None
     latents, attentions = extract_latent_and_attention(tft, full_dataset, batch_size)
     mean_attention = attentions.mean(dim=0)
     if mean_attention.dim() > 1:
