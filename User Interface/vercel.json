@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://reverse-mrs-removal-arising.trycloudflare.com/$1"
+                         "destination": "https://heater-each-mounting-administrator.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
