@@ -4,8 +4,12 @@
     "outputDirectory":  "dist",
     "rewrites":  [
                      {
+                         "source":  "/api/explain",
+                         "destination": "https://crops-convert-applying-estates.trycloudflare.com/api/explain"
+                     },
+                     {
                          "source":  "/api/(.*)",
-                         "destination": "https://crops-convert-applying-estates.trycloudflare.com/$1"
+                         "destination": "https://grants-was-broadcasting-reward.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
