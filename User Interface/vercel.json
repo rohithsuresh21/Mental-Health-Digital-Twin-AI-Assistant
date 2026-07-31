@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://thinking-films-proud-literary.trycloudflare.com/$1"
+                         "destination": "https://accessibility-gathered-thriller-fridge.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
