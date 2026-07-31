@@ -5,7 +5,7 @@
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://balanced-strengthening-marketing-courier.trycloudflare.com/$1"
+                         "destination": "https://crops-convert-applying-estates.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
