@@ -5,11 +5,11 @@
     "rewrites":  [
                      {
                          "source":  "/api/explain",
-                         "destination": "https://crops-convert-applying-estates.trycloudflare.com/api/explain"
+                         "destination": "https://relate-devices-shakespeare-trailer.trycloudflare.com/api/explain"
                      },
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://would-rebecca-cigarettes-james.trycloudflare.com/$1"
+                         "destination": "https://relate-devices-shakespeare-trailer.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
