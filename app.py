@@ -235,6 +235,9 @@ def add_security_headers(response):
 _pipeline = None
 def get_pipeline():
     global _pipeline
+    import pipeline_runner as _pr
+    if _pr._shared_pipeline is not None:
+        return _pr._shared_pipeline
     if _pipeline is None:
         from unified_pipeline import UnifiedJournalPipeline
         _pipeline = UnifiedJournalPipeline()
@@ -1096,7 +1099,9 @@ def index():
 def diagnose():
     try:
         body = request.get_json(force=True, silent=True) or {}
-        user_id = (body.get("user_id") or body.get("fullName", "user_demo")).strip() or "user_demo"
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Authentication required. Please log in."}), 401
         text_parts = [
             body.get("communicationLogs", ""),
             body.get("voiceRecordingsText", ""),
@@ -1129,6 +1134,8 @@ def diagnose():
                 f.write(text)
             try:
                 result = run_pipeline(user_id, file_path=tmp_path)
+            except ValueError as _ve:
+                return jsonify({"error": str(_ve)}), 400
             finally:
                 for _delay in [0, 0.5, 1.0]:
                     try:
@@ -1137,19 +1144,9 @@ def diagnose():
                         if _delay == 1.0: pass
                         else: time.sleep(_delay)
         else:
-            fd, tmp_path = tempfile.mkstemp(suffix=".txt")
-            os.close(fd)
-            with open(tmp_path, "w", encoding="utf-8") as f:
-                f.write("Today was a normal day. Feeling okay.\nYesterday was good, productive.\nTomorrow will be better.")
-            try:
-                result = run_pipeline(user_id, file_path=tmp_path)
-            finally:
-                for _delay in [0, 0.5, 1.0]:
-                    try:
-                        os.unlink(tmp_path); break
-                    except PermissionError:
-                        if _delay == 1.0: pass
-                        else: time.sleep(_delay)
+            return jsonify({
+                "error": "No journal data provided. Enter at least 3 journal entries or upload a document.",
+            }), 400
         result["cusum_status"] = build_cusum_status(
             result.get("cusum_alert_upper", []),
             result.get("cusum_alert_lower", []),
@@ -1191,7 +1188,9 @@ def forecast_detectors():
 
     try:
         body = request.get_json(force=True, silent=True) or {}
-        user_id = (body.get("user_id") or body.get("fullName", "user_demo")).strip() or "user_demo"
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Authentication required. Please log in."}), 401
         import pipeline_runner as _pr
         shared = _pr._shared_pipeline
         if shared is None:
@@ -1212,6 +1211,8 @@ def forecast_detectors():
 def generate_pdf():
     try:
         body = request.get_json(force=True, silent=True) or {}
+        if not session.get("user_id"):
+            return jsonify({"error": "Authentication required. Please log in."}), 401
         diagnostic_data = body.get("diagnosticData", {})
         inputs = body.get("inputs", {})
         if not diagnostic_data:
@@ -1236,7 +1237,9 @@ def generate_pdf():
 @rate_limit("diagnose")
 def run():
     try:
-        user_id = request.form.get("user_id", "user_demo").strip()
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Authentication required. Please log in."}), 401
         file    = request.files.get("file")
         if not file or not file.filename:
             return jsonify({"error": "No file uploaded. Upload a CSV, JSON, TXT, PDF, or DOCX file with journal entries."}), 400
@@ -1534,7 +1537,9 @@ def api_explain():
 
     try:
         body = request.get_json(force=True, silent=True) or {}
-        user_id = (body.get("user_id") or body.get("fullName", "user_demo")).strip() or "user_demo"
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Authentication required. Please log in."}), 401
         import pipeline_runner as _pr
         shared = _pr._shared_pipeline
         if shared is None:
