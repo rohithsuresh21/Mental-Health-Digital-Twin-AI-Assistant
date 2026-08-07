@@ -5,11 +5,11 @@
     "rewrites":  [
                      {
                          "source":  "/api/explain",
-                         "destination": "https://jews-clearly-flow-towers.trycloudflare.com/api/explain"
+                         "destination": "https://waiver-dpi-luis-hunt.trycloudflare.com/api/explain"
                      },
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://jews-clearly-flow-towers.trycloudflare.com/$1"
+                         "destination": "https://waiver-dpi-luis-hunt.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
