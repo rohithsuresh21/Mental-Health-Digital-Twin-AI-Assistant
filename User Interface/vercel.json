@@ -5,11 +5,11 @@
     "rewrites":  [
                      {
                          "source":  "/api/explain",
-                         "destination": "https://releases-signed-mai-negotiation.trycloudflare.com/api/explain"
+                         "destination": "https://telescope-coupon-dame-something.trycloudflare.com/api/explain"
                      },
                      {
                          "source":  "/api/(.*)",
-                         "destination": "https://releases-signed-mai-negotiation.trycloudflare.com/$1"
+                         "destination": "https://telescope-coupon-dame-something.trycloudflare.com/$1"
                      },
                      {
                          "source":  "/(.*)",
