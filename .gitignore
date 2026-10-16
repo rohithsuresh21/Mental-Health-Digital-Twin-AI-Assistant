@@ -81,3 +81,11 @@ desktop/app.ico
 
 # Licensed clinical dataset - never commit
 DAIC-WOZ/
+
+# Patient simulation outputs
+tests/patient_sim/days.json
+tests/patient_sim/report_*.json
+tests/patient_sim/*.wav
+tests/patient_sim/*.txt
+tests/patient_sim/*.csv
+tests/patient_sim/result.json

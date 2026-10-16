@@ -187,7 +187,8 @@ class UnifiedJournalPipeline:
         sleep_quality: Optional[float] = None,
         activity_level: Optional[float] = None,
         music_mood_score: Optional[float] = None,
-        prev_timestamp: Optional[datetime] = None
+        prev_timestamp: Optional[datetime] = None,
+        precomputed_audio: Optional[list] = None
     ) -> Tuple[np.ndarray, Dict[str, Any]]:
         if timestamp is None:
             timestamp = datetime.now()
@@ -200,7 +201,8 @@ class UnifiedJournalPipeline:
                 sleep_hours=sleep_hours,
                 sleep_quality=sleep_quality,
                 activity_level=activity_level,
-                music_mood_score=music_mood_score
+                music_mood_score=music_mood_score,
+                precomputed_audio=precomputed_audio
             )
             assert feature_vec.shape[0] == 466, f"Expected 466 features, got {feature_vec.shape[0]}"
             assert not np.any(np.isnan(feature_vec)), "NaN values detected in feature vector"
@@ -473,7 +475,8 @@ class UnifiedJournalPipeline:
         activity_level: Optional[float] = None,
         music_mood_score: Optional[float] = None,
         prev_timestamp: Optional[datetime] = None,
-        label: Optional[int] = None
+        label: Optional[int] = None,
+        precomputed_audio: Optional[list] = None
     ) -> Dict[str, Any]:
         pass
         feature_vec, readable = self.extract_user_entry(
@@ -485,7 +488,8 @@ class UnifiedJournalPipeline:
             sleep_quality=sleep_quality,
             activity_level=activity_level,
             music_mood_score=music_mood_score,
-            prev_timestamp=prev_timestamp
+            prev_timestamp=prev_timestamp,
+            precomputed_audio=precomputed_audio
         )
         if timestamp is None:
             timestamp = datetime.now()

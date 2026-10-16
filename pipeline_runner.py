@@ -100,21 +100,26 @@ def load_any_file(path: str) -> list[dict]:
                 for i, l in enumerate(lines)]
     else:
         raise ValueError(f"Unsupported format: {suffix}")
-def run_pipeline(user_id: str, file_path: str) -> dict:
+def run_pipeline(user_id: str, file_path: str = None, records: list = None) -> dict:
+    """Run all stages on a file (admin upload) or on pre-built records
+    (patient daily entries from daily_portal.dataset.build_user_records)."""
     from unified_pipeline import UnifiedJournalPipeline
     t_start = time.time()
     _hdr(f"MENTAL HEALTH DIGITAL TWIN  —  Pipeline Run")
     _p(f"  User:       {user_id}")
     _p(f"  Timestamp:  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    path = Path(file_path)
-    if not path.exists():
-        raise FileNotFoundError(f"File not found: {file_path}")
-    records = load_any_file(file_path)
-    records = [r for r in records if r["text"]]
+    if records is None:
+        path = Path(file_path)
+        if not path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+        records = load_any_file(file_path)
+        source_label = f"{path.name} ({path.suffix.lower()})"
+    else:
+        source_label = "daily check-ins (patient portal)"
+    records = sorted([r for r in records if r.get("text")], key=lambda r: r["timestamp"])
     if len(records) < 3:
         raise ValueError(f"Need at least 3 entries, got {len(records)}")
-    suffix = Path(file_path).suffix.lower()
-    _p(f"  Source:     {Path(file_path).name} ({suffix})")
+    _p(f"  Source:     {source_label}")
     _p(f"  Entries:    {len(records)} journal entries loaded")
     t_load = time.time()
     pipeline = UnifiedJournalPipeline()
@@ -136,6 +141,7 @@ def run_pipeline(user_id: str, file_path: str) -> dict:
             sleep_quality=rec["sleep_quality"],
             activity_level=rec["activity_level"],
             music_mood_score=rec["music_mood_score"],
+            precomputed_audio=rec.get("audio_features"),
         )
         prev_ts = rec["timestamp"]
         m = result["stage_1"]["readable_metrics"]["raw_display_metrics"]

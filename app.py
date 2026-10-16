@@ -1112,25 +1112,10 @@ def diagnose():
             body.get("docFileContent", ""),
         ]
         text = "\n\n".join(p for p in text_parts if p)
-        try:
-            from daily_portal import db as daily_db
-            daily_entries = daily_db.get_recent_entries(user_id, limit=500)
-            daily_texts = [
-                e.get("text_raw", "")
-                for e in daily_entries
-                if e.get("text_raw", "").strip()
-            ]
-            if daily_texts:
-                daily_block = "\n".join(daily_texts)
-                if text.strip():
-                    text = text + "\n\n--- Daily Journal Entries ---\n" + daily_block
-                else:
-                    text = daily_block
-        except Exception as _de:
-            print(f"[diagnose] Could not load daily entries: {_de}")
         from pipeline_runner import run_pipeline
         import tempfile, os
         if text.strip():
+            # admin / clinician upload: one journal entry per line
             fd, tmp_path = tempfile.mkstemp(suffix=".txt")
             os.close(fd)
             with open(tmp_path, "w", encoding="utf-8") as f:
@@ -1147,9 +1132,18 @@ def diagnose():
                         if _delay == 1.0: pass
                         else: time.sleep(_delay)
         else:
-            return jsonify({
-                "error": "No journal data provided. Enter at least 3 journal entries or upload a document.",
-            }), 400
+            # patient: the stored daily check-ins + imported chats, one structured record per day
+            from daily_portal.dataset import build_user_records
+            records = build_user_records(user_id)
+            if len(records) < 3:
+                return jsonify({
+                    "error": "No journal data provided. Enter at least 3 journal entries or upload a document.",
+                }), 400
+            try:
+                result = run_pipeline(user_id, records=records)
+            except ValueError as _ve:
+                return jsonify({"error": str(_ve)}), 400
+            result["data_source"] = "daily_checkins"
         result["cusum_status"] = build_cusum_status(
             result.get("cusum_alert_upper", []),
             result.get("cusum_alert_lower", []),

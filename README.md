@@ -29,6 +29,16 @@ After that the app works offline. Start menu entries: **Mental Health Digital Tw
 | RAM | 8 GB+ |
 | GPU (optional) | NVIDIA with a recent driver; falls back to CPU automatically |
 
+### Using it as a patient
+
+1. Pick **Patient**, open **Clinical Patient Intake Portal**.
+2. **Check-in** once a day: a few sentences about your day, optional `.wav` voice note (transcribed locally by Whisper), and sleep / activity / mood sliders. Missed a day? Pick its date.
+3. **Import chats** (optional): WhatsApp `.txt` export, Telegram `result.json`, Reddit `comments.csv` / `posts.csv`. Only your own messages are kept and each is merged into the day it was sent.
+4. **My data** shows your streak, a 5-week calendar, data sources, health trends and which AI stages are ready.
+5. After **14 days** the personal baseline calibrates. Open **Analysis** → **Run my analysis** to run all five stages on your days (risk score, explanations, 7-day forecast; per-detector forecasts need 37 days).
+
+Everything (database `app/data/daily_portal.db`, voice notes, models) stays in the install folder on your PC.
+
 ---
 
 ## 1. Pipeline Overview

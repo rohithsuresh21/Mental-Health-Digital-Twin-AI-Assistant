@@ -148,7 +148,14 @@ def main():
         run_setup()
         return
 
-    if not _port_free(port):
+    # The app's identity (patient id, settings) lives in the browser profile for this exact origin,
+    # so keep the port stable: wait for a previous instance to release it before falling back.
+    for _ in range(40):
+        if _port_free(port):
+            break
+        time.sleep(0.5)
+    else:
+        print(f"[desktop] port {port} busy, using a random port (browser storage will differ)", flush=True)
         port = _free_port()
 
     from desktop import server

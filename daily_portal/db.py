@@ -215,6 +215,10 @@ def get_all_feature_vectors(user_id: str) -> list[list[float]]:
             if r["feature_vector"]:
                 result.append(json.loads(r["feature_vector"]))
         return result
+def delete_entry(user_id: str, entry_date: str):
+    ph = _placeholder()
+    with _conn() as c:
+        c.execute(f"DELETE FROM daily_entries WHERE user_id={ph} AND entry_date={ph}", (user_id, entry_date))
 def delete_user(user_id: str):
     ph = _placeholder()
     with _conn() as c:

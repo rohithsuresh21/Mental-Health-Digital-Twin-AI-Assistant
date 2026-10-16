@@ -188,12 +188,53 @@ def generate_forecast(
     except Exception as e:
         print(f"[TFT] Forecast generation failed: {e}")
         return [0.5] * forecast_days
+
+def _pin_metrics_to_cpu(obj, _seen=None, _depth=0):
+    """Checkpoints saved on a GPU machine pickle torchmetrics objects with device=cuda; loading
+    them on a CPU-only PC then fails with 'Found no NVIDIA driver'. Re-pin them to CPU."""
+    import torch
+    try:
+        from torchmetrics import Metric
+    except Exception:
+        return
+    _seen = _seen if _seen is not None else set()
+    if id(obj) in _seen or _depth > 6:
+        return
+    _seen.add(id(obj))
+    if isinstance(obj, Metric):
+        obj._device = torch.device("cpu")
+    if isinstance(obj, dict):
+        for v in obj.values():
+            _pin_metrics_to_cpu(v, _seen, _depth + 1)
+    elif isinstance(obj, (list, tuple)):
+        for v in obj:
+            _pin_metrics_to_cpu(v, _seen, _depth + 1)
+    elif hasattr(obj, "__dict__") and not isinstance(obj, type):
+        for v in vars(obj).values():
+            _pin_metrics_to_cpu(v, _seen, _depth + 1)
+
+
+def _load_tft_any_device(checkpoint_path):
+    import io
+    import torch
+    try:
+        return TemporalFusionTransformer.load_from_checkpoint(checkpoint_path, map_location="cpu", weights_only=False)
+    except RuntimeError as e:
+        if "NVIDIA" not in str(e) and "CUDA" not in str(e).upper():
+            raise
+    ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    _pin_metrics_to_cpu(ckpt.get("hyper_parameters", {}))
+    buf = io.BytesIO()
+    torch.save(ckpt, buf)
+    buf.seek(0)
+    return TemporalFusionTransformer.load_from_checkpoint(buf, map_location="cpu", weights_only=False)
+
 def load_tft_checkpoint(checkpoint_path: str = "tft_checkpoint.ckpt"):
     import torch
     if not os.path.exists(checkpoint_path):
         return None
     try:
-        tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path, weights_only=False)
+        tft = _load_tft_any_device(checkpoint_path)
         tft = tft.cpu()
         tft.eval()
         checkpoint_dir = os.path.dirname(os.path.abspath(checkpoint_path))
@@ -248,7 +289,7 @@ def run_stage3(
         if os.path.exists(checkpoint_path):
             try:
                 print(f"[TFT] Checkpoint found — attempting to load for fine-tuning.")
-                tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path, weights_only=False)
+                tft = _load_tft_any_device(checkpoint_path)
                 tft = tft.cpu()
                 expected_encoder_len = num_patches - 7
                 actual_encoder_len = tft.hparams.encoder_max_length if hasattr(tft.hparams, 'encoder_max_length') else None

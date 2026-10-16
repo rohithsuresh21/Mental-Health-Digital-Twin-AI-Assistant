@@ -49,6 +49,7 @@ import { IngestionInput, DiagnosticData } from './types';
 import { defaultDiagnosticData } from './defaultData';
 import { mapFlaskRunResponse } from './diagnosisEngine';
 import PatientIntakePortal from './components/PatientIntakePortal';
+import PatientTelemetry from './components/PatientTelemetry';
 import { usePatientData } from './hooks/usePatientData';
 
 interface ClinicalAlert {
@@ -235,6 +236,9 @@ export default function App() {
 
   // Patient data from daily portal
   const patientData = usePatientData(isPatient ? userId : '');
+  const [patientFullView, setPatientFullView] = useState(false);
+  const [patientAnalyzing, setPatientAnalyzing] = useState(false);
+  const [patientAnalysisError, setPatientAnalysisError] = useState<string | null>(null);
 
   // Profile photo
   const [avatarUrl, setAvatarUrl] = useState<string>(() => {
@@ -991,6 +995,43 @@ export default function App() {
 
   // Generate input-derived synthetic pipeline data
   // Submit ingestion form
+  // Patient: run all stages on their stored daily check-ins + imported chats (server builds the dataset)
+  const runPatientAnalysis = async () => {
+    setPatientAnalyzing(true);
+    setPatientAnalysisError(null);
+    const steps = ['Building your 30-day dataset…', 'Extracting features (Stage 1)…', 'Normalising to your baseline (Stage 2)…',
+      'Detecting unusual patterns (Stage 4)…', 'Forecasting the next 7 days (Stage 3)…', 'Estimating risk (Stage 5)…', 'Explaining the result…'];
+    let i = 0;
+    setAnalysisStage(steps[0]);
+    const tick = setInterval(() => { i = Math.min(i + 1, steps.length - 1); setAnalysisStage(steps[i]); }, 6000);
+    try {
+      const payload: any = { fullName: inputs.fullName || '', user_id: userId };
+      const res = await fetch('/api/diagnose', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify(payload), signal: AbortSignal.timeout(900000),
+      });
+      const raw = await res.json();
+      if (!res.ok) throw new Error(raw.error || `Server responded ${res.status}`);
+      const result = mapFlaskRunResponse(raw, payload);
+      setDiagnosticData(result);
+      setHasRunAnalysis(true);
+      setClinicalAlerts(prev => [{
+        id: `alert-${Date.now()}`,
+        type: result.anomalyBehaviourScore > 75 ? 'critical' : (result.anomalyBehaviourScore > 40 ? 'warning' : 'info'),
+        title: 'Your analysis is ready',
+        message: `Analysed ${raw.n_entries} days. ${result.anomalyStatus || ''}`.trim(),
+        time: 'Just now', read: false,
+      }, ...prev]);
+      setPatientFullView(true);
+    } catch (err: any) {
+      setPatientAnalysisError(err.name === 'TimeoutError' ? 'The analysis took too long. Try again.' : (err.message || 'Analysis failed'));
+    } finally {
+      clearInterval(tick);
+      setAnalysisStage('');
+      setPatientAnalyzing(false);
+    }
+  };
+
   const handleInitializeDiagnosis = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAnalyzing(true);
@@ -1521,7 +1562,7 @@ export default function App() {
                   <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse" />
                   <div>
                     <h1 className="text-sm font-extrabold tracking-widest text-white uppercase font-sans">
-                      Clinical Provider Workspace — Patient Analytics
+                      {isPatient ? 'My Analysis' : 'Clinical Provider Workspace — Patient Analytics'}
                     </h1>
                     <p className="text-[10px] font-mono text-[#4b5563]">PATIENT: [ID] · MODEL: TFT+SHAP · SESSION ACTIVE</p>
                   </div>
@@ -1552,7 +1593,7 @@ export default function App() {
                   <span className="h-2 w-2 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7] animate-pulse" />
                   <div>
                     <h1 className="text-sm font-extrabold tracking-widest text-white uppercase font-sans">
-                      Clinical Provider Workspace — Explainable AI
+                      {isPatient ? 'My Analysis — Explainable AI' : 'Clinical Provider Workspace — Explainable AI'}
                     </h1>
                     <p className="text-[10px] font-mono text-[#4b5563]">PATIENT: [ID] · SESSION: ACTIVE · MODEL: TREESHAP v2.1</p>
                   </div>
@@ -1568,7 +1609,7 @@ export default function App() {
                 <div className="flex items-center gap-2.5 shrink-0">
                   <span className="h-2 w-2 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7] animate-pulse" />
                   <h1 className="text-sm font-extrabold tracking-widest bg-gradient-to-r from-purple-400 via-violet-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(168,85,247,0.3)] uppercase font-sans">
-                    Clinical Provider Workspace — Risk Forecast Engine
+                    {isPatient ? 'My 7-Day Forecast' : 'Clinical Provider Workspace — Risk Forecast Engine'}
                   </h1>
                 </div>
               </>
@@ -2298,95 +2339,36 @@ export default function App() {
                   </div>
                 );
               }
-              // Patient is calibrated — show their analytics
-              const calCount = s?.entry_count || 0;
-              const history = s?.history || [];
-              const validSleepQ = history.filter(e => e.sleep_quality != null).map(e => ({ date: e.entry_date.slice(5), val: e.sleep_quality! }));
-              const validActivity = history.filter(e => e.activity_level != null).map(e => ({ date: e.entry_date.slice(5), val: e.activity_level! }));
-              const validMood = history.filter(e => e.music_mood_score != null).map(e => ({ date: e.entry_date.slice(5), val: e.music_mood_score! }));
-              const avgSleepQ = validSleepQ.length ? (validSleepQ.reduce((s, e) => s + e.val, 0) / validSleepQ.length).toFixed(1) : '—';
-              const avgActivity = validActivity.length ? (validActivity.reduce((s, e) => s + e.val, 0) / validActivity.length).toFixed(1) : '—';
-              const avgMood = validMood.length ? (validMood.reduce((s, e) => s + e.val, 0) / validMood.length).toFixed(1) : '—';
-              const maxBarW = 180;
-              const renderMiniSpark = (data: { date: string; val: number }[], color: string) => {
-                if (data.length === 0) return <span className="text-gray-500 text-xs">No data</span>;
-                const max = 5;
+              // Patient is calibrated — personal telemetry + run the full 5-stage pipeline on their own days
+              if (!patientFullView) {
+                const ds = s?.dataset;
                 return (
-                  <div className="flex items-end gap-0.5 h-10">
-                    {data.slice(-14).map((d, i) => (
-                      <div key={i} className="flex flex-col items-center gap-0.5 group relative">
-                        <div className="w-2 rounded-t" style={{ height: `${(d.val / max) * 40}px`, backgroundColor: color, opacity: 0.6 + d.val / max * 0.4 }} title={`${d.date}: ${d.val}`} />
-                        <span className="text-[6px] text-gray-600 leading-none">{d.date.slice(2)}</span>
+                  <div className="space-y-6" id="patient-analytics-container">
+                    <div className="bg-emerald-900/15 backdrop-blur-sm border border-emerald-700/30 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                      <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_10px_#10b981] shrink-0 hidden sm:block" />
+                      <div className="flex-1">
+                        <h3 className="text-sm font-bold text-emerald-200">Baseline calibrated</h3>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {ds?.analysis_records ?? s?.entry_count} days of your data ({ds?.first_date} → {ds?.last_date}) are ready.
+                          Running the analysis takes your journal, chats, voice notes and sliders through all five AI stages on this computer.
+                        </p>
+                        {patientAnalysisError && <p className="text-xs text-amber-400 mt-2">{patientAnalysisError}</p>}
                       </div>
-                    ))}
+                      <button onClick={runPatientAnalysis} disabled={patientAnalyzing} id="run-patient-analysis"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer shrink-0">
+                        {patientAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+                        {patientAnalyzing ? (analysisStage || 'Analysing…') : hasRunAnalysis ? 'Re-run analysis' : 'Run my analysis'}
+                      </button>
+                    </div>
+                    {hasRunAnalysis && !patientAnalyzing && (
+                      <button onClick={() => setPatientFullView(true)} className="w-full text-left bg-[#11131C]/80 border border-blue-700/30 hover:border-blue-500/50 rounded-2xl p-4 text-sm text-blue-200 cursor-pointer transition-all">
+                        View your latest results — risk score, explanations and 7-day forecast →
+                      </button>
+                    )}
+                    <PatientTelemetry status={s} />
                   </div>
                 );
-              };
-              const trendTag = (avg: string) => {
-                const n = parseFloat(avg);
-                if (isNaN(n)) return '';
-                return n >= 4 ? 'Good' : n >= 3 ? 'Fair' : 'Needs Attention';
-              };
-              const trendColor = (avg: string) => {
-                const n = parseFloat(avg);
-                if (isNaN(n)) return 'text-gray-500';
-                return n >= 4 ? 'text-emerald-400' : n >= 3 ? 'text-yellow-400' : 'text-red-400';
-              };
-              return (
-                <div className="space-y-6" id="patient-analytics-container">
-                  <div className="bg-emerald-900/15 backdrop-blur-sm border border-emerald-700/30 rounded-2xl p-5 flex items-center gap-4">
-                    <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_10px_#10b981] shrink-0" />
-                    <div>
-                      <h3 className="text-sm font-bold text-emerald-200">Baseline Calibrated</h3>
-                      <p className="text-xs text-gray-400 mt-1">Your personal model is active with {calCount} entries. Analysis is running on your calibrated data.</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sleep Quality</h4>
-                        <span className={`text-xs font-bold ${trendColor(avgSleepQ)}`}>{avgSleepQ} {trendTag(avgSleepQ)}</span>
-                      </div>
-                      {renderMiniSpark(validSleepQ, '#818cf8')}
-                    </div>
-                    <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Activity Level</h4>
-                        <span className={`text-xs font-bold ${trendColor(avgActivity)}`}>{avgActivity} {trendTag(avgActivity)}</span>
-                      </div>
-                      {renderMiniSpark(validActivity, '#34d399')}
-                    </div>
-                    <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mood Score</h4>
-                        <span className={`text-xs font-bold ${trendColor(avgMood)}`}>{avgMood} {trendTag(avgMood)}</span>
-                      </div>
-                      {renderMiniSpark(validMood, '#f472b6')}
-                    </div>
-                  </div>
-                  <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-6">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Your Health Overview</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="bg-[#0B0E14] rounded-xl p-4 border border-[#1A202C]">
-                        <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Entries</div>
-                        <div className="text-2xl font-bold text-white">{calCount}</div>
-                      </div>
-                      <div className="bg-[#0B0E14] rounded-xl p-4 border border-[#1A202C]">
-                        <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Calibration</div>
-                        <div className="text-2xl font-bold text-emerald-400">100%</div>
-                      </div>
-                      <div className="bg-[#0B0E14] rounded-xl p-4 border border-[#1A202C]">
-                        <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Avg Sleep Quality</div>
-                        <div className="text-lg font-bold text-indigo-400">{avgSleepQ} <span className="text-[10px] font-normal text-gray-500">/5</span></div>
-                      </div>
-                      <div className="bg-[#0B0E14] rounded-xl p-4 border border-[#1A202C]">
-                        <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Avg Mood Score</div>
-                        <div className="text-lg font-bold text-pink-400">{avgMood} <span className="text-[10px] font-normal text-gray-500">/5</span></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
+              }
             }
 
             if (!hasRunAnalysis) {
@@ -2413,6 +2395,12 @@ export default function App() {
             }
             return (
               <div className="space-y-6" id="analytics-tab">
+                {isPatient && (
+                  <div className="flex items-center justify-between bg-[#11131C]/80 border border-[#1A202C] rounded-xl px-4 py-2.5">
+                    <span className="text-xs text-gray-400">Results from {diagnosticData.pipelineTimestamps?.length || ''} days of your check-ins and imported chats</span>
+                    <button onClick={() => setPatientFullView(false)} className="text-xs text-blue-400 hover:text-blue-300 cursor-pointer">← My overview</button>
+                  </div>
+                )}
                 
                 {diagnosticData.apiError && (
                   <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3 text-amber-200 text-xs animate-in fade-in duration-300" id="api-warning-banner">

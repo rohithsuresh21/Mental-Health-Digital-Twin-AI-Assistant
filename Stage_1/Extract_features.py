@@ -233,7 +233,7 @@ def readables(text,emotion_vec,vader_vec,lexical_vec,readability_vec,first_perso
         }
     }
 def extract_features(text, timestamp=None, prev_timestamp=None,audio_path= None,sleep_hours=None, sleep_quality=None,
-                     activity_level=None, music_mood_score=None):
+                     activity_level=None, music_mood_score=None, precomputed_audio=None):
     if timestamp is None:
         timestamp=datetime.now()
     sbert_embedding=_get_sentence_model().encode(text,convert_to_numpy=True).astype(np.float32)
@@ -249,7 +249,11 @@ def extract_features(text, timestamp=None, prev_timestamp=None,audio_path= None,
     metadata_vec = metadata_features(timestamp,prev_timestamp)
     health_features_vec= health_features(sleep_hours, sleep_quality,
                                           activity_level, music_mood_score)
-    if audio_path is not None:
+    if precomputed_audio is not None and len(precomputed_audio) == 22:
+        # audio dims already extracted when the voice note was submitted (avoids re-running Whisper)
+        _pa = np.asarray(precomputed_audio, dtype=np.float32)
+        audio_feature_vec, audio_feature_mask, transcript, acoustic_readable = _pa[:11], _pa[11:], None, None
+    elif audio_path is not None:
         from .Extract_audio_features import audio_block
         audio_feature_vec, audio_feature_mask, transcript, acoustic_readable = \
            audio_block(audio_path)
