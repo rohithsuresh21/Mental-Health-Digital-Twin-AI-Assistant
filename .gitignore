@@ -55,9 +55,6 @@ uploads/
 .DS_Store
 Thumbs.db
 
-# Local tunnel (binary too large for git)
-cloudflared/
-
 # Runtime data / user uploads
 data/avatars/
 data/*.db
@@ -73,6 +70,14 @@ data/*.xlsx
 .env
 .env.*
 
-.vercel
 .env*
 .aider*
+
+# Desktop build
+build/
+.models_cache/
+.desktop_logs/
+!desktop/app.ico
+
+# Licensed clinical dataset - never commit
+DAIC-WOZ/

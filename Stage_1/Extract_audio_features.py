@@ -30,11 +30,23 @@ ACOUSTIC_FEATURE_ORDER = [
 ACOUSTIC_DIM = len(ACOUSTIC_FEATURE_ORDER)
 _whisper_model = None
 _emotion_classifier = None
+from device_util import get_device, hf_device
+def _load_audio_16k(audio_path: str) -> np.ndarray:
+    """Decode audio without ffmpeg (soundfile/librosa) -> mono float32 @16 kHz."""
+    if librosa is not None:
+        y, _ = librosa.load(audio_path, sr=16000, mono=True)
+        return y.astype(np.float32)
+    y, sr = sf.read(audio_path, dtype="float32", always_2d=True)
+    y = y.mean(axis=1)
+    if sr != 16000:
+        n = int(round(len(y) * 16000 / sr))
+        y = np.interp(np.linspace(0, len(y) - 1, n), np.arange(len(y)), y).astype(np.float32)
+    return y
 def get_whisper_model():
     global _whisper_model
     if _whisper_model is None:
         print("Loading Whisper model...")
-        _whisper_model = whisper.load_model("base")
+        _whisper_model = whisper.load_model("base", device=get_device())
     return _whisper_model
 def get_emotion_classifier():
     global _emotion_classifier
@@ -43,7 +55,8 @@ def get_emotion_classifier():
         _emotion_classifier = hf_pipeline(
             task  = "audio-classification",
             model = "superb/wav2vec2-base-superb-er",
-            top_k = None
+            top_k = None,
+            device = hf_device()
         )
     return _emotion_classifier
 def transcribe_audio(audio_path:str)-> dict[str,Any]:
@@ -57,9 +70,10 @@ def transcribe_audio(audio_path:str)-> dict[str,Any]:
             f"Audio too short ({duration:.2f}s). Minimum is 0.5 seconds.")
     model  = get_whisper_model()
     result = model.transcribe(
-        audio_path,
+        _load_audio_16k(audio_path),
         word_timestamps=True,
-        verbose=False
+        verbose=False,
+        fp16=(get_device() == "cuda")
     )
     result["duration"] = sf.info(audio_path).duration
     text = result.get("text")
@@ -134,7 +148,7 @@ def extract_acoustic_measurements(audio_path: str,transcript: dict) -> np.ndarra
 def extract_speech_emotions(audio_path: str) -> np.ndarray:
     try:
         classifier = get_emotion_classifier()
-        results    = classifier(audio_path)
+        results    = classifier({"raw": _load_audio_16k(audio_path), "sampling_rate": 16000})
         score_map = {
             LABEL_MAP[r["label"]]: r["score"]
             for r in results

@@ -8,10 +8,13 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
 app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SAMESITE"] = "None"
-app.config["SESSION_COOKIE_SECURE"] = True
+# Runs locally (desktop app / dev): same-origin http://127.0.0.1, so Lax + non-Secure cookies.
+# Set MHDT_SECURE_COOKIES=1 only if you serve the API cross-site over HTTPS.
+_SECURE_COOKIES = os.environ.get("MHDT_SECURE_COOKIES", "0") == "1"
+app.config["SESSION_COOKIE_SAMESITE"] = "None" if _SECURE_COOKIES else "Lax"
+app.config["SESSION_COOKIE_SECURE"] = _SECURE_COOKIES
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
-CORS(app, supports_credentials=True, origins=["https://mental-health-digital-twin-ai-assis.vercel.app", "http://127.0.0.1:5173", "http://localhost:5173"])
+CORS(app, supports_credentials=True, origins=["http://127.0.0.1:3000", "http://localhost:3000", "http://127.0.0.1:5173", "http://localhost:5173"])
 RATE_LIMITS = {
     "diagnose":    (10,  300),
     "generate_pdf": (10, 300),

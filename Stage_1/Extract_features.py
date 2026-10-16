@@ -1,6 +1,10 @@
 import numpy as np
 import nltk
-nltk.download('punkt_tab')
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    import os as _os
+    nltk.download('punkt_tab', download_dir=_os.environ.get('NLTK_DATA'), quiet=True)
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from nltk.tokenize import sent_tokenize
 import re
@@ -24,13 +28,15 @@ def _get_emotion_classifier():
     global _emotion_classifier
     if _emotion_classifier is None:
         from transformers import pipeline
-        _emotion_classifier = pipeline(task="text-classification", model="SamLowe/roberta-base-go_emotions", top_k=None)
+        from device_util import hf_device
+        _emotion_classifier = pipeline(task="text-classification", model="SamLowe/roberta-base-go_emotions", top_k=None, device=hf_device())
     return _emotion_classifier
 def _get_sentence_model():
     global _model
     if _model is None:
         from sentence_transformers import SentenceTransformer
-        _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        from device_util import get_device
+        _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", device=get_device())
     return _model
 def _get_vader():
     global _vader_analyzer

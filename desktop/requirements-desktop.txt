@@ -1,0 +1,30 @@
+# Desktop runtime deps (Python 3.12, Windows x64).
+# torch/torchvision/torchaudio are installed separately by setup_runtime.ps1
+# with the CUDA build that matches the user's GPU driver (or CPU).
+# gunicorn / psycopg2 are not needed locally (waitress + SQLite).
+waitress==3.0.2
+Flask==3.1.1
+flask-cors==6.0.5
+librosa==0.11.0
+lightning==2.6.1
+matplotlib==3.10.1
+nltk==3.9.1
+numpy==2.2.0
+openai-whisper==20250625
+pandas==2.2.3
+pdfplumber==0.11.4
+pyreadr==0.5.6
+python-docx==1.2.0
+scikit-learn==1.6.1
+scipy==1.15.2
+sentence-transformers==3.4.1
+soundfile==0.13.1
+textstat==0.7.3
+transformers==4.51.3
+umap-learn==0.5.7
+vaderSentiment==3.3.2
+xgboost==2.1.4
+pytorch-forecasting==1.8.0
+openpyxl==3.1.5
+shap==0.52.0
+reportlab==5.0.0

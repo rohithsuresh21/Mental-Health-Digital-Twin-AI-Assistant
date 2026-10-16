@@ -1,0 +1,50 @@
+name: Desktop installer
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Installer version (e.g. 1.0.1)'
+        required: false
+        default: '0.0.0-dev'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: 'User Interface/package-lock.json'
+
+      - name: Ensure Inno Setup 6
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $v = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '${{ inputs.version }}' }
+          if (-not $v) { $v = '0.0.0-dev' }
+          ./desktop/build_installer.ps1 -Version $v
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MentalHealthDigitalTwin-Setup
+          path: build/desktop/output/*.exe
+
+      - name: Publish GitHub release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/desktop/output/*.exe
+          generate_release_notes: true

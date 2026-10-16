@@ -28,4 +28,6 @@ npm run lint         # tsc --noEmit
 
 ## Deploy
 
-`vercel.json` rewrites `/api/(.*)` to the backend (via a Cloudflare tunnel in local demos); all other routes fall back to `index.html` for client-side routing.
+The UI ships inside the Windows desktop app: `desktop/build_installer.ps1` runs `npm run build` and the
+local server (`desktop/server.py`) serves `dist/` and routes `/api/*` to the Flask backend on the same
+origin. See the [root README](../README.md#install-the-desktop-app-windows-1011).

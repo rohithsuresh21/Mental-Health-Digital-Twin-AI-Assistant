@@ -2,6 +2,33 @@
 
 An end-to-end mental health monitoring and early-warning system. It takes a user's daily journal entries (with optional audio, sleep, activity and mood data), converts them into a fixed-size numeric feature vector, builds a per-user baseline, detects anomalous and sustained changes, and produces an interpretable risk assessment with a forecast and explainable attributions. The pipeline is written in Python (PyTorch, PyTorch Lightning, XGBoost, scikit-learn) and served by a Flask backend.
 
+
+## Install the desktop app (Windows 10/11)
+
+The whole system (UI, Flask API and every ML model) runs **locally on your PC**, using your NVIDIA GPU when one is present. No cloud server, no data leaves the machine.
+
+Open **PowerShell** and run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/rohithsuresh21/Mental-Health-Digital-Twin-AI-Assistant/main/desktop/install.ps1 | iex"
+```
+
+Or download `MentalHealthDigitalTwin-Setup-<version>.exe` from [Releases](https://github.com/rohithsuresh21/Mental-Health-Digital-Twin-AI-Assistant/releases/latest) and run it.
+
+During setup a console window:
+1. detects your NVIDIA driver and installs the matching PyTorch 2.6 build (CUDA 12.6 / 12.4 / 11.8, or CPU if there is no NVIDIA GPU),
+2. installs the Python dependencies into the app's own embedded Python,
+3. downloads the models once (GoEmotions RoBERTa, MiniLM, wav2vec2, Whisper base), about 3-4 GB in total with CUDA.
+
+After that the app works offline. Start menu entries: **Mental Health Digital Twin**, **Repair runtime**, **Stop**, **Logs**. Installs per-user (no admin) to `%LOCALAPPDATA%\Programs\MentalHealthDigitalTwin`.
+
+| Requirement | |
+| --- | --- |
+| OS | Windows 10/11 64-bit |
+| Disk | ~8 GB free |
+| RAM | 8 GB+ |
+| GPU (optional) | NVIDIA with a recent driver; falls back to CPU automatically |
+
 ---
 
 ## 1. Pipeline Overview
@@ -177,34 +204,63 @@ Synthetic cohorts of 200 entries each, used to exercise and evaluate the pipelin
 - `data/at_risk_dataset_200.csv` — entries from at-risk users
 - `data/combination_dataset_200.csv` — mixed cohort
 - `data/audio_healthy_200.csv`, `data/audio_at_risk_200.csv`, `data/audio_combined_200.csv` — audio-enriched versions
-- `data/daily_portal.db` — SQLite store used by the daily check-in portal
+- `data/daily_portal.db` — SQLite store used by the daily check-in portal (created at runtime, not committed)
 
 The Stage-5 classifier is trained on DAIC-WOZ clinical transcripts (`Stage_5/daic_loader.py`, `daic_label_generator.py`, `train.py`) rather than on these synthetic cohorts.
 
 ---
 
-## 12. Getting Started
+## 12. Development
 
-Prerequisites: Python 3.10+ and a package manager for Python.
+Prerequisites: Python 3.12, Node.js 20+ (for the UI), optional NVIDIA GPU.
 
-```bash
+```powershell
 python -m venv venv
-# Windows
 venv\Scripts\activate
-# macOS / Linux
-source venv/bin/activate
-
+# GPU build of PyTorch (skip for CPU)
+pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu126
 pip install -r requirements.txt
-python app.py
+
+# build the UI once
+cd "User Interface"; npm ci; npm run build; cd ..
+
+# run the desktop app from source (UI + API on http://127.0.0.1:47821)
+python desktop\launcher.py
 ```
 
-The Flask backend serves on `http://127.0.0.1:5000`. The web dashboard for the project is hosted on Vercel and connects to this backend through a Cloudflare tunnel (see section 13). `start_server.ps1` automates the local backend start plus tunnel setup.
+For UI hot-reload, run `python app.py` (API on `:5000`) and `npm run dev` in `User Interface/` (proxies `/api` to Flask).
+Set `MHDT_DEVICE=cpu` to force CPU inference.
 
 ---
 
-## 13. Deployment
+## 13. Building & releasing the installer
 
-The dashboard is deployed as a static site on **Vercel**. `User Interface/vercel.json` rewrites `/api/(.*)` to the Flask backend and falls back to `index.html` for client-side routing. In a local demo, the backend runs on this machine and is exposed through a Cloudflare tunnel (`start_server.ps1`), with the Vercel rewrite pointing at the tunnel address so the hosted site reaches the local pipeline.
+```powershell
+powershell -ExecutionPolicy Bypass -File desktop\build_installer.ps1 -Version 1.0.0
+# -> build\desktop\output\MentalHealthDigitalTwin-Setup-1.0.0.exe
+```
+
+The script builds the React UI, bundles an embedded Python 3.12 + the app + model checkpoints, and compiles an Inno Setup installer (~100 MB). PyTorch and the models are fetched on the user's machine for their GPU.
+
+**Automated release:** pushing a tag runs `.github/workflows/desktop-release.yml` on a Windows runner and attaches the installer to a GitHub Release (which the one-line install command downloads):
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+How it works at runtime (`desktop/`):
+
+| File | Role |
+| --- | --- |
+| `launcher.py` | Entry point: starts the local server, opens an Edge/Chrome app window, exits when it is closed |
+| `server.py` | Waitress server: serves the built UI and maps `/api/*` to Flask on the same origin; loading screen while models load |
+| `runtime_env.py` | Model caches, offline mode, persistent session key, paths |
+| `setup_runtime.ps1` | Installs GPU-matched PyTorch, dependencies and models on the user's PC |
+| `prefetch_models.py` | Downloads all HF / Whisper / NLTK models for offline use |
+| `installer.iss` / `build_installer.ps1` | Inno Setup script and build script |
+| `install.ps1` | One-line installer (downloads the latest release) |
+| `../device_util.py` | Picks CUDA or CPU for every model |
 
 ---
 
@@ -222,12 +278,14 @@ Mental-Health-Digital-Twin/
 ├── XAI/                     # SHAP/TreeSHAP explainability
 ├── daily_portal/            # Daily check-in portal (Flask blueprint)
 ├── data_parser/             # WhatsApp / Reddit / Telegram parsers
-├── data/                    # Testing datasets + SQLite DB
+├── data/                    # Testing datasets (SQLite DB created at runtime)
 ├── unified_pipeline.py      # End-to-end journal pipeline
 ├── pipeline_runner.py       # Batch runner
 ├── pdf_generator.py         # Medical summary PDF
 ├── app.py                   # Flask backend
-└── start_server.ps1         # Local demo launcher + tunnel
+├── device_util.py           # CUDA / CPU device selection
+├── desktop/                 # Windows desktop app: launcher, local server, installer
+└── .github/workflows/       # CI: builds + releases the Windows installer
 ```
 
 ---
