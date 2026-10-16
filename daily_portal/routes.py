@@ -67,6 +67,8 @@ def submit():
         if existing and existing["features_extracted"]:
             return jsonify({"error": "Already submitted today", "entry": existing}), 409
         text_raw = request.form.get("text", "").strip()
+        if not text_raw and request.files.get("text"):
+            text_raw = request.files["text"].read().decode("utf-8", errors="ignore").strip()
         audio_file = request.files.get("audio")
         if not text_raw and not audio_file:
             return jsonify({"error": "Provide text or audio"}), 400
@@ -96,15 +98,18 @@ def submit():
             activity_level=activity_level,
             music_mood_score=music_mood_score,
         )
-        feature_vec, readable_metrics = extract_features(
-            text=text_raw or "",
-            timestamp=datetime.now(),
-            audio_path=audio_path,
-            sleep_hours=sleep_hours,
-            sleep_quality=sleep_quality,
-            activity_level=activity_level,
-            music_mood_score=music_mood_score,
-        )
+        try:
+            feature_vec, readable_metrics = extract_features(
+                text=text_raw or "",
+                timestamp=datetime.now(),
+                audio_path=audio_path,
+                sleep_hours=sleep_hours,
+                sleep_quality=sleep_quality,
+                activity_level=activity_level,
+                music_mood_score=music_mood_score,
+            )
+        except ValueError as ve:
+            return jsonify({"error": str(ve)}), 400
         db.update_features(entry_id, feature_vec.tolist(), readable_metrics)
         count = _user_entry_count(user_id)
         min_for_calib = UserBaseline.MIN_ENTRIES_TO_FIT

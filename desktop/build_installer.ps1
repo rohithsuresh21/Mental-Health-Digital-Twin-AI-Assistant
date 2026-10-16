@@ -72,6 +72,12 @@ if ($LASTEXITCODE -ge 8) { throw 'robocopy frontend failed' }
 New-Item -ItemType Directory -Force -Path "$Stage\app\data" | Out-Null   # fresh, empty user data
 $global:LASTEXITCODE = 0
 
+# icon (stored as base64 text in git)
+$ico = Join-Path $PSScriptRoot 'app.ico.b64'
+if (Test-Path $ico) {
+    [IO.File]::WriteAllBytes("$Stage\app\desktop\app.ico", [Convert]::FromBase64String((Get-Content $ico -Raw)))
+}
+
 # 4. Inno Setup --------------------------------------------------------------
 Say 'Compiling installer'
 $iscc = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe", "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe") |

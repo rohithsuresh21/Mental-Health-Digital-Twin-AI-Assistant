@@ -77,7 +77,7 @@ data/*.xlsx
 build/
 .models_cache/
 .desktop_logs/
-!desktop/app.ico
+desktop/app.ico
 
 # Licensed clinical dataset - never commit
 DAIC-WOZ/
