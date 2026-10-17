@@ -50,7 +50,15 @@ def _status(port, timeout=1.5):
 
 
 def _port_free(port):
+    """Free = nothing is listening. (A plain bind() test also fails on ports in TIME_WAIT after a
+    restart, which would push the app onto a random port and lose the browser's saved identity.)"""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        if s.connect_ex((HOST, port)) == 0:
+            return False
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        if os.name != "nt":
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             s.bind((HOST, port))
             return True

@@ -37,6 +37,8 @@ After that the app works offline. Start menu entries: **Mental Health Digital Tw
 4. **My data** shows your streak, a 5-week calendar, data sources, health trends and which AI stages are ready.
 5. After **14 days** the personal baseline calibrates. Open **Analysis** → **Run my analysis** to run all five stages on your days (risk score, explanations, 7-day forecast; per-detector forecasts need 37 days).
 
+6. Not sure what something means? Press **Ask the guide** (bottom right) or any **What's this?** link. The Guide explains every chart and term in plain words using your own numbers ("how was Oct 10?", "why is my score 41%?", "what happens next week?") and takes you straight to that part of the app. It runs offline, and for crisis messages it shows Tele-MANAS 14416 and 112.
+
 Everything (database `app/data/daily_portal.db`, voice notes, models) stays in the install folder on your PC.
 
 ---

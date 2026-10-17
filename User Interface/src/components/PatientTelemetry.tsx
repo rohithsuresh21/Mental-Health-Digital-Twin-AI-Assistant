@@ -122,7 +122,7 @@ export default function PatientTelemetry({ status, compact = false, narrow = fal
       </div>
 
       <div className={`grid gap-4 ${compact ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 lg:grid-cols-2'}`}>
-        <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-5">
+        <div data-guide="calendar" className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-5">
           <div className="text-[10px] tracking-widest text-gray-500 font-bold uppercase mb-3">Last 5 weeks</div>
           <Calendar history={history} />
           {ds && Object.keys(ds.sources).length > 0 && (
@@ -139,7 +139,7 @@ export default function PatientTelemetry({ status, compact = false, narrow = fal
           )}
         </div>
 
-        <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-5">
+        <div data-guide="readiness" className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-5">
           <div className="text-[10px] tracking-widest text-gray-500 font-bold uppercase mb-3">AI pipeline readiness</div>
           <div className="space-y-2.5">
             {(ds?.stages || []).map(st => {

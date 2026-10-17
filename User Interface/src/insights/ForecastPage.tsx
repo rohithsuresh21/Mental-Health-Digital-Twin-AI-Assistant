@@ -1,6 +1,8 @@
 import { useState, KeyboardEvent } from 'react';
 import { ChevronLeft, Info, Loader2 } from 'lucide-react';
-import { C, addDays, parseDay, weekday, fmtDay, fmtDayLong, mean, std, pct } from './theme';
+import { C, parseDay, weekday, fmtDay, fmtDayLong, mean, pct } from './theme';
+import { forecast as deriveForecast } from './derive';
+import { AskLink } from '../guide/Guide';
 import { useWidth, useEntrance, xScale, yScale, smoothPath, DrawPath, Tooltip, TipRow, Key, Spark } from './charts';
 
 type Raw = any;
@@ -98,16 +100,8 @@ export default function ForecastPage({ raw, onBack }: { raw: Raw; onBack: () => 
     );
   }
   const hist = comp.slice(-HISTORY), histDates = dates.slice(-HISTORY);
-  const last = dates[n - 1];
-  const fcDates = fc.map((_, i) => addDays(last, i + 1));
-  // day-to-day spread around a 3-day running mean, widening with the horizon
-  const resid = comp.map((v, i) => v - (mean(comp.slice(Math.max(0, i - 1), i + 2)) ?? v));
-  const sd = Math.max(0.01, std(resid));
-  const band = fc.map((_, i) => sd * Math.sqrt(i + 1));
-  const recent = mean(comp.slice(-7)) ?? comp[n - 1];
-  const ahead = mean(fc) ?? recent;
-  const diff = ahead - recent;
-  const dir = diff > 0.025 ? 'rise' : diff < -0.025 ? 'ease' : 'hold steady';
+  const F = deriveForecast(raw)!;
+  const { last, fcDates, band, recent, ahead, dir } = F;
   const headline = dir === 'hold steady'
     ? `Your twin index is expected to hold steady over the next week.`
     : `Your twin index is expected to ${dir} over the next week, from ${pct(recent)} to about ${pct(ahead)}.`;
@@ -139,15 +133,16 @@ export default function ForecastPage({ raw, onBack }: { raw: Raw; onBack: () => 
           The twin index is what the forecasting model (a Temporal Fusion Transformer) learns to predict: one number per day that blends how unusual the day was,
           the mood tone of your writing, and your sleep and activity.
         </p>
+        <div className="mt-4 flex flex-wrap gap-2"><AskLink q="What is the twin index?" label="What is the twin index?" /><AskLink q="What is the shaded range?" label="What is the shaded area?" /></div>
       </section>
 
-      <section className="mt-10 rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
+      <section data-guide="fan" className="mt-10 rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
         <div className="mb-5 flex flex-wrap gap-x-5 gap-y-2">
           <Key color={INDEX} label="Twin index" />
           <Key color="rgba(144,133,233,0.3)" kind="band" label="Typical day-to-day range" />
         </div>
         <FanChart hist={hist} histDates={histDates} fc={fc} fcDates={fcDates} band={band} />
-        <div className="mt-6 grid grid-cols-7 gap-2">
+        <div data-guide="days" className="mt-6 grid grid-cols-7 gap-2">
           {fc.map((v, i) => {
             const d = parseDay(fcDates[i]);
             const delta = v - comp[n - 1];
@@ -166,7 +161,7 @@ export default function ForecastPage({ raw, onBack }: { raw: Raw; onBack: () => 
       </section>
 
       <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.25fr]">
-        <div className="rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
+        <div data-guide="composition" className="rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
           <h2 className="font-serif text-[22px]">What goes into the index</h2>
           <p className="mt-1 mb-5 text-[13px]" style={{ color: C.text2 }}>Weights the model was trained with, and your average over the last 7 days.</p>
           <div className="space-y-4">
@@ -183,7 +178,7 @@ export default function ForecastPage({ raw, onBack }: { raw: Raw; onBack: () => 
             ))}
           </div>
         </div>
-        <div className="rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
+        <div data-guide="detector-forecast" className="rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
           <h2 className="font-serif text-[22px]">Each detector, a week ahead</h2>
           {detReady ? (
             <>

@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Upload, Activity, Trash2, MessageSquare, Send, Globe, Check, Loader2, FileText, PenLine, BarChart3, Mic, CalendarDays, UserRound } from 'lucide-react';
 import { usePatientData } from '../hooks/usePatientData';
 import PatientTelemetry from './PatientTelemetry';
+import { onEvent } from '../guide/bus';
+import { AskLink } from '../guide/Guide';
 
 const BASE = '/api';
 
@@ -86,6 +88,8 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
   const [showCalibrationChoice, setShowCalibrationChoice] = useState(false);
   const checkedInDates = new Set((status?.history || []).filter(h => h.sources?.includes('checkin')).map(h => h.entry_date));
   const alreadyCheckedIn = checkedInDates.has(entryDate);
+
+  useEffect(() => onEvent<Tab>('mhdt:intake-tab', t => setTab(t)), []);
 
   useEffect(() => {
     if (calibrated) {
@@ -244,7 +248,7 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
       </div>
 
       {tab === 'submit' && (
-        <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-6" id="checkin-form">
+        <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-6" id="checkin-form" data-guide="checkin-form">
           <div className="flex items-center justify-between gap-3 mb-5">
             <span className="flex items-center gap-2 text-[10px] tracking-widest text-gray-500 font-bold uppercase">
               <Activity className="h-4 w-4 text-blue-400" />{entryDate === todayIso() ? "Today's check-in" : `Check-in for ${entryDate}`}
@@ -308,9 +312,9 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
       )}
 
       {tab === 'import' && (
-        <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-6" id="chat-import">
+        <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-6" id="chat-import" data-guide="chat-import">
           <p className="text-[11px] text-gray-500 mb-4 leading-relaxed">
-            Add your own messages from a chat export. Each message is merged into the day it was sent — on days you
+            <span className="float-right ml-2"><AskLink q="How do I import chats?" label="How?" /></span>Add your own messages from a chat export. Each message is merged into the day it was sent — on days you
             checked in it enriches that entry, other days become new entries. Files are read on this computer only.
           </p>
           <div className="flex gap-2 mb-3">
@@ -454,7 +458,7 @@ export default function PatientIntakePortal({ userId, onCalibrated, onNavigateTo
       )}
 
       {tab === 'data' && (
-        <div className="space-y-4" id="my-data">
+        <div className="space-y-4" id="my-data" data-guide="my-data">
           <PatientTelemetry status={status} narrow />
           <div className="bg-[#11131C]/80 backdrop-blur-sm border border-[#1A202C] rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">

@@ -26,21 +26,20 @@ export const C = {
 
 export const GROUP_COLORS = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#9085e9'];
 
-export type RiskLevel = 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+export type RiskLevel = 'LOW' | 'MODERATE' | 'HIGH';
 
+// Must match unified_pipeline.predict_classification: < 0.33 LOW, < 0.67 MODERATE, else HIGH
 export const RISK = {
-  LOW: { word: 'Low', color: C.good, from: 0, to: 0.35 },
-  MODERATE: { word: 'Moderate', color: C.warning, from: 0.35, to: 0.55 },
-  HIGH: { word: 'High', color: C.serious, from: 0.55, to: 0.75 },
-  CRITICAL: { word: 'Critical', color: C.critical, from: 0.75, to: 1 },
+  LOW: { word: 'Low', color: C.good, from: 0, to: 0.33 },
+  MODERATE: { word: 'Moderate', color: C.warning, from: 0.33, to: 0.67 },
+  HIGH: { word: 'High', color: C.serious, from: 0.67, to: 1 },
 } as const;
 
 export function riskLevelFor(p: number, backend?: string): RiskLevel {
   const b = (backend || '').toUpperCase();
   if (b in RISK) return b as RiskLevel;
-  if (p >= 0.75) return 'CRITICAL';
-  if (p >= 0.55) return 'HIGH';
-  if (p >= 0.35) return 'MODERATE';
+  if (p >= 0.67) return 'HIGH';
+  if (p >= 0.33) return 'MODERATE';
   return 'LOW';
 }
 

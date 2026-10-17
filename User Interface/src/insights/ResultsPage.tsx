@@ -1,4 +1,7 @@
-import { useMemo, useState, useRef, KeyboardEvent } from 'react';
+import { useMemo, useState, useEffect, KeyboardEvent } from 'react';
+import { onEvent } from '../guide/bus';
+import { AskLink } from '../guide/Guide';
+import { overview } from './derive';
 import { ChevronRight, Table2, LineChart as LineIcon, Info } from 'lucide-react';
 import { C, RISK, riskLevelFor, valenceOf, VALENCE_COLOR, pct, fmtDay, fmtDayLong, mean, std, cap } from './theme';
 import { useWidth, useEntrance, xScale, yScale, smoothPath, DrawPath, Tooltip, TipRow, Key, Spark } from './charts';
@@ -180,9 +183,9 @@ function Timeline({ raw, hover, setHover }: { raw: Raw; hover: number | null; se
         <Tooltip x={X(hover)} width={w} top={Math.max(0, Y1(sent[hover] ?? 0.5) - 120)}>
           <div className="mb-1.5 font-medium">{fmtDayLong(dates[hover])}</div>
           <TipRow color={C.mood} label="Mood tone" value={pct(sent[hover])} />
-          <TipRow color={C.unusual} label="Unusualness" value={pct(anom[hover])} sub={flags[hover] ? 'flagged' : undefined} />
+          <TipRow color={C.unusual} label="Different from usual" value={pct(anom[hover])} sub={flags[hover] ? 'flagged' : undefined} />
           <TipRow color={VALENCE_COLOR[valenceOf(emo[hover])]} label="Emotion" value={cap(emo[hover] || '—')} />
-          {states[hover] != null && <TipRow label="Drift check" value={DRIFT_TEXT[states[hover]] || '—'} />}
+          {states[hover] != null && <TipRow label="Longer-term shift" value={DRIFT_TEXT[states[hover]] || '—'} />}
           {(sleep[hover] != null || act[hover] != null || mood[hover] != null) && <div className="my-1.5 h-px" style={{ background: C.line }} />}
           {sleep[hover] != null && <TipRow label="Sleep" value={`${sleep[hover]}h`} />}
           {act[hover] != null && <TipRow label="Activity" value={pct(act[hover])} />}
@@ -197,6 +200,8 @@ function Timeline({ raw, hover, setHover }: { raw: Raw; hover: number | null; se
 export default function ResultsPage({ raw, isPatient, onExplain, onForecast }: { raw: Raw; isPatient: boolean; onExplain: () => void; onForecast: () => void }) {
   const [hover, setHover] = useState<number | null>(null);
   const [table, setTable] = useState(false);
+  useEffect(() => onEvent<number>('mhdt:focus-day', i => { setTable(false); setHover(i); }), []);
+  const O = overview(raw);
   const t = useEntrance(900, 500);
   const dates: string[] = raw.timestamps || [];
   const n = dates.length;
@@ -234,9 +239,18 @@ export default function ResultsPage({ raw, isPatient, onExplain, onForecast }: {
           <h1 className="font-serif text-[clamp(30px,3.6vw,46px)] leading-[1.12] tracking-[-0.01em]" style={{ color: C.text, fontVariationSettings: '"opsz" 72, "SOFT" 50' }}>
             {text}
           </h1>
+          <ul data-guide="summary" className="mt-6 space-y-2 text-[15px] leading-relaxed max-w-[62ch]" style={{ color: C.text2 }} aria-label="In short">
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: C.unusual }} />
+              <span><span style={{ color: C.text }}>{O.unusualDays} of {O.n} days</span> looked noticeably different from {isPatient ? 'your' : 'their'} usual pattern.</span></li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: C.mood }} />
+              <span>The mood tone of {isPatient ? 'your' : 'the'} writing went from <span style={{ color: C.text }}>{pct(O.moodEarly)}</span> in the first week to <span style={{ color: C.text }}>{pct(O.moodLate)}</span> in the last week (50% is neutral).</span></li>
+            <li className="flex gap-2.5"><span className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: C.warning }} />
+              <span>Longer-term check: <span style={{ color: C.text }}>{O.driftTitle.toLowerCase()}</span>{O.driftSince ? ` since ${fmtDay(O.driftSince)}` : ''}.</span></li>
+          </ul>
         </div>
-        <div className="rounded-2xl p-6" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
+        <div data-guide="risk" className="rounded-2xl p-6" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
           <RiskScale p={p} level={level} />
+          <div className="mt-3"><AskLink q="What does my score mean?" label="What does this mean?" /></div>
           <p className="mt-4 text-[12px] leading-relaxed" style={{ color: C.muted }}>
             Probability of a depression-like pattern from a model trained on clinical interviews (DAIC-WOZ), calibrated. A screening signal, not a diagnosis.
             {raw.prediction?.intervention_recommended ? ' A check-in with someone you trust or a professional is suggested.' : ''}
@@ -245,27 +259,27 @@ export default function ResultsPage({ raw, isPatient, onExplain, onForecast }: {
       </section>
 
       {/* three facts */}
-      <dl className="mt-10 grid grid-cols-1 sm:grid-cols-3" style={{ borderTop: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}` }}>
+      <dl data-guide="facts" className="mt-10 grid grid-cols-1 sm:grid-cols-3" style={{ borderTop: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}` }}>
         <div className="py-5 sm:pr-6">
-          <dt className="text-[13px]" style={{ color: C.text2 }}>Unusual days</dt>
+          <dt className="text-[13px]" style={{ color: C.text2 }}>Days that looked different from {isPatient ? 'your' : 'their'} usual <AskLink q="What are unusual days?" label="?" /></dt>
           <dd className="mt-1 text-[22px] tabular-nums">{flags.filter(Boolean).length} <span className="text-[15px]" style={{ color: C.text2 }}>of {n}</span></dd>
         </div>
         <div className="py-5 sm:px-6" style={{ borderLeft: `1px solid ${C.line}` }}>
-          <dt className="text-[13px]" style={{ color: C.text2 }}>{isPatient ? 'Drift from your baseline' : 'Drift from baseline'}</dt>
+          <dt className="text-[13px]" style={{ color: C.text2 }}>Longer-term shift <AskLink q="What is drift?" label="?" /></dt>
           <dd className="mt-1 text-[22px]">{cs.current_title || '—'}</dd>
           {driftSince && <dd className="text-[12px] mt-0.5" style={{ color: C.muted }}>since {fmtDay(driftSince)}</dd>}
         </div>
         <div className="py-5 sm:pl-6" style={{ borderLeft: `1px solid ${C.line}` }}>
-          <dt className="text-[13px]" style={{ color: C.text2 }}>Mood tone, first week to last week</dt>
+          <dt className="text-[13px]" style={{ color: C.text2 }}>Mood tone of the writing, first week to last week <AskLink q="What is mood tone?" label="?" /></dt>
           <dd className="mt-1 text-[22px] tabular-nums">{pct(moodEarly)} <span style={{ color: C.muted }}>to</span> {pct(moodLate)}</dd>
         </div>
       </dl>
 
       {/* timeline */}
-      <section className="mt-10 rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
+      <section data-guide="timeline" className="mt-10 rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
         <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="font-serif text-[24px] leading-tight">Day by day</h2>
+            <h2 className="font-serif text-[24px] leading-tight">Day by day <AskLink q="How do I read the day by day chart?" label="How to read this" /></h2>
             <p className="mt-1 text-[13px] max-w-[60ch]" style={{ color: C.text2 }}>
               Hover or use the arrow keys to read any day. The first {Math.min(14, n)} days set the personal baseline everything else is compared to.
             </p>
@@ -278,8 +292,8 @@ export default function ResultsPage({ raw, isPatient, onExplain, onForecast }: {
         <div className="mb-4 flex flex-wrap gap-x-5 gap-y-2">
           <Key color={C.mood} label="Mood tone of the writing" />
           <Key color="rgba(166,174,192,0.25)" kind="band" label={isPatient ? 'Your usual range' : 'Usual range'} />
-          <Key color={C.unusual} kind="bar" label="Unusualness (solid = flagged)" />
-          <Key color="rgba(250,178,25,0.35)" kind="band" label="Drift alert" />
+          <Key color={C.unusual} kind="bar" label="How different from usual (solid = flagged)" />
+          <Key color="rgba(250,178,25,0.35)" kind="band" label="Longer-term shift alert" />
           <Key color={VALENCE_COLOR.positive} kind="dot" label="Positive" />
           <Key color={VALENCE_COLOR.neutral} kind="dot" label="Neutral" />
           <Key color={VALENCE_COLOR.negative} kind="dot" label="Negative" />
@@ -288,7 +302,7 @@ export default function ResultsPage({ raw, isPatient, onExplain, onForecast }: {
           <div className="max-h-[420px] overflow-auto text-[13px]">
             <table className="w-full tabular-nums">
               <thead className="sticky top-0" style={{ background: C.surface, color: C.text2 }}>
-                <tr className="text-left"><th className="py-2 font-normal">Day</th><th className="font-normal">Mood tone</th><th className="font-normal">Unusualness</th><th className="font-normal">Emotion</th><th className="font-normal">Drift</th></tr>
+                <tr className="text-left"><th className="py-2 font-normal">Day</th><th className="font-normal">Mood tone</th><th className="font-normal">Different from usual</th><th className="font-normal">Emotion</th><th className="font-normal">Longer-term shift</th></tr>
               </thead>
               <tbody>
                 {dates.map((d, i) => (
@@ -307,8 +321,8 @@ export default function ResultsPage({ raw, isPatient, onExplain, onForecast }: {
       {/* health + detectors */}
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         {health.length > 0 && (
-          <div className="rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
-            <h2 className="font-serif text-[22px] leading-tight">Your daily check-ins</h2>
+          <div data-guide="checkins" className="rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
+            <h2 className="font-serif text-[22px] leading-tight">{isPatient ? 'Your daily check-ins' : 'Daily check-ins'}</h2>
             <p className="mt-1 mb-5 text-[13px]" style={{ color: C.text2 }}>The sliders you set each day. They move with the timeline above.</p>
             <div className="space-y-4">
               {health.map(h => {
@@ -327,10 +341,10 @@ export default function ResultsPage({ raw, isPatient, onExplain, onForecast }: {
             </div>
           </div>
         )}
-        <div className="rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
-          <h2 className="font-serif text-[22px] leading-tight">Four detectors, one verdict</h2>
+        <div data-guide="detectors" className="rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
+          <h2 className="font-serif text-[22px] leading-tight">How a day is judged unusual <AskLink q="What are the detectors?" label="?" /></h2>
           <p className="mt-1 mb-5 text-[13px]" style={{ color: C.text2 }}>
-            {hover != null ? `Scores for ${fmtDayLong(dates[hover])}.` : 'Scores for your most recent day.'} Each looks for “unusual” in a different way; the bars above combine them.
+            {hover != null ? `Scores for ${fmtDayLong(dates[hover])}.` : 'Scores for your most recent day.'} Four checks each look for “different from usual” in their own way; together they make the orange bars above.
           </p>
           <div className="space-y-4">
             {DETECTORS.map(d => {

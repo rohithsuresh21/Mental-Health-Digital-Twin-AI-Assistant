@@ -54,6 +54,8 @@ import ResultsPage from './insights/ResultsPage';
 import ExplainPage from './insights/ExplainPage';
 import ForecastPage from './insights/ForecastPage';
 import { C as INS } from './insights/theme';
+import Guide from './guide/Guide';
+import { onEvent, spotlight, type NavAction } from './guide/bus';
 
 function NoResultsYet({ onGo, isPatient }: { onGo: () => void; isPatient: boolean }) {
   return (
@@ -252,12 +254,23 @@ export default function App() {
   const [diagnosticData, setDiagnosticData] = useState<DiagnosticData>(defaultDiagnosticData);
   const [hasRunAnalysis, setHasRunAnalysis] = useState(false);
   const [pipelineRaw, setPipelineRaw] = useState<any>(null);
+  const pipelineRawRef = useRef<any>(null); pipelineRawRef.current = pipelineRaw;
 
   // Patient data from daily portal
   const patientData = usePatientData(isPatient ? userId : '');
   const [patientFullView, setPatientFullView] = useState(false);
   const [patientAnalyzing, setPatientAnalyzing] = useState(false);
   const [patientAnalysisError, setPatientAnalysisError] = useState<string | null>(null);
+  // The Guide drives the app: switch page, open the right sub-tab, scroll + highlight, focus a day / row
+  useEffect(() => onEvent<NavAction>('mhdt:navigate', a => {
+    if (a.tab === 'analytics' && isPatient) setPatientFullView(!!pipelineRawRef.current);
+    setActiveTab(a.tab as any);
+    setIsMenuOpen(false);
+    if (a.intakeTab) setTimeout(() => window.dispatchEvent(new CustomEvent('mhdt:intake-tab', { detail: a.intakeTab })), 120);
+    if (a.target) setTimeout(() => spotlight(a.target!), 380);
+    if (a.day != null) setTimeout(() => window.dispatchEvent(new CustomEvent('mhdt:focus-day', { detail: a.day })), 700);
+    if (a.row) setTimeout(() => window.dispatchEvent(new CustomEvent('mhdt:open-row', { detail: a.row })), 1600);
+  }), [isPatient]);
 
   // Profile photo
   const [avatarUrl, setAvatarUrl] = useState<string>(() => {
@@ -1647,7 +1660,7 @@ export default function App() {
 
           <div className="flex items-center gap-4 relative shrink-0">
             {hasRunAnalysis && (
-              <button
+              <button data-guide="pdf"
                 onClick={compileMedicalSummary}
                 className="text-xs bg-indigo-600/20 border border-indigo-500/50 text-indigo-300 hover:bg-indigo-600/40 hover:border-indigo-400 px-3 py-1.5 rounded-lg transition cursor-pointer font-bold flex items-center gap-1.5"
               >
@@ -2350,6 +2363,7 @@ export default function App() {
         </div>
 
         {/* SYSTEM STATUS FOOTER — redesigned */}
+        <Guide ctx={{ raw: pipelineRaw, isPatient, status: patientData.status }} page={activeTab} />
         <footer className="h-12 border-t border-[#1A202C]/30 bg-[#0E1119]/20 backdrop-blur-lg px-8 flex items-center justify-between text-[10px] text-gray-500 select-none shrink-0" id="main-footer">
           <div className="flex items-center gap-2">
             <Lock className="h-3 w-3 text-emerald-500" />

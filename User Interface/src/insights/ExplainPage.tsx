@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Info } from 'lucide-react';
-import { C, GROUP_COLORS, sigmoid, logit, pct } from './theme';
+import { C, GROUP_COLORS, pct } from './theme';
+import { waterfall } from './derive';
+import { onEvent } from '../guide/bus';
+import { AskLink } from '../guide/Guide';
+import { useEffect } from 'react';
 import { useWidth, useEntrance } from './charts';
 
 type Raw = any;
@@ -10,30 +14,7 @@ const SHOW = 8;
 const pts = (d: number) => `${d >= 0 ? '+' : '−'}${Math.abs(d * 100).toFixed(1)}`;
 
 function useSteps(raw: Raw) {
-  return useMemo(() => {
-    const sx = raw?.shap_explanation;
-    if (!sx || !Array.isArray(sx.top_features)) return null;
-    const pRaw: number = raw?.prediction?.probability_raw ?? raw?.prediction?.probability ?? 0.5;
-    const pFinal: number = raw?.prediction?.probability ?? pRaw;
-    const feats: Feat[] = sx.top_features.filter((f: Feat) => Math.abs(f.shap_value) > 1e-4).slice(0, SHOW);
-    let m = sx.base_value as number;
-    const rows: { key: string; label: string; sub?: string; from: number; to: number; kind: 'base' | 'up' | 'down' | 'rest' | 'cal' | 'final'; feat?: Feat }[] = [];
-    rows.push({ key: 'base', label: 'Typical starting point', sub: 'What the model assumes before reading your data', from: 0, to: sigmoid(m), kind: 'base' });
-    for (const f of feats) {
-      const a = sigmoid(m); m += f.shap_value; const b = sigmoid(m);
-      rows.push({ key: f.full_name, label: f.description, sub: f.group, from: a, to: b, kind: b >= a ? 'up' : 'down', feat: f });
-    }
-    const mRaw = logit(pRaw);
-    if (Math.abs(sigmoid(m) - pRaw) > 0.0005) {
-      rows.push({ key: 'rest', label: `All other signals (${Math.max(0, (sx.top_features?.length || 0) - feats.length)}+ smaller ones)`, sub: 'Combined effect of everything not listed above', from: sigmoid(m), to: pRaw, kind: 'rest' });
-    }
-    if (Math.abs(pFinal - pRaw) > 0.0005) {
-      rows.push({ key: 'cal', label: 'Calibration', sub: 'Adjusts raw model output so percentages match observed rates', from: pRaw, to: pFinal, kind: 'cal' });
-    }
-    rows.push({ key: 'final', label: 'Your estimate', from: 0, to: pFinal, kind: 'final' });
-    void mRaw;
-    return { rows, feats, sx, pFinal, p0: sigmoid(sx.base_value) };
-  }, [raw]);
+  return useMemo(() => waterfall(raw, SHOW), [raw]);
 }
 
 function Waterfall({ rows, open, setOpen }: { rows: NonNullable<ReturnType<typeof useSteps>>['rows']; open: string | null; setOpen: (k: string | null) => void }) {
@@ -118,6 +99,7 @@ function Waterfall({ rows, open, setOpen }: { rows: NonNullable<ReturnType<typeo
 export default function ExplainPage({ raw, onBack, onForecast }: { raw: Raw; onBack: () => void; onForecast: () => void }) {
   const s = useSteps(raw);
   const [open, setOpen] = useState<string | null>(null);
+  useEffect(() => onEvent<string>('mhdt:open-row', k => setOpen(k)), []);
   const tg = useEntrance(900, 700);
   if (!s) {
     return (
@@ -128,14 +110,7 @@ export default function ExplainPage({ raw, onBack, onForecast }: { raw: Raw; onB
       </div>
     );
   }
-  const { rows, feats, sx, pFinal, p0 } = s;
-  const up = feats.filter(f => f.shap_value > 0).sort((a, b) => b.shap_value - a.shap_value);
-  const down = feats.filter(f => f.shap_value < 0).sort((a, b) => a.shap_value - b.shap_value);
-  // name the true main driver: the largest single move in the direction the estimate ended up
-  const above = pFinal >= p0;
-  const moves = rows.filter(r => r.kind === 'up' || r.kind === 'down' || r.kind === 'rest' || r.kind === 'cal')
-    .map(r => ({ r, d: r.to - r.from })).filter(m => (above ? m.d > 0 : m.d < 0)).sort((a, b) => Math.abs(b.d) - Math.abs(a.d));
-  const top = moves[0]?.r;
+  const { rows, up, down, pFinal, p0, above, mainDriver: top } = s;
   const counter = (above ? down : up)[0];
   const where = above ? 'above' : 'below';
   const headline = !top ? 'No single signal dominates your estimate.'
@@ -144,7 +119,7 @@ export default function ExplainPage({ raw, onBack, onForecast }: { raw: Raw; onB
       : top.kind === 'cal'
         ? `Calibration moved your estimate ${where} the typical starting point more than any single signal.`
         : `${top.feat!.concept} is the main reason your estimate is ${where} the typical starting point.`;
-  const groups: { group: string; total_impact: number }[] = (sx.group_impacts || []).filter((g: any) => g.total_impact > 0);
+  const groups: { group: string; total_impact: number }[] = s.groups;
   const gTotal = groups.reduce((a, g) => a + g.total_impact, 0) || 1;
 
   return (
@@ -159,9 +134,10 @@ export default function ExplainPage({ raw, onBack, onForecast }: { raw: Raw; onB
           The model starts from where it would place a typical person, {pct(p0, 0)}, then each signal from your last 30 days pushes the estimate
           {' '}<span style={{ color: C.raises }}>up</span> or <span style={{ color: C.lowers }}>down</span>. Tap a signal to see what it measured.
         </p>
+        <div className="mt-4 flex flex-wrap gap-2"><AskLink q="Explain my score simply" label="Explain this simply" /><AskLink q="Is this a diagnosis?" label="Is this a diagnosis?" /></div>
       </section>
 
-      <section className="mt-10 rounded-2xl p-5 sm:p-8" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
+      <section data-guide="waterfall" className="mt-10 rounded-2xl p-5 sm:p-8" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
         <Waterfall rows={rows} open={open} setOpen={setOpen} />
       </section>
 
@@ -187,13 +163,13 @@ export default function ExplainPage({ raw, onBack, onForecast }: { raw: Raw; onB
         <div className="rounded-2xl p-5 sm:p-7" style={{ background: C.surface, border: `1px solid ${C.line}` }}>
           <h2 className="font-serif text-[22px]">In plain words</h2>
           <ul className="mt-4 space-y-3.5">
-            {up.slice(0, 3).map(f => (
+            {up.slice(0, 3).map((f: any) => (
               <li key={f.full_name} className="flex gap-3 text-[14px] leading-relaxed">
                 <span className="mt-[7px] h-2 w-2 shrink-0 rounded-full" style={{ background: C.raises }} />
                 <span><span style={{ color: C.text }}>{f.description}</span> <span style={{ color: C.text2 }}>raised your estimate.</span></span>
               </li>
             ))}
-            {down.slice(0, 2).map(f => (
+            {down.slice(0, 2).map((f: any) => (
               <li key={f.full_name} className="flex gap-3 text-[14px] leading-relaxed">
                 <span className="mt-[7px] h-2 w-2 shrink-0 rounded-full" style={{ background: C.lowers }} />
                 <span><span style={{ color: C.text }}>{f.description}</span> <span style={{ color: C.text2 }}>lowered it.</span></span>
