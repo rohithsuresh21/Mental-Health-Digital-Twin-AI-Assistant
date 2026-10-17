@@ -3,6 +3,21 @@
 @import "tailwindcss";
 
 @theme {
+  --font-serif: "Fraunces Variable", "Fraunces", Georgia, "Times New Roman", serif;
+}
+
+/* result pages (Results / Why / Outlook) */
+.insights {
+  font-family: "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+.insights .tabular-nums { font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) {
+  .insights *, .insights *::before, .insights *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+}
+
+@theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;

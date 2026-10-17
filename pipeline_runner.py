@@ -100,6 +100,18 @@ def load_any_file(path: str) -> list[dict]:
                 for i, l in enumerate(lines)]
     else:
         raise ValueError(f"Unsupported format: {suffix}")
+def _tft_target_series(vectors, anomaly_results):
+    out = []
+    for v, a in zip(vectors, anomaly_results):
+        v = np.asarray(v, dtype=float)
+        sentiment = float(v[415]) if len(v) > 415 else 0.0
+        sleep_hours = float(v[436]) if len(v) > 436 else 0.0
+        sleep_quality = float(v[437]) if len(v) > 437 else 0.0
+        activity = float(v[439]) if len(v) > 439 else 0.0
+        health = float(np.clip(sleep_hours / 10.0 * 0.3 + sleep_quality * 0.4 + activity * 0.3, 0.0, 1.0))
+        target = a.get("overall_risk_score", 0.5) * 0.5 + (sentiment + 1.0) / 2.0 * 0.25 + health * 0.25
+        out.append(round(float(np.clip(target, 0.01, 0.99)), 4))
+    return out
 def run_pipeline(user_id: str, file_path: str = None, records: list = None) -> dict:
     """Run all stages on a file (admin upload) or on pre-built records
     (patient daily entries from daily_portal.dataset.build_user_records)."""
@@ -326,6 +338,11 @@ def run_pipeline(user_id: str, file_path: str = None, records: list = None) -> d
         "sleep_series":        [(t.strftime("%Y-%m-%d"), v) for t, v in sleep_series],
         "activity_series":     [(t.strftime("%Y-%m-%d"), v) for t, v in activity_series],
         "music_series":        [(t.strftime("%Y-%m-%d"), v) for t, v in music_series],
+        "sleep_quality_series": [(r["timestamp"].strftime("%Y-%m-%d"), r["sleep_quality"]) for r in records if r.get("sleep_quality") is not None],
+        # the exact target the TFT learns and forecasts (stage_3.tft_model.build_dataframe):
+        # built from the baseline-normalised vectors, so history and forecast are the same series
+        "composite_series":    _tft_target_series(pipeline.normalized_vectors.get(user_id, []), anomaly_results),
+        "is_anomaly_flags":    [bool(a.get("is_anomaly", False)) for a in anomaly_results],
         "anomaly_scores":      [round(a["overall_risk_score"], 4) for a in anomaly_results],
         "detector_scores":     [a["detector_scores"] for a in anomaly_results],
         "cusum_upper":         [round(float(c["cusum_upper"]), 4) for c in cusum_results],
